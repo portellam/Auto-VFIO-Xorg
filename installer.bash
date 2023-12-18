@@ -95,7 +95,7 @@
       fi
 
       if ! cd "${lwd}"; then
-        print_error_to_log "Failed to return to last working directory."
+        print_error_to_log "Could not return to last working directory."
         return 1
       fi
     }
@@ -116,7 +116,7 @@
       fi
 
       if ! cd "${lwd}"; then
-        print_error_to_log "Failed to return to last working directory."
+        print_error_to_log "Could not return to last working directory."
         return 1
       fi
     }
@@ -140,17 +140,17 @@
     function copy_sources_to_targets
     {
       if ! sudo cp --force "${MAIN_EXECUTABLE}" "${bin_path}${MAIN_EXECUTABLE}" &> /dev/null; then
-        print_error_to_log "Failed to copy main executable."
+        print_error_to_log "Could not copy main executable."
         return 1
       fi
 
       if ! sudo cp --force --recursive "${bin_source_path}"* "${bin_target_path}" &> /dev/null; then
-        print_error_to_log "Failed to copy project binaries."
+        print_error_to_log "Could not copy project binaries."
         return 1
       fi
 
       if ! sudo cp --force --recursive "${etc_source_path}"* "${etc_target_path}" &> /dev/null; then
-        print_error_to_log "Failed to copy project file(s)."
+        print_error_to_log "Could not copy project file(s)."
         return 1
       fi
     }
@@ -169,7 +169,7 @@
       if ! sudo chown --recursive root:root "${bin_target_path}" &> /dev/null \
         || ! sudo chmod --recursive +x "${bin_target_path}" &> /dev/null \
         || ! sudo chown --recursive root:root "${etc_target_path}" &> /dev/null; then
-        print_error_to_log "Failed to set file permissions."
+        print_error_to_log "Could not set file permissions."
         return 1
       fi
     }
@@ -177,17 +177,17 @@
     function uninstall
     {
       if ! rm --force "${bin_path}${MAIN_EXECUTABLE}" &> /dev/null; then
-        print_error_to_log "Failed to delete main executable."
+        print_error_to_log "Could not delete main executable."
         return 1
       fi
 
       if ! rm --force --recursive "${bin_target_path}" &> /dev/null; then
-        print_error_to_log "Failed to delete project binaries."
+        print_error_to_log "Could not delete project binaries."
         return 1
       fi
 
       if ! rm --force --recursive "${etc_target_path}" &> /dev/null; then
-        print_error_to_log "Failed to delete project file(s)."
+        print_error_to_log "Could not delete project file(s)."
         return 1
       fi
     }

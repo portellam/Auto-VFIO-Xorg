@@ -87,7 +87,7 @@
 
       function is_option_skip_post_setup
       {
-        if [[ "${1}" == "--skip-vfio-setup" ]]; then
+        if [[ "${1}" == "--skip-post-setup" ]]; then
           POST_SETUP_DO_SKIP_ALL=true
           POST_SETUP_ASK_TO_EXECUTE_ALL=true
         fi
@@ -95,7 +95,7 @@
 
       function is_option_uninstall_post_setup
       {
-        if [[ "${1}" == "--uninstall-vfio-setup" ]]; then
+        if [[ "${1}" == "--uninstall-post-setup" ]]; then
           POST_SETUP_ASK_TO_EXECUTE_ALL=false
         fi
       }

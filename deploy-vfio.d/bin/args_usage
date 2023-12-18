@@ -95,7 +95,10 @@
       "\nSpecify the database to reference before parsing IOMMU groups:"
       "  -x,  --xml [filename]\t\tCross-reference XML file. First-time, export if VFIO is not setup. Consecutive-times, imports if VFIO is setup."
       "       [filename]\t\tReference specific file."
-      "       --no-xml\t\tSkips prompt."
+      "       --no-xml\t\t\tSkips prompt."
+
+      "\nExample:"
+      "       --xml ${SCRIPT_BIN_DIR}parse.xml"
 
       "\nSpecify the IOMMU groups to parse:"
       "  -p,  --parse [groups]\t\tParse given IOMMU groups (delimited by comma)."

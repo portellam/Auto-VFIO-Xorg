@@ -46,6 +46,10 @@
 
   function do_parse_database
   {
+    if "${MAIN_SETUP_DO_SKIP_ALL}"; then
+      return 0
+    fi
+
     do_parse_database_prompt || return 0
 
     if ! create_temp_files_for_database \
@@ -121,7 +125,7 @@
     {
       if ! is_file "${XML_FILE}" &> /dev/null \
         && ! sudo touch "${XML_FILE}"; then
-        print_error_to_log "Failed to created '${XML_FILE}'".
+        print_error_to_log "Could not create '${XML_FILE}'".
         return 1
       fi
     }
@@ -240,7 +244,7 @@
       done
 
       if [[ -z "${NAME}" ]]; then
-        print_error_to_log "Failed to find device name of any VGA device in IOMMU group ${IOMMU_GROUP_ID}."
+        print_error_to_log "Could not find device name of any VGA device in IOMMU group ${IOMMU_GROUP_ID}."
         return 1
       fi
 
@@ -676,7 +680,7 @@
       )
 
       if ! sudo echo -e "${xml_output[*]}" > "${XML_FILE}"; then
-        print_error_to_log "Failed to write to file '${XML_FILE}'."
+        print_error_to_log "Could not write to file '${XML_FILE}'."
         return 1
       fi
     }

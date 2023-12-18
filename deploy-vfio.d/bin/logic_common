@@ -144,7 +144,7 @@
       local -r temp_file="${file}.tmp"
 
       if ! cp --force "${file}" "${temp_file}"; then
-        print_error_to_log "Failed to create temp file of '${file}'."
+        print_error_to_log "Could not create temp file of '${file}'."
         return 1
       fi
     }
@@ -159,7 +159,7 @@
       is_file "${temp_file}" || return 1
 
       if ! cp --force "${temp_file}" "${file}"; then
-        print_error_to_log "Failed to overwrite file '${file}'."
+        print_error_to_log "Could not overwrite file '${file}'."
         return 1
       fi
     }
@@ -184,7 +184,7 @@
       is_file "${temp_file}" &> /dev/null || return 0
 
       if ! rm --force --recursive "${temp_file}"; then
-        print_error_to_log "Failed to delete temp file '${temp_file}'."
+        print_error_to_log "Could not delete temp file '${temp_file}'."
         return 1
       fi
     }
@@ -232,7 +232,7 @@
       local -r full_repo="${1}"
 
       if ! git clone "https://github.com/${full_repo}"; then
-        print_error_to_log "Failed to download repository."
+        print_error_to_log "Could not download repository."
         return 1
       fi
     }
@@ -240,7 +240,7 @@
     function update_git_repo
     {
       if ! git pull &> /dev/null; then
-        print_error_to_log "Failed to update repository."
+        print_error_to_log "Could not update repository."
         return 1
       fi
     }
@@ -255,7 +255,7 @@
       if [[ -d "${full_path}" ]] \
         && [[ -z "$( ls -A "${full_path}" )" ]] \
         && ! rm --recursive --force "${full_path}" &> /dev/null; then
-        print_error_to_log "Failed to delete empty directory '${full_path}'."
+        print_error_to_log "Could not delete empty directory '${full_path}'."
       fi
 
       if [[ ! -d "${full_path}" ]]; then

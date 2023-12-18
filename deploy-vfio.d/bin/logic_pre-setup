@@ -331,7 +331,7 @@
           HUGEPAGES_MIN_COUNT=1 ;;
 
         * )
-          print_error_to_log "Failed to calculate minimum or maximum values for Hugepages."
+          print_error_to_log "Could not calculate minimum or maximum values for Hugepages."
           return 1 ;;
       esac
 

@@ -521,7 +521,7 @@
         echo -e "Please answer between 0 and ${LAST_INDEX}."
       done
 
-      print_error_to_log "Failed to answer."
+      print_error_to_log "Could not answer."
       return 1
     }
 
@@ -549,7 +549,7 @@
         esac
       done
 
-      print_error_to_log "Failed to answer."
+      print_error_to_log "Could not answer."
       return 1
     }
 
@@ -589,7 +589,7 @@
       done
 
       if ! [[ "${answer}" =~ [MmSsUuNn] ]]; then
-        print_error_to_log "Failed to answer."
+        print_error_to_log "Could not answer."
         return 1
       fi
     }
@@ -647,7 +647,7 @@
     function set_entries_for_custom_grub
     {
       if ! sed -i "s/+'/-'/g" "${GRUB_CUSTOM_DEST_PATH}" &> /dev/null; then
-        print_error_to_log "Failed to enable entries for GRUB proxy file."
+        print_error_to_log "Could not enable entries for GRUB proxy file."
         return 1
       fi
     }
@@ -655,7 +655,7 @@
     function unset_entries_for_custom_grub
     {
       if ! sed -i "s/+'/-'/g" "${GRUB_CUSTOM_DEST_PATH}" &> /dev/null; then
-        print_error_to_log "Failed to disable entries for GRUB proxy file."
+        print_error_to_log "Could not disable entries for GRUB proxy file."
         return 1
       fi
     }
@@ -667,7 +667,7 @@
     #   # local grub_custom_proxy_file=$( find "${GRUB_PATH}" -name *"${GRUB_CUSTOM_PROXY_FILENAME}" )
 
     #   # if ! is_file "${grub_custom_proxy_file}"; then
-    #   #   print_error_to_log "Failed to find GRUB proxy file in directory '/etc/grub.d/'."
+    #   #   print_error_to_log "Could not find GRUB proxy file in directory '/etc/grub.d/'."
     #   #   return 1
     #   # fi
 
@@ -724,7 +724,7 @@
 
       if [[ ! -d $( dirname "${GRUB_CUSTOM_DEST_PATH}" ) ]] \
         && ! sudo mkdir --parents $( dirname "${GRUB_CUSTOM_DEST_PATH}" ); then
-        print_error_to_log "Failed to create directory '"$( dirname "${GRUB_CUSTOM_DEST_PATH}" )"'."
+        print_error_to_log "Could not create directory '"$( dirname "${GRUB_CUSTOM_DEST_PATH}" )"'."
         return 1
       fi
 
@@ -750,7 +750,7 @@
     {
       if ! sed -i '/'"${line_to_match}"'/c\'"${line_grub_default}" "${GRUB_DEST_PATH}" \
         || ! echo -e "\n${GRUB_CUSTOM_FILE_CONTENTS[*]}" >> "${GRUB_CUSTOM_DEST_PATH}" ; then
-        print_error_to_log "Failed to overwrite target lines of files."
+        print_error_to_log "Could not overwrite target lines of files."
         return 1
       fi
     }
@@ -761,7 +761,7 @@
       local line_to_replace="${line_to_match}\"${GRUB_CMDLINE_DEFAULT}\""
 
       if ! sed -i '/'"${line_to_match}"'/c\'"${line_to_replace}" "${GRUB_DEST_PATH}" &> /dev/null; then
-        print_error_to_log "Failed to overwrite target lines of files."
+        print_error_to_log "Could not overwrite target lines of files."
         return 1
       fi
     }
@@ -770,7 +770,7 @@
     {
       for line in "${INITRAMFS_ENUM[@]}"; do
         if ! sed -i "23i ${line}" "${INITRAMFS_MODULES_DEST_PATH}"; then
-          print_error_to_log "Failed to overwrite target lines of files."
+          print_error_to_log "Could not overwrite target lines of files."
           return 1
         fi
       done
@@ -780,7 +780,7 @@
     {
       for line in "${MODULES_ENUM[@]}"; do
         if ! sed -i "7i ${line}" "${MODPROBE_VFIO_DEST_PATH}"; then
-          print_error_to_log "Failed to overwrite target lines of files."
+          print_error_to_log "Could not overwrite target lines of files."
           return 1
         fi
       done
@@ -793,7 +793,7 @@
         || ! echo -e "\n${BLACKLISTS_ENUM[*]}" >> "${MODPROBE_BLACKLISTS_DEST_PATH}" \
         || ! sed -i "/# options vfio_pci ids=*/c\options vfio_pci ids=\"${HWID_DELIM}\"" "${MODPROBE_VFIO_DEST_PATH}" &> /dev/null \
         || ! sed -i "/# vfio_pci ids=*/c\vfio_pci_ids=\"${HWID_DELIM}\"" "${MODULES_DEST_PATH}" &> /dev/null; then
-        print_error_to_log "Failed to overwrite target lines of files."
+        print_error_to_log "Could not overwrite target lines of files."
         return 1
       fi
     }

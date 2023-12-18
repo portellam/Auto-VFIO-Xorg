@@ -49,10 +49,10 @@
     # if ! execute_libvirt_hooks_setup \
     #   || ! execute_zram_swap_setup \
     #   || ! execute_auto_xorg_setup \
-    #   || ! execute_looking_glass_setup \   # <note>To be added in a future release.</note>
-    #   || ! execute_scream_setup \          # <note>To be added in a future release.</note>
+    #   # || ! execute_looking_glass_setup \   # <note>To be added in a future release.</note>
+    #   # || ! execute_scream_setup \          # <note>To be added in a future release.</note>
     #   || ! execute_audio_loopback_setup; then
-    #   print_error_to_log "Post-setup incomplete."
+    #   print_fail_to_log "${output}"
     #   exit 1
     # fi
 
@@ -85,35 +85,31 @@
       {
         local -r user_name="portellam"
         local -r repo_name="audio-loopback"
-
-        execute_audio_loopback_setup_prompt || return 1
-
         local -r script_name="installer.sh"
 
-        if "${POST_SETUP_DO_EXECUTE_ZRAM_SWAP}"; then
-          update_or_clone_git_repo "${user_name}" "${repo_name}"
-        fi
+        execute_audio_loopback_setup_prompt || return 0
 
-        if ! execute_audio_loopback_setup_install \
-          || ! execute_audio_loopback_setup_undo; then
-          return 1
+        if ! execute_audio_loopback_setup_prompt \
+          || ! update_or_clone_git_repo "${user_name}" "${repo_name}" \
+          || ! execute_audio_loopback_setup_install; then
+          execute_audio_loopback_setup_undo || return 1
         fi
       }
 
       function execute_audio_loopback_setup_install
       {
-        if ! cd "${BIN_PATH}${full_repo}"; then
-            print_error_to_log "Failed to find build directory."
+        if ! cd "${BIN_PATH}${repo_name}" &> /dev/null; then
+            print_error_to_log "Could not find build directory."
             return 1
         fi
 
         if [[ ! -e "${script_name}" ]]; then
-            print_error_to_log "Failed to find script '${script_name}'."
+            print_error_to_log "Could not find script '${script_name}'."
             return 1
         fi
 
         if ! sudo bash "${script_name}" --install &> /dev/null; then
-            print_error_to_log "Failed to execute script '${script_name}'."
+            print_error_to_log "Could not execute script '${script_name}'."
             return 1
         fi
       }
@@ -141,7 +137,7 @@
       function execute_audio_loopback_setup_uninstall
       {
         if ! sudo bash "${script_name}" --uninstall &> /dev/null; then
-            print_error_to_log "Failed to execute script '${script_name}'."
+            print_error_to_log "Could not execute script '${script_name}'."
             return 1
         fi
       }
@@ -152,35 +148,28 @@
         local -r user_name="portellam"
         local -r repo_name="auto-xorg"
 
-        execute_auto_xorg_setup_prompt || return 1
+        execute_auto_xorg_setup_prompt || return 0
 
-        local -r script_name="installer.sh"
-
-        if "${POST_SETUP_DO_EXECUTE_AUTO_XORG}"; then
-          update_or_clone_git_repo "${user_name}" "${repo_name}"
-        fi
-
-        if ! get_usage_auto_xorg_prompt \
-          || ! execute_auto_xorg_setup_install \
-          || ! execute_auto_xorg_setup_undo; then
-          return 1
+        if ! update_or_clone_git_repo "${user_name}" "${repo_name}" \
+          || ! execute_auto_xorg_setup_install; then
+          execute_auto_xorg_setup_undo || return 1
         fi
       }
 
       function execute_auto_xorg_setup_install
       {
-        if ! cd "${BIN_PATH}${full_repo}"; then
-            print_error_to_log "Failed to find build directory."
+        if ! cd "${BIN_PATH}${repo_name}" &> /dev/null; then
+            print_error_to_log "Could not find build directory."
             return 1
         fi
 
         if [[ ! -e "${script_name}" ]]; then
-            print_error_to_log "Failed to find script '${script_name}'."
+            print_error_to_log "Could not find script '${script_name}'."
             return 1
         fi
 
         if ! sudo bash "${script_name}" --install "${POST_SETUP_ARGS_FOR_AUTO_XORG}" &> /dev/null; then
-            print_error_to_log "Failed to execute script '${script_name}'."
+            print_error_to_log "Could not execute script '${script_name}'."
             return 1
         fi
       }
@@ -200,7 +189,7 @@
         execute_or_skip_prompt "Set arguments for ${SET_COLOR_YELLOW}${repo_name}${RESET_COLOR}?" || return 0
 
         if ! sudo bash "${script_name}" --help &> /dev/null; then
-            print_error_to_log "Failed to execute script '${script_name}'."
+            print_error_to_log "Could not execute script '${script_name}'."
             return 1
         fi
 
@@ -228,7 +217,7 @@
       function execute_auto_xorg_setup_uninstall
       {
         if ! sudo bash "${script_name}" --uninstall &> /dev/null; then
-            print_error_to_log "Failed to execute script '${script_name}'."
+            print_error_to_log "Could not execute script '${script_name}'."
             return 1
         fi
       }
@@ -238,35 +227,30 @@
       {
         local -r user_name="portellam"
         local -r repo_name="libvirt-hooks"
-
-        execute_libvirt_hooks_setup_prompt || return 1
-
         local -r script_name="libvirt-hooks.sh"
 
-        if "${POST_SETUP_DO_EXECUTE_LIBVIRT_HOOKS}"; then
-          update_or_clone_git_repo "${user_name}" "${repo_name}" || return 1
-        fi
+        execute_libvirt_hooks_setup_prompt || return 0
 
-        if ! execute_libvirt_hooks_setup_install \
-          || ! execute_libvirt_hooks_setup_undo; then
-          return 1
+        if ! update_or_clone_git_repo "${user_name}" "${repo_name}" \
+          || ! execute_libvirt_hooks_setup_install; then
+          execute_libvirt_hooks_setup_undo || return 1
         fi
       }
 
       function execute_libvirt_hooks_setup_install
       {
-        if ! cd "${BIN_PATH}${full_repo}"; then
-            print_error_to_log "Failed to find build directory."
+        if ! cd "${BIN_PATH}${repo_name}" &> /dev/null; then
+            print_error_to_log "Could not find build directory."
             return 1
         fi
 
         if [[ ! -e "${script_name}" ]]; then
-            print_error_to_log "Failed to find script '${script_name}'."
+            print_error_to_log "Could not find script '${script_name}'."
             return 1
         fi
 
         if ! sudo bash "${script_name}" --install &> /dev/null; then
-            print_error_to_log "Failed to execute script '${script_name}'."
+            print_error_to_log "Could not execute script '${script_name}'."
             return 1
         fi
       }
@@ -294,7 +278,7 @@
       function execute_libvirt_hooks_setup_uninstall
       {
         if ! sudo bash "${script_name}" --uninstall &> /dev/null; then
-            print_error_to_log "Failed to execute script '${script_name}'."
+            print_error_to_log "Could not execute script '${script_name}'."
             return 1
         fi
       }
@@ -322,18 +306,18 @@
 
       function execute_zram_swap_setup_install
       {
-        if ! cd "${BIN_PATH}${full_repo}"; then
-            print_error_to_log "Failed to find build directory."
+        if ! cd "${BIN_PATH}${repo_name}" &> /dev/null; then
+            print_error_to_log "Could not find build directory."
             return 1
         fi
 
         if [[ ! -e "${script_name}" ]]; then
-            print_error_to_log "Failed to find script '${script_name}'."
+            print_error_to_log "Could not find script '${script_name}'."
             return 1
         fi
 
         if ! sudo bash "${script_name}" --install &> /dev/null; then
-            print_error_to_log "Failed to execute script '${script_name}'."
+            print_error_to_log "Could not execute script '${script_name}'."
             return 1
         fi
       }
@@ -342,19 +326,13 @@
       {
         local -r user_name="foundObjects"
         local -r repo_name="zram-swap"
-
-        execute_zram_swap_setup_prompt || return 1
-
-        local -r full_repo="${user_name}/${repo_name}"
         local -r script_name="install.sh"
 
-        if "${POST_SETUP_DO_EXECUTE_ZRAM_SWAP}"; then
-          update_or_clone_git_repo "${user_name}" "${repo_name}"
-        fi
+        execute_zram_swap_setup_prompt || return 0
 
-        if ! execute_zram_swap_setup_install \
-          || ! execute_zram_swap_undo; then
-          return 1
+        if ! update_or_clone_git_repo "${user_name}" "${repo_name}" \
+          || ! execute_zram_swap_setup_install; then
+          execute_zram_swap_undo || return 1
         fi
 
         if "${POST_SETUP_DO_EXECUTE_ZRAM_SWAP}"; then
@@ -390,7 +368,7 @@
         fi
 
         if ! sed -i '/'${line_to_match}'"*"/c\'${line_to_match}'"'${fraction}'"' "${file}"; then
-          print_error_to_log "Failed to write output to zram-swap file."
+          print_error_to_log "Could not write output to zram-swap file."
           return 1
         fi
 
@@ -404,22 +382,22 @@
 
         if sudo swapon --verbose | grep zram &> /dev/null \
           && ! sudo swapoff /dev/zram* &> /dev/null; then
-          print_error_to_log "Failed to disable zram-swap device(s)."
+          print_error_to_log "Could not disable zram-swap device(s)."
           return 1
         fi
 
         if ! sudo systemctl daemon-reload &> /dev/null; then
-          print_error_to_log "Failed to update systemd."
+          print_error_to_log "Could not update systemd."
           return 1
         fi
 
         if ! sudo systemctl restart zram-swap &> /dev/null; then
-          print_error_to_log "Failed to restart zram-swap service."
+          print_error_to_log "Could not restart zram-swap service."
           return 1
         fi
 
         if ! sudo swapon --verbose | grep zram &> /dev/null; then
-          print_error_to_log "Failed to enable zram-swap device."
+          print_error_to_log "Could not enable zram-swap device."
           return 1
         fi
       }
@@ -437,7 +415,7 @@
       function execute_zram_swap_setup_uninstall
       {
         if ! sudo bash "${script_name}" --uninstall &> /dev/null; then
-            print_error_to_log "Failed to execute script '${script_name}'."
+            print_error_to_log "Could not execute script '${script_name}'."
             return 1
         fi
       }
