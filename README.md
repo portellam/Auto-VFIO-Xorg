@@ -19,11 +19,10 @@ Effortlessly deploy changes to enable virtualization, hardware-passthrough (VFIO
 - [References](#references)
 - [Disclaimer](#disclaimer)
 - [Contact](#contact)
-- [License](LICENSE.md)
 
 ## Contents
 ### About
-Collection of scripts to deploy and re-deploy a VFIO setup. Includes automation.
+Collection of scripts to deploy and re-deploy a VFIO setup.
 
 ### Why?
 1. **Separation of Concerns:** Independently operate your workstation, gaming, and school Operating Systems (OS), as [Virtual Machines](https://en.wikipedia.org/wiki/Virtual_machine) (VMs), under one Host machine.
