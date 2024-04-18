@@ -69,6 +69,7 @@ Collection of scripts to deploy and re-deploy a VFIO setup.
 
 ### Download
 - To download this script, you may:
+  - Download the latest release [here](https://github.com/portellam/deploy-vfio/releases/latest).
   - Clone the repository:
     1. Open a Command Line Interface (CLI).
       - Open a console emulator (for Debian systems: Konsole).
