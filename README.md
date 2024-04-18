@@ -3,10 +3,11 @@ Effortlessly deploy changes to enable virtualization, hardware-passthrough (VFIO
 
 **[View master branch...](https://github.com/portellam/deploy-vfio/tree/master)**
 
-**What is [VFIO?](#VFIO) | [VFIO Article](https://www.kernel.org/doc/html/latest/driver-api/vfio.html) | [VFIO Forum](https://old.reddit.com/r/VFIO) | [PCI Passthrough Guide](https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF)**
-
 #### Related Projects:
 **[Auto Xorg](https://github.com/portellam/auto-Xorg) | [Generate Evdev](https://github.com/portellam/generate-evdev) | [Guest Machine Guide](https://github.com/portellam/guest-machine-guide) | [Libvirt Hooks](https://github.com/portellam/libvirt-hooks) | [Power State VirtManager](https://github.com/portellam/powerstate-virtmanager)**
+
+#### Other Links:
+**What is [VFIO?](#VFIO) | [VFIO Article](https://www.kernel.org/doc/html/latest/driver-api/vfio.html) | [VFIO Forum](https://old.reddit.com/r/VFIO) | [PCI Passthrough Guide](https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF)**
 
 ## Table of Contents
 - [About](#about)
@@ -65,7 +66,7 @@ Collection of scripts to deploy and re-deploy a VFIO setup.
     - For Intel machines:&ensp;&nbsp;`VT-d`
     - ARM (`SMMU`) and other CPU architectures are not explicitly supported by this script.
 
-## Get
+## Download
 - To download this script, you may:
   - Clone the repository:
     1. Open a Command Line Interface (CLI).
@@ -354,6 +355,4 @@ In Linux, a Video device or GPU, is listed as *VGA*, or Video Graphics Array. VG
 Use at your own risk. Please review your system's specifications and resources.
 
 ## Contact
-Did you encounter a bug? Do you need help? Notice any dead links? Please contact by [raising an issue](https://github.com/portellam/deploy-VFIO/issues) with the project itself. The project is still in active development and the [Author](https://github.com/portellam) monitors this repository occasionally.
-
-Thanks!
+Did you encounter a bug? Do you need help? Notice any dead links? Please contact by [raising an issue](https://github.com/portellam/deploy-VFIO/issues) with the project itself.
