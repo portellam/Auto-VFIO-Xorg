@@ -1,7 +1,8 @@
 # Deploy VFIO
+### v1.0.0
 Effortlessly deploy changes to enable virtualization, hardware-passthrough (VFIO), and quality-of-life enhancements for a seamless VFIO setup on a Linux desktop machine.
 
-**[View master branch...](https://github.com/portellam/deploy-vfio/tree/master)**
+**[Latest release](https://github.com/portellam/deploy-vfio/releases/latest) | [View master branch...](https://github.com/portellam/deploy-vfio/tree/master)**
 
 #### Related Projects:
 **[Auto X.Org](https://github.com/portellam/auto-xorg) | [Generate Evdev](https://github.com/portellam/generate-evdev) | [Guest Machine Guide](https://github.com/portellam/guest-machine-guide) | [Libvirt Hooks](https://github.com/portellam/libvirt-hooks) | [Power State Virtual Machine Manager](https://github.com/portellam/powerstate-virtmanager)**
