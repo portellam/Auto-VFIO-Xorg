@@ -13,7 +13,7 @@ Effortlessly deploy changes to enable virtualization, hardware-passthrough (VFIO
 - [About](#about)
 - [Why?](#why)
 - [Host Requirements](#host-requirements)
-- [Get](#get)
+- [Download](#download)
 - [Usage](#usage)
 - [Features](#features)
 - [Information](#information)
