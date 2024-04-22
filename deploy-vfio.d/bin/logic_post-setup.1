@@ -1,6 +1,8 @@
 #!/bin/bash
 
-
+#
+# notes:
+#
 # - check if git exists
 #   - if not, attempt to install
 #     - if internet cannot be reached, log error and exit.
@@ -19,3 +21,126 @@
 #     - if internet cannot be reached, log error and exit.
 #   - second, ask to install each repo.
 #     - if install fails for one, rollback changes, log error, and continue.
+#
+
+#
+# global vars
+#
+
+declare BOOL_DO_IGNORE_INTERNET_STATUS=false
+
+#
+# helper logic
+#
+
+function execute_or_skip_prompt
+{
+  local output=""
+
+  if [[ ! -z "${1}" ]]; then
+    output="${1} "
+  fi
+
+  for counter in $( seq 0 2 ); do
+    echo -en "${output}[Y/n]: "
+    read -r -p "" answer
+
+    case "${answer}" in
+      [Yy]* )
+        return 0 ;;
+
+      [Nn]* )
+        return 255 ;;
+
+      * )
+        echo "Please answer 'Y' or 'N'." ;;
+    esac
+  done
+
+  return 1
+}
+
+#
+# main logic
+#
+
+function is_git_installed
+{
+  local -lr str_command="git"
+
+  if command -v "${str_command}" &> /dev/null; then
+    echo -e "'git' is installed."
+    return 0
+  fi
+
+  echo -e "'git' is not installed. Attempting to install..."
+
+  if ! sudo apt install -y "${str_command}"; then
+    echo -e "'git' is not installed."
+    return 1
+  fi
+
+  echo -e "'git' is installed."
+  return 0
+}
+
+function main
+{
+  is_connected_to_internet || return 1
+  is_git_installed || return 1
+
+  echo "Install git repos!"
+  echo "exit"
+}
+
+
+function
+
+
+#
+# validate internet connection logic
+#
+
+function is_connected_to_internet
+{
+  if ! do_ping_internet; then
+    echo -e "Disconnected."
+
+    if "${BOOL_DO_IGNORE_INTERNET_STATUS}" \
+      || execute_or_skip_prompt "Ignore and continue?"; then
+      echo -e "Continuing."
+      return 0;
+    fi
+
+    echo -e "Stopping."
+    return 1
+  fi
+
+  echo -e "Connected."
+  return 0
+}
+
+function do_ping_server
+{
+  ping "$1" -c 1 &> /dev/null
+}
+
+function do_ping_internet
+{
+  echo -e "Checking connection to Internet..."
+
+  if ! do_ping_server "8.8.8.8" \
+    && ! do_ping_server "8.8.4.4"; then
+    echo -e "Failed to ping IP addresses."
+    return 1
+  fi
+
+    if ! do_ping_server "8.8.8.8" \
+    && ! do_ping_server "8.8.4.4"; then
+    echo -e "Failed to resolve Domain names."
+    return 1
+  fi
+}
+
+main
+exit "$?"
