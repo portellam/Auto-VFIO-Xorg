@@ -166,7 +166,7 @@ Post-setup:
 --skip-post-setup        Skip execution.
 --uninstall-post-setup   Undo all changes made by post-setup.
 
-auto-xorg:
+Auto X.Org:
   first  [vendor]        Find the first valid VGA device.
   last   [vendor]        Find the last valid VGA device.
   [sort] amd             Prefer AMD or ATI.

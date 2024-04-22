@@ -152,7 +152,7 @@
       "       --skip-post-setup\tSkip execution."
       "       --uninstall-post-setup\tUndo all changes made by post-setup."
 
-      "\nauto-xorg:"
+      "\nAuto X.Org:"
       "       first  [vendor]\t\tFind the first valid VGA device."
       "       last   [vendor]\t\tFind the last valid VGA device."
       "       [sort] amd\t\tPrefer AMD or ATI."
