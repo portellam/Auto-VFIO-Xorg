@@ -160,7 +160,6 @@ Static VFIO:
   grub                   Append output to GRUB; single GRUB menu entry.
 
 Post-setup:
---audio-loopback         Install the audio loopback service...           Loopback audio from Guest to Host (over Line-out to Line-in).
 --auto-xorg [ARGS]       Install Auto X.Org...                           System service to find and set a valid boot VGA device for X.Org.
 --libvirt-hooks          Install recommended Libvirt hooks.
 --zram-swap [ARGS]       Create compressed swap in RAM (about 2:1)...    Reduce chances of memory exhaustion for Host.
@@ -227,7 +226,7 @@ Example: (assume a Host with 32 GiB of RAM)
 
 #### Post-setup
 1. **Auto X.Org** system service to find and set a valid Host boot [VGA](#VGA) device for X.Org.
-2. **Guest Audio Capture**
+2. **Guest Audio Capture** (To be implemented in a future release)
   - Create an [audio loopback](https://github.com/portellam/audio-loopback) to output on the Host audio device Line-Out.
     - Listen on Host audio device Line-In (from Guest PCI Audio device Line-Out).
     - Useful for systems with multiple audio devices.
@@ -245,11 +244,11 @@ Example: (assume a Host with 32 GiB of RAM)
     - Reduce chances of Host memory exhaustion (given an event of memory over-allocation).
   - Implementation is known as [zram-swap](#zram-swap).
 
-5. **Virtual Audio Capture**
+5. **Virtual Audio Capture** (To be implemented in a future release)
   - Setup a virtual audio driver for Windows that provides a discrete audio device.
   - Implementation is known as [Scream](#scream).
 
-6. **Virtual Video Capture**
+6. **Virtual Video Capture** (To be implemented in a future release)
   - Setup direct-memory-access (DMA) of a PCI VGA device output (video and audio) from a Guest to Host.
   - Implementation is known as [LookingGlass](https://looking-glass.io/).
   - **Disclaimer:** Only supported for Guests running Windows 7 and later (Windows NT 6.1+).

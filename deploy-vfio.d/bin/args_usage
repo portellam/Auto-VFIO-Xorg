@@ -143,11 +143,11 @@
       "       grub\t\t\tAppend output to GRUB; single GRUB menu entry."
 
       "\nPost-setup:"
-      "       --audio-loopback\t\tInstall the audio loopback service...\t\tLoopback audio from Guest to Host (over Line-out to Line-in)."
-      "       --auto-xorg [ARGS]\tInstall auto-Xorg...\t\t\t\tSystem service to find and set a valid boot VGA device for Xorg."
+#      "       --audio-loopback\t\tInstall the audio loopback service...\t\tLoopback audio from Guest to Host (over Line-out to Line-in)."  # <note>To be added in a future release.</note>
+      "       --auto-xorg [ARGS]\tInstall Auto X.Org...\t\t\t\tSystem service to find and set a valid boot VGA device for Xorg."
       "       --libvirt-hooks\t\tInstall recommended Libvirt hooks."
-      #"       --looking-glass\t\tInstall Looking Glass...\t\t\tVideo (and audio) capture over memory bus from Windows guest."           # <note>To be added in a future release.</note>
-      #"       --scream\t\t\tInstall Scream...\t\t\t\tAudio capture over virtual network from Windows guest."                           # <note>To be added in a future release.</note>
+#      "       --looking-glass\t\tInstall Looking Glass...\t\t\tVideo (and audio) capture over memory bus from Windows guest."              # <note>To be added in a future release.</note>
+#      "       --scream\t\t\tInstall Scream...\t\t\t\tAudio capture over virtual network from Windows guest."                               # <note>To be added in a future release.</note>
       "       --zram-swap [ARGS]\tCreate compressed swap in RAM (about 2:1)...\tReduce chances of memory exhaustion for Host."
       "       --skip-post-setup\tSkip execution."
       "       --uninstall-post-setup\tUndo all changes made by post-setup."
