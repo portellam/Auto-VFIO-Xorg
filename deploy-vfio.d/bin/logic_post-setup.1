@@ -1,0 +1,21 @@
+#!/bin/bash
+
+
+# - check if git exists
+#   - if not, attempt to install
+#     - if internet cannot be reached, log error and exit.
+#     - if that fails, warn user, log error and exit.
+
+# - if git repos exist locally,
+#   - first, ask user to check for updates for all.
+#     - if yes...
+#       - if internet cannot be reached, log error and exit.
+#       - if given repo fails to update, rollback.
+#   - second, ask to install each repo.
+#     - if install fails for one, rollback changes, log error, and continue.
+
+# - if git repos do not exist locally,
+#   - first, download each repo.
+#     - if internet cannot be reached, log error and exit.
+#   - second, ask to install each repo.
+#     - if install fails for one, rollback changes, log error, and continue.
