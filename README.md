@@ -161,7 +161,7 @@ Static VFIO:
 
 Post-setup:
 --audio-loopback         Install the audio loopback service...           Loopback audio from Guest to Host (over Line-out to Line-in).
---auto-xorg [ARGS]       Install Auto X.Org...                            System service to find and set a valid boot VGA device for X.Org.
+--auto-xorg [ARGS]       Install Auto X.Org...                           System service to find and set a valid boot VGA device for X.Org.
 --libvirt-hooks          Install recommended Libvirt hooks.
 --zram-swap [ARGS]       Create compressed swap in RAM (about 2:1)...    Reduce chances of memory exhaustion for Host.
 --skip-post-setup        Skip execution.
@@ -225,7 +225,7 @@ Example: (assume a Host with 32 GiB of RAM)
   - Most flexibility; Libvirt hooks allow Host to allocate and release resources dynamically.
   - For an existing script of similar scope, you may try the project [VFIO-Tools](https://github.com/PassthroughPOST/VFIO-Tools).
 
-#### Post-setup (To be implemented in a future release)
+#### Post-setup
 1. **Auto X.Org** system service to find and set a valid Host boot [VGA](#VGA) device for X.Org.
 2. **Guest Audio Capture**
   - Create an [audio loopback](https://github.com/portellam/audio-loopback) to output on the Host audio device Line-Out.
