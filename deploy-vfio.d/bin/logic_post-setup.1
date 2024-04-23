@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash/env bash
 
 #
 # notes:
@@ -28,12 +28,28 @@
 #
 
 declare BOOL_DO_IGNORE_INTERNET_STATUS=false
+declare STR_GIT_REPO_PARENT_PATH="${HOME}/git"
+
+declare -A DICT_GIT_REPO_NAME_AND_ADDRESS
+#DICT_GIT_REPO_NAME_AND_ADDRESS["Audio Loopback"]="github.com/portellam/audio-loopback"
+DICT_GIT_REPO_NAME_AND_ADDRESS["Auto X.Org"]="github.com/portellam/auto-xorg"
+DICT_GIT_REPO_NAME_AND_ADDRESS["Libvirt Hooks"]="github.com/portellam/libvirt-hooks"
+#DICT_GIT_REPO_NAME_AND_ADDRESS["Looking Glass"]="github.com/gnif/LookingGlass"
+#DICT_GIT_REPO_NAME_AND_ADDRESS["Scream"]="github.com/duncanthrax/scream"
+DICT_GIT_REPO_NAME_AND_ADDRESS["ZRAM Swap"]="github.com/foundObjects/zram-swap"
+readonly DICT_GIT_REPO_NAME_AND_ADDRESS
+
+declare -A DICT_GIT_REPO_NAME_AND_AVAILABILITY
+
+#declare -A DICT_FEATURE_NAME_AND_ADDRESS
+#DICT_FEATURE_NAME_AND_ADDRESS["Looking Glass"]="https://looking-glass.io/artifact/stable/source"
+#readonly DICT_FEATURE_NAME_AND_ADDRESS
 
 #
 # helper logic
 #
 
-function execute_or_skip_prompt
+function ask_yes_or_no_to_execute
 {
   local output=""
 
@@ -64,60 +80,136 @@ function execute_or_skip_prompt
 # main logic
 #
 
+function main
+{
+  is_connected_to_internet || return 1
+  is_git_installed || return 1
+  does_git_parent_path_exist || return 1
+  do_any_git_repos_exist || return 1
+  echo "exit"
+}
+
+function print
+{
+  echo -e "$1"
+}
+
+#
+# git logic
+#
+
+function do_any_git_repos_exist
+{
+  local -r str_last_dir="$( pwd )"
+
+  for str_git_repo_name in "${!DICT_GIT_REPO_NAME_AND_ADDRESS[@]}"; do
+    does_this_git_repo_exist "$str_git_repo_name"
+    print
+  done
+
+  readonly DICT_GIT_REPO_NAME_AND_AVAILABILITY
+  cd "${str_last_dir}"
+}
+
+function does_git_parent_path_exist
+{
+  local -r str_last_dir="$( pwd )"
+
+  if ! [[ -d "${STR_GIT_REPO_PARENT_PATH}" ]]; then
+    print "Git directory missing. Attemping to create..."
+
+    if ! mkdir --parent "${STR_GIT_REPO_PARENT_PATH}" &> /dev/null; then
+      print "Failed to create Git directory."
+      return 1
+    fi
+  fi
+}
+
+function does_this_git_repo_exist
+{
+  local str_git_repo_name="$1"
+
+  cd "${STR_GIT_REPO_PARENT_PATH}"
+    DICT_GIT_REPO_NAME_AND_AVAILABILITY["${str_git_repo_name}"]=false
+
+    local str_git_repo_address="${DICT_GIT_REPO_NAME_AND_ADDRESS[${str_git_repo_name}]}"
+
+    if ! ask_yes_or_no_to_execute "Install '${str_git_repo_name}'?"; then
+      print "Skipped."
+      return 0
+    fi
+
+    local str_git_repo_full_address="https://www.${str_git_repo_address}"
+
+    print "Cloning '${str_git_repo_name}'"
+    git clone "${str_git_repo_full_address}" &> /dev/null
+    local -i int_code="$?"
+
+    if [[ "${int_code}" -eq 0 ]]; then
+      print "Clone successful."
+      DICT_GIT_REPO_NAME_AND_AVAILABILITY["${str_git_repo_name}"]=true
+      return 0
+    fi
+
+    local str_git_repo_path="$( basename ${str_git_repo_address} )"
+
+    if [[ "${int_code}" -eq 128 ]]; then
+      print "Repo exists. Updating..."
+      cd "${str_git_repo_path}" || return 1
+
+      if ! git pull &> /dev/null; then
+        print "Update failed."
+        return 1
+      fi
+
+      print "Update successful."
+      DICT_GIT_REPO_NAME_AND_AVAILABILITY["${str_git_repo_name}"]=true
+      return 0
+    fi
+
+    print "Clone failed."
+    return 1
+}
+
 function is_git_installed
 {
   local -lr str_command="git"
 
   if command -v "${str_command}" &> /dev/null; then
-    echo -e "'git' is installed."
+    print "'git' is installed."
     return 0
   fi
 
-  echo -e "'git' is not installed. Attempting to install..."
+  print "'git' is not installed. Attempting to install..."
 
   if ! sudo apt install -y "${str_command}"; then
-    echo -e "'git' is not installed."
+    print "'git' is not installed."
     return 1
   fi
 
-  echo -e "'git' is installed."
+  print "'git' is installed."
   return 0
 }
-
-function main
-{
-  is_connected_to_internet || return 1
-  is_git_installed || return 1
-
-  echo "Install git repos!"
-  echo "exit"
-}
-
-
-function
-
 
 #
 # validate internet connection logic
 #
 
-function is_connected_to_internet
+function do_ping_internet
 {
-  if ! do_ping_internet; then
-    echo -e "Disconnected."
+  print "Checking connection to Internet..."
 
-    if "${BOOL_DO_IGNORE_INTERNET_STATUS}" \
-      || execute_or_skip_prompt "Ignore and continue?"; then
-      echo -e "Continuing."
-      return 0;
-    fi
-
-    echo -e "Stopping."
+  if ! do_ping_server "8.8.8.8" \
+    && ! do_ping_server "8.8.4.4"; then
+    print "Failed to ping IP addresses."
     return 1
   fi
 
-  echo -e "Connected."
-  return 0
+    if ! do_ping_server "8.8.8.8" \
+    && ! do_ping_server "8.8.4.4"; then
+    print "Failed to resolve Domain names."
+    return 1
+  fi
 }
 
 function do_ping_server
@@ -125,21 +217,23 @@ function do_ping_server
   ping "$1" -c 1 &> /dev/null
 }
 
-function do_ping_internet
+function is_connected_to_internet
 {
-  echo -e "Checking connection to Internet..."
+  if ! do_ping_internet; then
+    print "Disconnected."
 
-  if ! do_ping_server "8.8.8.8" \
-    && ! do_ping_server "8.8.4.4"; then
-    echo -e "Failed to ping IP addresses."
+    if "${BOOL_DO_IGNORE_INTERNET_STATUS}" \
+      || ask_yes_or_no_to_execute "Ignore and continue?"; then
+      print "Continuing."
+      return 0;
+    fi
+
+    print "Stopping."
     return 1
   fi
 
-    if ! do_ping_server "8.8.8.8" \
-    && ! do_ping_server "8.8.4.4"; then
-    echo -e "Failed to resolve Domain names."
-    return 1
-  fi
+  print "Connected."
+  return 0
 }
 
 main
