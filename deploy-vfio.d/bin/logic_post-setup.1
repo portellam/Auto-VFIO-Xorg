@@ -3,31 +3,40 @@
 #
 # notes:
 #
-# - check if git exists
-#   - if not, attempt to install
-#     - if internet cannot be reached, log error and exit.
-#     - if that fails, warn user, log error and exit.
-
-# - if git repos exist locally,
-#   - first, ask user to check for updates for all.
-#     - if yes...
-#       - if internet cannot be reached, log error and exit.
-#       - if given repo fails to update, rollback.
-#   - second, ask to install each repo.
-#     - if install fails for one, rollback changes, log error, and continue.
-
-# - if git repos do not exist locally,
-#   - first, download each repo.
-#     - if internet cannot be reached, log error and exit.
-#   - second, ask to install each repo.
-#     - if install fails for one, rollback changes, log error, and continue.
+# - [x] check if git exists
+#   - [x] if not, attempt to install
+#     - [x] if internet cannot be reached, log error and exit.
+#     - [x] if that fails, warn user, log error and exit.
 #
+# - [x] if git repos exist locally,
+#   - [x] first, ask user to check for updates for all.
+#     - [x] if yes...
+#       - [x] if internet cannot be reached, log error and exit.
+#       - [x] if given repo fails to update, rollback.
+#   - [x] second, ask to download each repo.
+#     - [x] if install fails for one, rollback changes, log error, and continue.
+#
+# - [x] if git repos do not exist locally,
+#   - [x] first, download each repo.
+#     - [x] if internet cannot be reached, log error and exit.
+#   - [x] second, ask to download each repo.
+#     - [x] if download fails for one, rollback changes, log error, and continue.
+#
+#
+# - [ ] add logger
+#   - [ ] escalate by type, general output, warn, error, failure, success.
+#
+#
+# - [ ] add array to track which repos to execute or skip automatically.
+#   - [ ] install or uninstall.
+#    - [ ] include args too.
 
 #
 # global vars
 #
 
 declare BOOL_DO_IGNORE_INTERNET_STATUS=false
+declare BOOL_DO_DOWNLOAD_ALL_REPOS=true
 declare STR_GIT_REPO_PARENT_PATH="${HOME}/git"
 
 declare -A DICT_GIT_REPO_NAME_AND_ADDRESS
@@ -130,45 +139,55 @@ function does_this_git_repo_exist
   local str_git_repo_name="$1"
 
   cd "${STR_GIT_REPO_PARENT_PATH}"
-    DICT_GIT_REPO_NAME_AND_AVAILABILITY["${str_git_repo_name}"]=false
+  DICT_GIT_REPO_NAME_AND_AVAILABILITY["${str_git_repo_name}"]=false
 
-    local str_git_repo_address="${DICT_GIT_REPO_NAME_AND_ADDRESS[${str_git_repo_name}]}"
+  local str_git_repo_address="${DICT_GIT_REPO_NAME_AND_ADDRESS[${str_git_repo_name}]}"
 
-    if ! ask_yes_or_no_to_execute "Install '${str_git_repo_name}'?"; then
-      print "Skipped."
-      return 0
+  local str_prompt="Download '${str_git_repo_name}'?"
+
+  if "${BOOL_DO_DOWNLOAD_ALL_REPOS}"; then
+    true &> /dev/null
+  else
+    ask_yes_or_no_to_execute "${str_prompt}"
+  fi
+
+  local -i int_code="$?"
+
+  if [[ "${int_code}" -ne 0 ]]; then
+    print "Skipped."
+    return 0
+  fi
+
+  local str_git_repo_full_address="https://www.${str_git_repo_address}"
+
+  print "Cloning '${str_git_repo_name}'"
+  git clone "${str_git_repo_full_address}" &> /dev/null
+  int_code="$?"
+
+  if [[ "${int_code}" -eq 0 ]]; then
+    print "Clone successful."
+    DICT_GIT_REPO_NAME_AND_AVAILABILITY["${str_git_repo_name}"]=true
+    return 0
+  fi
+
+  local str_git_repo_path="$( basename ${str_git_repo_address} )"
+
+  if [[ "${int_code}" -eq 128 ]]; then
+    print "Repo exists. Updating..."
+    cd "${str_git_repo_path}" || return 1
+
+    if ! git pull &> /dev/null; then
+      print "Update failed."
+      return 1
     fi
 
-    local str_git_repo_full_address="https://www.${str_git_repo_address}"
+    print "Update successful."
+    DICT_GIT_REPO_NAME_AND_AVAILABILITY["${str_git_repo_name}"]=true
+    return 0
+  fi
 
-    print "Cloning '${str_git_repo_name}'"
-    git clone "${str_git_repo_full_address}" &> /dev/null
-    local -i int_code="$?"
-
-    if [[ "${int_code}" -eq 0 ]]; then
-      print "Clone successful."
-      DICT_GIT_REPO_NAME_AND_AVAILABILITY["${str_git_repo_name}"]=true
-      return 0
-    fi
-
-    local str_git_repo_path="$( basename ${str_git_repo_address} )"
-
-    if [[ "${int_code}" -eq 128 ]]; then
-      print "Repo exists. Updating..."
-      cd "${str_git_repo_path}" || return 1
-
-      if ! git pull &> /dev/null; then
-        print "Update failed."
-        return 1
-      fi
-
-      print "Update successful."
-      DICT_GIT_REPO_NAME_AND_AVAILABILITY["${str_git_repo_name}"]=true
-      return 0
-    fi
-
-    print "Clone failed."
-    return 1
+  print "Clone failed."
+  return 1
 }
 
 function is_git_installed
