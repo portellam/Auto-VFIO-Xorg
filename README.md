@@ -1,5 +1,5 @@
 # Deploy VFIO
-### v1.0.0
+### v1.1.0
 Effortlessly deploy changes to enable virtualization, hardware-passthrough (VFIO), and quality-of-life enhancements for a seamless VFIO setup on a Linux desktop machine.
 
 **[Latest release](https://github.com/portellam/deploy-vfio/releases/latest) | [View master branch...](https://github.com/portellam/deploy-vfio/tree/master)**
