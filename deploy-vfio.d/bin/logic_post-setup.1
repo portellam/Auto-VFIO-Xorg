@@ -36,7 +36,8 @@
 # title : Global parameters
 #
   declare BOOL_DO_IGNORE_INTERNET_STATUS=false
-  declare BOOL_DO_DOWNLOAD_ALL_REPOS=false
+  declare BOOL_DO_DOWNLOAD_ALL_REPOS=true
+  declare STR_AUTO_XORG_ARGUMENTS=""
   declare STR_GIT_REPO_PARENT_PATH="${HOME}/git"
   declare -A DICT_GIT_REPO_NAME_AND_AVAILABILITY
 
@@ -230,7 +231,33 @@
       return 0
     }
 
-# title
+#
+# title : Install logic
+#
+  #
+  # desc  : Install Auto X.Org
+  #
+    function install_auto_xorg
+    {
+      local -r str_project_path="${STR_GIT_REPO_PARENT_PATH}/auto-xorg"
+
+      cd "${str_project_path}"
+      print "Installing Auto X.Org...\n"
+      sudo bash installer.bash "${STR_AUTO_XORG_ARGUMENTS}"
+
+      local -i int_code="${?}"
+
+      print
+
+      if [[ "${int_code}" -ne 0 ]]; then
+        print "Install failed."
+        return "${int_code}"
+      fi
+
+      print "Install successful."
+      return 0
+    }
+
 
 #
 # title : Internet connection logic
@@ -294,7 +321,8 @@
     is_connected_to_internet || return 1
     is_git_installed || return 1
     does_git_parent_path_exist || return 1
-    do_any_git_repos_exist || return 1
+    #do_any_git_repos_exist || return 1
+    install_auto_xorg "--last --amd" || return 1
   }
 
 main
