@@ -38,6 +38,7 @@
   declare BOOL_DO_IGNORE_INTERNET_STATUS=false
   declare BOOL_DO_DOWNLOAD_ALL_REPOS=true
   declare STR_AUTO_XORG_ARGUMENTS=""
+  declare STR_LIBVIRT_HOOKS_ARGUMENTS="--install"
   declare STR_GIT_REPO_PARENT_PATH="${HOME}/git"
   declare -A DICT_GIT_REPO_NAME_AND_AVAILABILITY
 
@@ -258,6 +259,53 @@
       return 0
     }
 
+  #
+  # desc  : Install Libvirt Hooks
+  #
+    function install_libvirt_hooks
+    {
+      local -r str_project_path="${STR_GIT_REPO_PARENT_PATH}/libvirt-hooks"
+
+      cd "${str_project_path}"
+      print "Installing Libvirt Hooks...\n"
+      sudo bash installer.bash "${STR_LIBVIRT_HOOKS_ARGUMENTS}"
+
+      local -i int_code="${?}"
+
+      print
+
+      if [[ "${int_code}" -ne 0 ]]; then
+        print "Install failed."
+        return "${int_code}"
+      fi
+
+      print "Install successful."
+      return 0
+    }
+
+  #
+  # desc  : Install ZRAM Swap
+  #
+    function install_zram_swap
+    {
+      local -r str_project_path="${STR_GIT_REPO_PARENT_PATH}/zram-swap"
+
+      cd "${str_project_path}"
+      print "Installing ZRAM Swap...\n"
+      sudo bash install.sh --install
+
+      local -i int_code="${?}"
+
+      print
+
+      if [[ "${int_code}" -ne 0 ]]; then
+        print "Install failed."
+        return "${int_code}"
+      fi
+
+      print "Install successful."
+      return 0
+    }
 
 #
 # title : Internet connection logic
@@ -318,11 +366,20 @@
 #
   function main
   {
-    is_connected_to_internet || return 1
-    is_git_installed || return 1
-    does_git_parent_path_exist || return 1
-    #do_any_git_repos_exist || return 1
-    install_auto_xorg "--last --amd" || return 1
+    print "Executing post-setup."
+
+    if ! is_connected_to_internet \
+      || ! is_git_installed \
+      || ! does_git_parent_path_exist \
+      || ! install_auto_xorg \
+      || ! install_libvirt_hooks
+    then
+      print "Post-setup failed."
+      return 1
+    fi
+
+    print "Post-setup successful."
+    return 0
   }
 
 main
