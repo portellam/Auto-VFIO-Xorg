@@ -36,224 +36,256 @@
 #
 
 declare BOOL_DO_IGNORE_INTERNET_STATUS=false
-declare BOOL_DO_DOWNLOAD_ALL_REPOS=true
+declare BOOL_DO_DOWNLOAD_ALL_REPOS=false
 declare STR_GIT_REPO_PARENT_PATH="${HOME}/git"
-
-declare -A DICT_GIT_REPO_NAME_AND_ADDRESS
-#DICT_GIT_REPO_NAME_AND_ADDRESS["Audio Loopback"]="github.com/portellam/audio-loopback"
-DICT_GIT_REPO_NAME_AND_ADDRESS["Auto X.Org"]="github.com/portellam/auto-xorg"
-DICT_GIT_REPO_NAME_AND_ADDRESS["Libvirt Hooks"]="github.com/portellam/libvirt-hooks"
-#DICT_GIT_REPO_NAME_AND_ADDRESS["Looking Glass"]="github.com/gnif/LookingGlass"
-#DICT_GIT_REPO_NAME_AND_ADDRESS["Scream"]="github.com/duncanthrax/scream"
-DICT_GIT_REPO_NAME_AND_ADDRESS["ZRAM Swap"]="github.com/foundObjects/zram-swap"
-readonly DICT_GIT_REPO_NAME_AND_ADDRESS
-
 declare -A DICT_GIT_REPO_NAME_AND_AVAILABILITY
 
-#declare -A DICT_FEATURE_NAME_AND_ADDRESS
-#DICT_FEATURE_NAME_AND_ADDRESS["Looking Glass"]="https://looking-glass.io/artifact/stable/source"
-#readonly DICT_FEATURE_NAME_AND_ADDRESS
+declare -Ar DICT_GIT_REPO_NAME_AND_ADDRESS=( \
+  ["Audio Loopback"]="github.com/portellam/audio-loopback" \
+  ["Auto X.Org"]="github.com/portellam/auto-xorg" \
+  ["Libvirt Hooks"]="github.com/portellam/libvirt-hooks" \
+  ["Looking Glass"]="github.com/gnif/LookingGlass" \
+  ["Scream"]="github.com/duncanthrax/scream" \
+  ["ZRAM Swap"]="github.com/foundObjects/zram-swap" \
+)
+
+declare -A DICT_FEATURE_NAME_AND_ADDRESS=( \
+  ["Looking Glass"]="https://looking-glass.io/artifact/stable/source", \
+)
 
 #
-# helper logic
+# title : Commonly used logic
 #
+  #
+  # desc    : (Optionally) ask a yes or no question.
+  # $1      : the yes or no question
+  # return  : '0' if answer is 'Y', '1' if answer is 'N'
+  #
+    function ask_yes_or_no_to_execute
+    {
+      local output=""
 
-function ask_yes_or_no_to_execute
-{
-  local output=""
+      if [[ ! -z "${1}" ]]; then
+        output="${1} "
+      fi
 
-  if [[ ! -z "${1}" ]]; then
-    output="${1} "
-  fi
+      for counter in $( seq 0 2 ); do
+        print_without_newline "${output}[Y/n]: "
+        read -r -p "" answer
 
-  for counter in $( seq 0 2 ); do
-    echo -en "${output}[Y/n]: "
-    read -r -p "" answer
+        case "${answer}" in
+          [Yy]* )
+            return 0 ;;
 
-    case "${answer}" in
-      [Yy]* )
-        return 0 ;;
+          [Nn]* )
+            return 255 ;;
 
-      [Nn]* )
-        return 255 ;;
+          * )
+            echo "Please answer 'Y' or 'N'." ;;
+        esac
+      done
 
-      * )
-        echo "Please answer 'Y' or 'N'." ;;
-    esac
-  done
-
-  return 1
-}
-
-#
-# main logic
-#
-
-function main
-{
-  is_connected_to_internet || return 1
-  is_git_installed || return 1
-  does_git_parent_path_exist || return 1
-  do_any_git_repos_exist || return 1
-  echo "exit"
-}
-
-function print
-{
-  echo -e "$1"
-}
-
-#
-# git logic
-#
-
-function do_any_git_repos_exist
-{
-  local -r str_last_dir="$( pwd )"
-
-  for str_git_repo_name in "${!DICT_GIT_REPO_NAME_AND_ADDRESS[@]}"; do
-    does_this_git_repo_exist "$str_git_repo_name"
-    print
-  done
-
-  readonly DICT_GIT_REPO_NAME_AND_AVAILABILITY
-  cd "${str_last_dir}"
-}
-
-function does_git_parent_path_exist
-{
-  local -r str_last_dir="$( pwd )"
-
-  if ! [[ -d "${STR_GIT_REPO_PARENT_PATH}" ]]; then
-    print "Git directory missing. Attemping to create..."
-
-    if ! mkdir --parent "${STR_GIT_REPO_PARENT_PATH}" &> /dev/null; then
-      print "Failed to create Git directory."
       return 1
-    fi
-  fi
-}
+    }
 
-function does_this_git_repo_exist
-{
-  local str_git_repo_name="$1"
+  #
+  # $1  : the line of text
+  #
+    function print
+    {
+      echo -e "$1"
+    }
 
-  cd "${STR_GIT_REPO_PARENT_PATH}"
-  DICT_GIT_REPO_NAME_AND_AVAILABILITY["${str_git_repo_name}"]=false
+  #
+  # $1  : the line of text
+  #
+    function print_without_newline
+    {
+      echo -en "$1"
+    }
 
-  local str_git_repo_address="${DICT_GIT_REPO_NAME_AND_ADDRESS[${str_git_repo_name}]}"
+#
+# title : Git logic
+#
+  #
+  # desc  : Checks if any git repos exist.
+  #
+    function do_any_git_repos_exist
+    {
+      local -r str_last_dir="$( pwd )"
 
-  local str_prompt="Download '${str_git_repo_name}'?"
+      for str_git_repo_name in "${!DICT_GIT_REPO_NAME_AND_ADDRESS[@]}"; do
+        does_this_git_repo_exist "$str_git_repo_name" \
+          "${DICT_GIT_REPO_NAME_AND_ADDRESS["${str_git_repo_name}"]}"
+      done
 
-  if "${BOOL_DO_DOWNLOAD_ALL_REPOS}"; then
-    true &> /dev/null
-  else
-    ask_yes_or_no_to_execute "${str_prompt}"
-  fi
+      readonly DICT_GIT_REPO_NAME_AND_AVAILABILITY
+      cd "${str_last_dir}"
+    }
 
-  local -i int_code="$?"
+  #
+  # desc  : Checks if the parent path for git repos exists.
+  #
+    function does_git_parent_path_exist
+    {
+      local -r str_last_dir="$( pwd )"
 
-  if [[ "${int_code}" -ne 0 ]]; then
-    print "Skipped."
-    return 0
-  fi
+      if ! [[ -d "${STR_GIT_REPO_PARENT_PATH}" ]]; then
+        print "Git directory missing. Attemping to create..."
 
-  local str_git_repo_full_address="https://www.${str_git_repo_address}"
+        if ! mkdir --parent "${STR_GIT_REPO_PARENT_PATH}" &> /dev/null; then
+          print "Failed to create Git directory."
+          return 1
+        fi
+      fi
+    }
 
-  print "Cloning '${str_git_repo_name}'"
-  git clone "${str_git_repo_full_address}" &> /dev/null
-  int_code="$?"
+  #
+  # desc  : Checks if the provided git repo exists.
+  # $1    : the git repo name
+  # $2    : the git repo address
+  #
+    function does_this_git_repo_exist
+    {
+      local str_git_repo_name="$1"
+      local str_git_repo_address="$2"
 
-  if [[ "${int_code}" -eq 0 ]]; then
-    print "Clone successful."
-    DICT_GIT_REPO_NAME_AND_AVAILABILITY["${str_git_repo_name}"]=true
-    return 0
-  fi
+      cd "${STR_GIT_REPO_PARENT_PATH}"
 
-  local str_git_repo_path="$( basename ${str_git_repo_address} )"
+      DICT_GIT_REPO_NAME_AND_AVAILABILITY["${str_git_repo_name}"]=false
+      local str_prompt="Download '${str_git_repo_name}'?"
 
-  if [[ "${int_code}" -eq 128 ]]; then
-    print "Repo exists. Updating..."
-    cd "${str_git_repo_path}" || return 1
+      if ! "${BOOL_DO_DOWNLOAD_ALL_REPOS}"; then
+        ask_yes_or_no_to_execute "${str_prompt}"
+      fi
 
-    if ! git pull &> /dev/null; then
-      print "Update failed."
+      local -i int_code="$?"
+
+      if [[ "${int_code}" -ne 0 ]]; then
+        print "Skipped."
+        return 0
+      fi
+
+      local str_git_repo_full_address="https://www.${str_git_repo_address}"
+
+      print "Cloning '${str_git_repo_name}'"
+      git clone "${str_git_repo_full_address}" &> /dev/null
+      int_code="$?"
+
+      if [[ "${int_code}" -eq 0 ]]; then
+        print "Clone successful."
+        DICT_GIT_REPO_NAME_AND_AVAILABILITY["${str_git_repo_name}"]=true
+        return 0
+      fi
+
+      local str_git_repo_path="$( basename ${str_git_repo_address} )"
+
+      if [[ "${int_code}" -eq 128 ]]; then
+        print "Repo exists. Updating..."
+        cd "${str_git_repo_path}" || return 1
+
+        if ! git pull &> /dev/null; then
+          print "Update failed."
+          return 1
+        fi
+
+        print "Update successful."
+        DICT_GIT_REPO_NAME_AND_AVAILABILITY["${str_git_repo_name}"]=true
+        return 0
+      fi
+
+      print "Clone failed."
       return 1
-    fi
+    }
 
-    print "Update successful."
-    DICT_GIT_REPO_NAME_AND_AVAILABILITY["${str_git_repo_name}"]=true
-    return 0
-  fi
+  #
+  # desc  : Checks if git command is installed. Installs if absent.
+  #
+    function is_git_installed
+    {
+      local -lr str_command="git"
 
-  print "Clone failed."
-  return 1
-}
+      if command -v "${str_command}" &> /dev/null; then
+        print "'git' is installed."
+        return 0
+      fi
 
-function is_git_installed
-{
-  local -lr str_command="git"
+      print "'git' is not installed. Attempting to install..."
 
-  if command -v "${str_command}" &> /dev/null; then
-    print "'git' is installed."
-    return 0
-  fi
+      if ! sudo apt install -y "${str_command}"; then
+        print "'git' is not installed."
+        return 1
+      fi
 
-  print "'git' is not installed. Attempting to install..."
-
-  if ! sudo apt install -y "${str_command}"; then
-    print "'git' is not installed."
-    return 1
-  fi
-
-  print "'git' is installed."
-  return 0
-}
+      print "'git' is installed."
+      return 0
+    }
 
 #
-# validate internet connection logic
+# title : Internet connection logic
 #
+  #
+  # desc  : Pings Internet IP addresses and domain names.
+  #
+    function do_ping_internet
+    {
+      print "Checking connection to Internet..."
 
-function do_ping_internet
-{
-  print "Checking connection to Internet..."
+      if ! do_ping_server "8.8.8.8" \
+        && ! do_ping_server "8.8.4.4"; then
+        print "Failed to ping IP addresses."
+        return 1
+      fi
 
-  if ! do_ping_server "8.8.8.8" \
-    && ! do_ping_server "8.8.4.4"; then
-    print "Failed to ping IP addresses."
-    return 1
-  fi
+        if ! do_ping_server "www.google.com"; then
+          print "Failed to resolve Domain names."
+        return 1
+      fi
+    }
 
-    if ! do_ping_server "8.8.8.8" \
-    && ! do_ping_server "8.8.4.4"; then
-    print "Failed to resolve Domain names."
-    return 1
-  fi
-}
+  #
+  # desc  : Pings given server address.
+  # $1    : the server address
+  #
+    function do_ping_server
+    {
+      ping "$1" -c 1 &> /dev/null
+    }
 
-function do_ping_server
-{
-  ping "$1" -c 1 &> /dev/null
-}
+  #
+  # desc  : Checks if the machine is connected to Internet.
+  #
+    function is_connected_to_internet
+    {
+      if ! do_ping_internet; then
+        print "Disconnected."
 
-function is_connected_to_internet
-{
-  if ! do_ping_internet; then
-    print "Disconnected."
+        if "${BOOL_DO_IGNORE_INTERNET_STATUS}" \
+          || ask_yes_or_no_to_execute "Ignore and continue?"; then
+          print "Continuing."
+          return 0;
+        fi
 
-    if "${BOOL_DO_IGNORE_INTERNET_STATUS}" \
-      || ask_yes_or_no_to_execute "Ignore and continue?"; then
-      print "Continuing."
-      return 0;
-    fi
+        print "Stopping."
+        return 1
+      fi
 
-    print "Stopping."
-    return 1
-  fi
+      print "Connected."
+      return 0
+    }
 
-  print "Connected."
-  return 0
-}
+#
+# title : Main logic
+# $@
+#
+  function main
+  {
+    is_connected_to_internet || return 1
+    is_git_installed || return 1
+    does_git_parent_path_exist || return 1
+    do_any_git_repos_exist || return 1
+    echo "exit"
+  }
 
 main
 exit "$?"
