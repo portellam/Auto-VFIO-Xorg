@@ -32,26 +32,25 @@
 #    - [ ] include args too.
 
 #
-# global vars
+# title : Global parameters
 #
+  declare BOOL_DO_IGNORE_INTERNET_STATUS=false
+  declare BOOL_DO_DOWNLOAD_ALL_REPOS=false
+  declare STR_GIT_REPO_PARENT_PATH="${HOME}/git"
+  declare -A DICT_GIT_REPO_NAME_AND_AVAILABILITY
 
-declare BOOL_DO_IGNORE_INTERNET_STATUS=false
-declare BOOL_DO_DOWNLOAD_ALL_REPOS=false
-declare STR_GIT_REPO_PARENT_PATH="${HOME}/git"
-declare -A DICT_GIT_REPO_NAME_AND_AVAILABILITY
+  declare -Ar DICT_GIT_REPO_NAME_AND_ADDRESS=( \
+    ["Audio Loopback"]="github.com/portellam/audio-loopback" \
+    ["Auto X.Org"]="github.com/portellam/auto-xorg" \
+    ["Libvirt Hooks"]="github.com/portellam/libvirt-hooks" \
+    ["Looking Glass"]="github.com/gnif/LookingGlass" \
+    ["Scream"]="github.com/duncanthrax/scream" \
+    ["ZRAM Swap"]="github.com/foundObjects/zram-swap" \
+  )
 
-declare -Ar DICT_GIT_REPO_NAME_AND_ADDRESS=( \
-  ["Audio Loopback"]="github.com/portellam/audio-loopback" \
-  ["Auto X.Org"]="github.com/portellam/auto-xorg" \
-  ["Libvirt Hooks"]="github.com/portellam/libvirt-hooks" \
-  ["Looking Glass"]="github.com/gnif/LookingGlass" \
-  ["Scream"]="github.com/duncanthrax/scream" \
-  ["ZRAM Swap"]="github.com/foundObjects/zram-swap" \
-)
-
-declare -A DICT_FEATURE_NAME_AND_ADDRESS=( \
-  ["Looking Glass"]="https://looking-glass.io/artifact/stable/source", \
-)
+  declare -A DICT_FEATURE_NAME_AND_ADDRESS=( \
+    ["Looking Glass"]="https://looking-glass.io/artifact/stable/source", \
+  )
 
 #
 # title : Commonly used logic
