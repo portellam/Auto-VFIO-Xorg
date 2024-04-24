@@ -3,6 +3,9 @@
 #
 # notes:
 #
+# - [ ] add args to beginning of main, so that this script can be run on its' own,
+#  without deploy-vfio.
+#
 # - [x] check if git exists
 #   - [x] if not, attempt to install
 #     - [x] if internet cannot be reached, log error and exit.
@@ -22,10 +25,8 @@
 #   - [x] second, ask to download each repo.
 #     - [x] if download fails for one, rollback changes, log error, and continue.
 #
-#
 # - [ ] add logger
 #   - [ ] escalate by type, general output, warn, error, failure, success.
-#
 #
 # - [ ] add array to track which repos to execute or skip automatically.
 #   - [ ] install or uninstall.
@@ -38,6 +39,15 @@
   declare BOOL_DO_DOWNLOAD_ALL_REPOS=false
   declare STR_GIT_REPO_PARENT_PATH="${HOME}/git"
   declare -A DICT_GIT_REPO_NAME_AND_AVAILABILITY
+
+  declare -ar ARR_GIT_REPO_NAME=( \
+    "Audio Loopback" \
+    "Auto X.Org" \
+    "Libvirt Hooks" \
+    "Looking Glass" \
+    "Scream" \
+    "ZRAM Swap" \
+  )
 
   declare -Ar DICT_GIT_REPO_NAME_AND_ADDRESS=( \
     ["Audio Loopback"]="github.com/portellam/audio-loopback" \
@@ -57,19 +67,19 @@
 #
   #
   # desc    : (Optionally) ask a yes or no question.
-  # $1      : the yes or no question
+  # ${1}      : the yes or no question
   # return  : '0' if answer is 'Y', '1' if answer is 'N'
   #
     function ask_yes_or_no_to_execute
     {
-      local output=""
+      local str_output=""
 
       if [[ ! -z "${1}" ]]; then
-        output="${1} "
+        str_output="${1} "
       fi
 
       for counter in $( seq 0 2 ); do
-        print_without_newline "${output}[Y/n]: "
+        print_without_newline "${str_output}[Y/n]: "
         read -r -p "" answer
 
         case "${answer}" in
@@ -88,19 +98,19 @@
     }
 
   #
-  # $1  : the line of text
+  # ${1}  : the line of text
   #
     function print
     {
-      echo -e "$1"
+      echo -e "${1}"
     }
 
   #
-  # $1  : the line of text
+  # ${1}  : the line of text
   #
     function print_without_newline
     {
-      echo -en "$1"
+      echo -en "${1}"
     }
 
 #
@@ -113,9 +123,9 @@
     {
       local -r str_last_dir="$( pwd )"
 
-      for str_git_repo_name in "${!DICT_GIT_REPO_NAME_AND_ADDRESS[@]}"; do
-        does_this_git_repo_exist "$str_git_repo_name" \
-          "${DICT_GIT_REPO_NAME_AND_ADDRESS["${str_git_repo_name}"]}"
+      for str_git_repo_name in "${ARR_GIT_REPO_NAME[@]}"; do
+        local str_git_repo_address="${DICT_GIT_REPO_NAME_AND_ADDRESS[$str_git_repo_name]}"
+        does_this_git_repo_exist "${str_git_repo_name}" "${str_git_repo_address}"
       done
 
       readonly DICT_GIT_REPO_NAME_AND_AVAILABILITY
@@ -141,13 +151,13 @@
 
   #
   # desc  : Checks if the provided git repo exists.
-  # $1    : the git repo name
-  # $2    : the git repo address
+  # ${1}    : the git repo name
+  # ${2}    : the git repo address
   #
     function does_this_git_repo_exist
     {
-      local str_git_repo_name="$1"
-      local str_git_repo_address="$2"
+      local str_git_repo_name="${1}"
+      local str_git_repo_address="${2}"
 
       cd "${STR_GIT_REPO_PARENT_PATH}"
 
@@ -220,6 +230,8 @@
       return 0
     }
 
+# title
+
 #
 # title : Internet connection logic
 #
@@ -244,11 +256,11 @@
 
   #
   # desc  : Pings given server address.
-  # $1    : the server address
+  # ${1}    : the server address
   #
     function do_ping_server
     {
-      ping "$1" -c 1 &> /dev/null
+      ping "${1}" -c 1 &> /dev/null
     }
 
   #
