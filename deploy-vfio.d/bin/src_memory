@@ -1,0 +1,102 @@
+#!/bin/false
+
+#
+# Filename:       src_memory
+# Description:    Memory values and logic.
+# Author(s):      Alex Portell <github.com/portellam>
+# Maintainer(s):  Alex Portell <github.com/portellam>
+#
+
+#
+# sources
+#
+# TODO: add source for print logic
+
+#
+# traps
+#
+  trap 'catch_error' SIGINT SIGTERM ERR
+  trap 'catch_exit' EXIT
+  trap 'uncatch_exit' EXIT 3
+
+#
+# setter logic
+#
+  #
+  # desc:   Sets the global parameter.
+  # return: True return 0, false return 1.
+  #
+    function set_free_memory
+    {
+      if ! is_int "INT_MAX_FREE_MEMORY" \
+        || ! is_int "INT_MIN_FREE_MEMORY"; then
+        print_error_to_log "Failed to get current free memory."
+        return 1
+      fi
+
+      INT_CURRENT_FREE_MEMORY=$(( INT_MAX_FREE_MEMORY - INT_MIN_FREE_MEMORY ))
+    }
+
+  #
+  # desc:   Sets the global parameter.
+  # return: True return 0, false return 1.
+  #
+    function set_minimum_memory
+    {
+      if ! "${BOOL_DO_USE_TWO_MIB_HUGEPAGES}"; then
+        declare -gi INT_MIN_FREE_MEMORY=$(( 8 * ${INT_ONE_GIB_IN_KIB} ))
+      fi
+    }
+
+
+#
+# parameters
+#
+  #
+  # desc: globals
+  #
+    # TODO: use 'free' and get by bytes.
+
+    # TODO: get all memory stick sizes. Get the lowest memory stick size, and go with the 
+    closest huge page size and fraction. Or, inform the user and input manually. Or both.
+
+    # sudo lshw -class memory -short | grep -Ei "DIMM|DDR" | grep -Ei "KiB|MiB|GiB|TiB"
+
+
+    declare -g BOOL_DO_USE_TWO_MIB_HUGEPAGES=false
+    declare -gi INT_CURRENT_FREE_MEMORY=0
+    declare -gir INT_TWO_TO_POWER_OF_TEN=1024
+
+    # TODO: define the lowest common factor by CLI output or user input.
+    declare -gir INT_LCF_MEMORY_STICK_IN_KIB=$(( 8 * ${INT_TWO_TO_POWER_OF_TEN} ))
+
+    declare -gir INT_ONE_GIB_IN_KIB=$(( ${INT_TWO_TO_POWER_OF_TEN} * \
+      ${INT_TWO_TO_POWER_OF_TEN} ))
+
+    declare -gir INT_TWO_MIB_IN_KIB=$(( 2 * ${INT_TWO_TO_POWER_OF_TEN} ))
+
+    declare -gir INT_MAX_FREE_MEMORY=$( cat /proc/meminfo | grep MemTotal \
+      | cut --delimiter ":" --fields 2 | awk 'END {print $1}' )
+
+    declare -gir INT_MIN_FREE_MEMORY=$(( 8 * ${INT_ONE_GIB_IN_KIB} ))
+    set_free_memory
+
+#
+# logic
+#
+  #
+  # desc:   Is any Host memory available.
+  # return: True return 0, false return 1.
+  #
+    function is_any_host_memory_available
+    {
+      if [[ "${INT_CURRENT_FREE_MEMORY}" -le 0 ]]; then
+        print_error_to_log "Insufficient Host memory available."
+        return 1
+      fi
+
+      print_output_to_log "Sufficient Host memory available."
+      return 0
+    }
+
+  
