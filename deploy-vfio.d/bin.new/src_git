@@ -36,6 +36,7 @@
 #
 # logic
 #
+  #
   # DESC:   Checks if the parent path for git repos exists.
   # RETURN: If user is root return 0. If false, return 1.
   #
