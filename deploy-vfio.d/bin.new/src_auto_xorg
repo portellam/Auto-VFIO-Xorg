@@ -83,3 +83,23 @@
       print_output_to_log "Execution successful."
       return 0
     }
+
+  #
+  # DESC:   Basic install of Auto X.Org, no added arguments.
+  # RETURN: If install is successful, return 0. If false, return 1.
+  #
+    function basic_install_auto_xorg
+    {
+      execute_auto_xorg_installer "--install"
+      return "${?}"
+    }
+
+  #
+  # DESC:   Uninstall Auto X.Org.
+  # RETURN: If uninstall is successful, return 0. If false, return 1.
+  #
+    function uninstall_auto_xorg
+    {
+      execute_auto_xorg_installer "--uninstall"
+      return "${?}"
+    }
