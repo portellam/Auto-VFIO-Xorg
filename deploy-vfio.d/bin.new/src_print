@@ -20,44 +20,44 @@
   #
   # DESC: globals
   #
-  function set_globals
-  {
-    if [[ "${BOOL_SRC_PRINT_SET_GLOBALS}" == true ]]; then
-      return 0
-    fi
+    function set_globals
+    {
+      if [[ "${BOOL_SRC_PRINT_SET_GLOBALS}" == true ]]; then
+        return 0
+      fi
 
-    declare -g BOOL_SRC_PRINT_SET_GLOBALS=true
+      declare -g BOOL_SRC_PRINT_SET_GLOBALS=true
 
-    #
-    # DESC:   vanity
-    #
-      declare -gr STR_SCRIPT_NAME="deploy-vfio"
+      #
+      # DESC:   vanity
+      #
+        declare -gr STR_SCRIPT_NAME="deploy-vfio"
 
-    #
-    # DESC:   color coding
-    #
-      declare -gr STR_SET_COLOR_GREEN='\033[0;32m'
-      declare -gr STR_SET_COLOR_RED='\033[0;31m'
-      declare -gr STR_SET_COLOR_YELLOW='\033[0;33m'
-      declare -gr STR_RESET_COLOR='\033[0m'
+      #
+      # DESC:   color coding
+      #
+        declare -gr STR_SET_COLOR_GREEN='\033[0;32m'
+        declare -gr STR_SET_COLOR_RED='\033[0;31m'
+        declare -gr STR_SET_COLOR_YELLOW='\033[0;33m'
+        declare -gr STR_RESET_COLOR='\033[0m'
 
-    #
-    # DESC:   font handling
-    #
-      declare -gr STR_SET_BOLD='\e[1m'
-      declare -gr STR_SET_ITALIC='\e[3m'
-      declare -gr STR_SET_UNDERLINE='\e[4m'
-      declare -gr STR_RESET_TEXT='\e[0m'
+      #
+      # DESC:   font handling
+      #
+        declare -gr STR_SET_BOLD='\e[1m'
+        declare -gr STR_SET_ITALIC='\e[3m'
+        declare -gr STR_SET_UNDERLINE='\e[4m'
+        declare -gr STR_RESET_TEXT='\e[0m'
 
-    #
-    # DESC:   prompt prefixes
-    #
-      declare -gr STR_PREFIX_PROMPT="${STR_SCRIPT_NAME}: "
-      declare -gr STR_PREFIX_NOTE="${STR_PREFIX_PROMPT}${STR_SET_COLOR_YELLOW}Note:${STR_RESET_COLOR} "
-      declare -gr STR_PREFIX_ERROR="${STR_PREFIX_PROMPT}${STR_SET_COLOR_YELLOW}An error occurred:${STR_RESET_COLOR} "
-      declare -gr STR_PREFIX_FAIL="${STR_PREFIX_PROMPT}${STR_SET_COLOR_RED}Failure:${STR_RESET_COLOR} "
-      declare -gr STR_PREFIX_PASS="${STR_PREFIX_PROMPT}${STR_SET_COLOR_GREEN}Success:${STR_RESET_COLOR} "
-  }
+      #
+      # DESC:   prompt prefixes
+      #
+        declare -gr STR_PREFIX_PROMPT="${STR_SCRIPT_NAME}: "
+        declare -gr STR_PREFIX_NOTE="${STR_PREFIX_PROMPT}${STR_SET_COLOR_YELLOW}Note:${STR_RESET_COLOR} "
+        declare -gr STR_PREFIX_ERROR="${STR_PREFIX_PROMPT}${STR_SET_COLOR_YELLOW}An error occurred:${STR_RESET_COLOR} "
+        declare -gr STR_PREFIX_FAIL="${STR_PREFIX_PROMPT}${STR_SET_COLOR_RED}Failure:${STR_RESET_COLOR} "
+        declare -gr STR_PREFIX_PASS="${STR_PREFIX_PROMPT}${STR_SET_COLOR_GREEN}Success:${STR_RESET_COLOR} "
+    }
 
 #
 # logic
