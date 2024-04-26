@@ -20,7 +20,7 @@
 # logic
 #
   #
-  # DESC:   Checks if any git repos exist.
+  # DESC:   Checks if git repo exists.
   # RETURN: If repo exists, return 0. If false, return 1.
   #
     function does_libvirt_hooks_repo_exist
@@ -37,6 +37,8 @@
   #
     function execute_libvirt_hooks_installer
     {
+      does_libvirt_hooks_repo_exist || return 1
+
       local -r str_arguments="${*}"
       local -r str_project_path="${STR_GIT_REPO_PARENT_PATH}/libvirt-hooks"
 
