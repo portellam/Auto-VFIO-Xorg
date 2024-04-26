@@ -62,6 +62,24 @@
 # logic
 #
   #
+  # DESC:   Trap error code and run logic before exit.
+  # RETURN: Always return 1.
+  #
+    function catch_error {
+      echo
+      exit 1
+    }
+
+  #
+  # DESC:   Trap exit code and run logic before exit.
+  # RETURN: Always return 1.
+  #
+    function catch_exit {
+      print_pass_or_fail_to_log
+      reset_ifs
+    }
+
+  #
   # DESC:   Print and log error.
   # $1:     line of text as a string
   # RETURN: Always return 0.
@@ -132,6 +150,32 @@
     function print_pass_to_log
     {
       echo -e "${STR_PREFIX_PASS}${1}" >&1
+    }
+
+  #
+  # DESC:   Preserve current internal field seperator.
+  # RETURN: Always return 0.
+  #
+    function reset_ifs
+    {
+      IFS="${SAVEIFS}"
+    }
+
+  #
+  # DESC:   Set internal field seperator to newline.
+  # RETURN: Always return 0.
+  #
+    function set_ifs_to_newline
+    {
+      IFS=$'\n'
+    }
+
+  #
+  # DESC:   Trap exit code and run logic before exit.
+  # RETURN: Always return 0.
+  #
+    function uncatch_exit {
+      reset_ifs
     }
 
 #
