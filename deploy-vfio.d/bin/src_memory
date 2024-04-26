@@ -10,14 +10,11 @@
 #
 # sources
 #
-  # TODO: add source for print logic.
-  # TODO: add source for data type validation.
-
-  # NOTE: this must always be the same!
   declare -g SCRIPT_DIR="/usr/local/bin/"
   declare -g SCRIPT_BIN_DIR="${SCRIPT_DIR}deploy-vfio.d/"
 
-  source "${SCRIPT_BIN_DIR}logic_common"
+  source "${SCRIPT_BIN_DIR}src_print"
+  source "${SCRIPT_BIN_DIR}src_datatype"
 
 #
 # setter logic
