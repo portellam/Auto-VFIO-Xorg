@@ -18,11 +18,24 @@
 #
 # logic
 #
+  #
+  # DESC:   Checks if git repo exists.
+  # RETURN: If repo exists, return 0. If false, return 1.
+  #
+    function does_zram_swap_repo_exist
+    {
+      local -r str_last_dir="$( pwd )"
+      does_this_git_repo_exist "ZRAM Swap" "github.com/foundObjects/zram-swap"
+      cd "${str_last_dir}"
+    }
+
     #
     # DESC: Install ZRAM Swap
     #
       function install_zram_swap
       {
+        does_zram_swap_repo_exist || return 1
+
         local -r str_project_path="${STR_GIT_REPO_PARENT_PATH}/zram-swap"
 
         cd "${str_project_path}"
