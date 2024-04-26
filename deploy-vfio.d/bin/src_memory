@@ -10,87 +10,179 @@
 #
 # sources
 #
-# TODO: add source for print logic
+  # TODO: add source for print logic.
+  # TODO: add source for data type validation.
 
-#
-# traps
-#
-  trap 'catch_error' SIGINT SIGTERM ERR
-  trap 'catch_exit' EXIT
-  trap 'uncatch_exit' EXIT 3
+  # NOTE: this must always be the same!
+  declare -g SCRIPT_DIR="/usr/local/bin/"
+  declare -g SCRIPT_BIN_DIR="${SCRIPT_DIR}deploy-vfio.d/"
+
+  source "${SCRIPT_BIN_DIR}logic_common"
 
 #
 # setter logic
 #
   #
-  # desc:   Sets the global parameter.
-  # return: True return 0, false return 1.
+  # DESC: globals
+  #
+  function set_globals
+  {
+    if [[ "${BOOL_SRC_MEMORY_SET_GLOBALS}" == true ]]; then
+      return 0
+    fi
+
+    declare -g BOOL_SRC_MEMORY_SET_GLOBALS=true
+
+    declare -g BOOL_DO_USE_FOUR_KIB_HUGEPAGES=false
+    declare -g BOOL_DO_USE_TWO_MIB_HUGEPAGES=false
+    declare -g BOOL_DO_USE_ONE_GIB_HUGEPAGES=true
+
+    declare -gir INT_TWO_TO_POWER_OF_TEN=$(( 2 ** 10 ))
+    declare -gir INT_FOUR_KIB_IN_KIB=4
+    declare -gir INT_TWO_MIB_IN_KIB=$(( 2 * ${INT_TWO_TO_POWER_OF_TEN} ))
+    declare -gir INT_ONE_GIB_IN_KIB=$(( ${INT_TWO_TO_POWER_OF_TEN} ** 2 ))
+
+    declare -gi INT_CURRENT_FREE_MEMORY_BYTES=0
+    declare -gi INT_MIN_FREE_MEMORY_BYTES=0
+
+    declare -gir INT_MAX_FREE_MEMORY_BYTES=$( cat /proc/meminfo | grep MemTotal \
+      | cut --delimiter ":" --fields 2 | awk 'END {print $1}' )
+
+    find_lowest_common_factor_memory_channel_size
+    set_free_memory
+  }
+
+  #
+  # DESC:   Sets the global parameter.
+  # RETURN: If true return 0, if false return 1.
   #
     function set_free_memory
     {
-      if ! is_int "INT_MAX_FREE_MEMORY" \
-        || ! is_int "INT_MIN_FREE_MEMORY"; then
+      if ! is_int "INT_MAX_FREE_MEMORY_BYTES" \
+        || ! is_int "INT_MIN_FREE_MEMORY_BYTES"; then
         print_error_to_log "Failed to get current free memory."
         return 1
       fi
 
-      INT_CURRENT_FREE_MEMORY=$(( INT_MAX_FREE_MEMORY - INT_MIN_FREE_MEMORY ))
+      INT_CURRENT_FREE_MEMORY_BYTES=$(( INT_MAX_FREE_MEMORY_BYTES - \
+        INT_MIN_FREE_MEMORY_BYTES ))
     }
 
   #
-  # desc:   Sets the global parameter.
-  # return: True return 0, false return 1.
+  # DESC:   Determine whether to use smaller or larger huge memory pages.
+  # RETURN: If set a valid page size return 0, false return 1.
+  #
+    function set_huge_memory_page_size
+    {
+      if "${BOOL_DO_USE_FOUR_KIB_HUGEPAGES}"; then
+        print_output_to_log "Set huge memory page size: 4 KiB"
+        return 0
+      fi
+
+      if "${BOOL_DO_USE_TWO_MIB_HUGEPAGES}"; then
+        print_output_to_log "Set huge memory page size: 2 MiB"
+        return 0
+      fi
+
+      if "${BOOL_DO_USE_ONE_GIB_HUGEPAGES}"; then
+        print_output_to_log "Set huge memory page size: 1 GiB"
+        return 0
+      fi
+
+      local -i int_quotient=$(( ${INT_MIN_FREE_MEMORY_BYTES}/${INT_TWO_TO_POWER_OF_TEN} ))
+
+      if [[ ${int_quotient} -ge ${INT_FOUR_KIB_IN_KIB} ]] \
+        && [[ ${int_quotient} -lt ${INT_TWO_MIB_IN_KIB} ]]; then
+        BOOL_DO_USE_FOUR_KIB_HUGEPAGES=true
+        print_output_to_log "Set huge memory page size: 4 KiB"
+        return 0
+
+      elif [[ ${int_quotient} -ge ${INT_TWO_MIB_IN_KIB} ]] \
+        && [[ ${int_quotient} -lt ${INT_ONE_GIB_IN_KIB} ]]; then
+        BOOL_DO_USE_TWO_MIB_HUGEPAGES=true
+        print_output_to_log "Set huge memory page size: 2 MiB"
+        return 0
+
+      elif [[ ${int_quotient} -ge ${INT_ONE_GIB_IN_KIB} ]]; then
+        BOOL_DO_USE_ONE_GIB_HUGEPAGES=true
+        print_output_to_log "Set huge memory page size: 1 GiB"
+        return 0
+
+      else
+        print_error_to_log "Failed to set huge memory page size."
+        return 1
+      fi
+    }
+
+  #
+  # DESC:   Find the lowest memory channel size.
+  # RETURN: If memory channel size is valid, return 0. If false return 1.
+  #
+    function find_lowest_common_factor_memory_channel_size
+    {
+      local -a arr_memory_channel_bytes=( )
+
+      for str_line in $( sudo dmidecode --type memory | \
+        grep --ignore-case "Size: " | wc --lines ); do
+
+        local -i int_memory_channel_size=$( echo "${str_line}" | awk 'END {print $2}')
+        local -u str_memory_channel_unit=$( echo "${str_line}" | awk 'END {print $3}')
+
+        local -i int_memory_channel_bytes=0
+
+        set_memory_channel_size_in_bytes "${int_memory_channel_size}" \
+          "${str_memory_channel_unit}" "int_memory_channel_bytes"
+
+        arr_memory_channel_bytes+=( "${int_memory_channel_bytes}" )
+      done
+
+      if ! is_enum "arr_memory_channel_bytes"; then
+        print_error_to_log "Could not find memory channel size values."
+        return 1
+      fi
+
+      local -a arr_sorted=( )
+
+      while IFS= read -r var_element; do
+        arr_sorted+=( "${var_element}" )
+      done < <( printf '%s\n' "${arr_memory_channel_bytes[@]}" | \
+        sort --reverse --field-seperator _  --general-numeric-sort )
+
+      if ! is_enum "arr_sorted"; then
+        print_error_to_log "Could not sort memory channel size values."
+        return 1
+      fi
+
+      INT_MIN_FREE_MEMORY_BYTES=$( declare -p arr_sorted | \
+        head --lines 1)
+
+      if ! is_int "INT_MIN_FREE_MEMORY_BYTES"; then
+        print_error_to_log "Could not find lowest memory channel size value."
+        return 1
+      fi
+    }
+
+  #
+  # DESC:   Sets the global parameter.
+  # RETURN: True return 0, false return 1.
   #
     function set_minimum_memory
     {
       if ! "${BOOL_DO_USE_TWO_MIB_HUGEPAGES}"; then
-        declare -gi INT_MIN_FREE_MEMORY=$(( 8 * ${INT_ONE_GIB_IN_KIB} ))
+        declare -gi INT_MIN_FREE_MEMORY_BYTES=$(( 8 * ${INT_ONE_GIB_IN_KIB} ))
       fi
     }
-
-
-#
-# parameters
-#
-  #
-  # desc: globals
-  #
-    # TODO: use 'free' and get by bytes.
-
-    # TODO: get all memory stick sizes. Get the lowest memory stick size, and go with the 
-    closest huge page size and fraction. Or, inform the user and input manually. Or both.
-
-    # sudo lshw -class memory -short | grep -Ei "DIMM|DDR" | grep -Ei "KiB|MiB|GiB|TiB"
-
-
-    declare -g BOOL_DO_USE_TWO_MIB_HUGEPAGES=false
-    declare -gi INT_CURRENT_FREE_MEMORY=0
-    declare -gir INT_TWO_TO_POWER_OF_TEN=1024
-
-    # TODO: define the lowest common factor by CLI output or user input.
-    declare -gir INT_LCF_MEMORY_STICK_IN_KIB=$(( 8 * ${INT_TWO_TO_POWER_OF_TEN} ))
-
-    declare -gir INT_ONE_GIB_IN_KIB=$(( ${INT_TWO_TO_POWER_OF_TEN} * \
-      ${INT_TWO_TO_POWER_OF_TEN} ))
-
-    declare -gir INT_TWO_MIB_IN_KIB=$(( 2 * ${INT_TWO_TO_POWER_OF_TEN} ))
-
-    declare -gir INT_MAX_FREE_MEMORY=$( cat /proc/meminfo | grep MemTotal \
-      | cut --delimiter ":" --fields 2 | awk 'END {print $1}' )
-
-    declare -gir INT_MIN_FREE_MEMORY=$(( 8 * ${INT_ONE_GIB_IN_KIB} ))
-    set_free_memory
 
 #
 # logic
 #
   #
-  # desc:   Is any Host memory available.
-  # return: True return 0, false return 1.
+  # DESC:   Is any Host memory available.
+  # RETURN: True return 0, false return 1.
   #
     function is_any_host_memory_available
     {
-      if [[ "${INT_CURRENT_FREE_MEMORY}" -le 0 ]]; then
+      if [[ "${INT_CURRENT_FREE_MEMORY_BYTES}" -le 0 ]]; then
         print_error_to_log "Insufficient Host memory available."
         return 1
       fi
@@ -99,4 +191,50 @@
       return 0
     }
 
-  
+  #
+  # DESC:   Set the memory channel size, given the memory channel size.
+  # $1:     the memory channel size (unitless)
+  # $2:     the memory channel unit (KB, MB, GB, TB)
+  # $3:     the pointer
+  # RETURN: If the memory channel size is valid, return 0. If false return 1.
+  #
+    function set_memory_channel_size_in_bytes
+    {
+      local -u str_memory_channel_size="${1}"
+      local -i int_memory_channel_unit="${2}"
+      local -r int_memory_channel_bytes="${3}"
+
+      case "${str_memory_channel_size}" in
+          "K" | "KB" | "KIB" )
+            int_memory_channel_bytes=$(( ${INT_TWO_TO_POWER_OF_TEN} ** 1 ))
+            ;;
+
+          "M" | "MB" | "MIB" )
+            int_memory_channel_bytes=$(( ${INT_TWO_TO_POWER_OF_TEN} ** 2 ))
+            ;;
+
+          "G" | "GB" | "GIB" )
+            int_memory_channel_bytes=$(( ${INT_TWO_TO_POWER_OF_TEN} ** 3 ))
+            ;;
+
+          "T" | "TB" | "TIB" )
+            int_memory_channel_bytes=$(( ${INT_TWO_TO_POWER_OF_TEN} ** 4 ))
+            ;;
+
+          * )
+            print_error_to_log "Unsupported channel size or invalid input."
+            return 1
+            ;;
+        esac
+
+        int_memory_channel_bytes=$(( ${int_memory_channel_bytes} * \
+          ${int_memory_channel_unit} ))
+
+        return 0
+    }
+
+#
+# main logic
+#
+  set_globals
+  unset set_globals
