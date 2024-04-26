@@ -1,0 +1,58 @@
+#!/bin/false
+
+#
+# Filename:       src_auto_xorg
+# Description:    Logic to update and install Auto X.Org.
+# Author(s):      Alex Portell <github.com/portellam>
+# Maintainer(s):  Alex Portell <github.com/portellam>
+#
+
+#
+# sources
+#
+  declare -g SCRIPT_DIR="/usr/local/bin/"
+  declare -g SCRIPT_BIN_DIR="${SCRIPT_DIR}deploy-vfio.d/"
+
+  source "${SCRIPT_BIN_DIR}src_print"
+  source "${SCRIPT_BIN_DIR}src_git"
+
+#
+# logic
+#
+  #
+  # DESC:   Checks if any git repos exist.
+  # RETURN: If repo exists, return 0. If false, return 1.
+  #
+    function does_auto_xorg_repo_exist
+    {
+      local -r str_last_dir="$( pwd )"
+      does_this_git_repo_exist "Auto X.Org" "github.com/portellam/auto-xorg"
+      cd "${str_last_dir}"
+    }
+
+  #
+  # DESC:   Install Auto X.Org
+  # $1:     the command line arguments
+  # RETURN: If install finished, return 0. If false, return 1.
+  #
+    function install_auto_xorg
+    {
+      local -r str_arguments="${*}"
+      local -r str_project_path="${STR_GIT_REPO_PARENT_PATH}/auto-xorg"
+
+      cd "${str_project_path}"
+      print_output_to_log "Installing Auto X.Org...\n"
+      sudo bash installer.bash "${str_arguments}"
+
+      local -i int_code="${?}"
+
+      echo
+
+      if [[ "${int_code}" -ne 0 ]]; then
+        print_output_to_log "Install failed."
+        return "${int_code}"
+      fi
+
+      print_output_to_log "Install successful."
+      return 0
+    }
