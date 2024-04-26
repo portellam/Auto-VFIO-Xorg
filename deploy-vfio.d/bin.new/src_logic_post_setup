@@ -1,9 +1,95 @@
-#!/bin/bash/env bash
+#!/bin/false
+
+#
+# Filename:       src_post_setup
+# Description:    Post setup logic.
+# Author(s):      Alex Portell <github.com/portellam>
+# Maintainer(s):  Alex Portell <github.com/portellam>
+#
+
+#
+# sources
+#
+  declare -g SCRIPT_DIR="/usr/local/bin/"
+  declare -g SCRIPT_BIN_DIR="${SCRIPT_DIR}deploy-vfio.d/"
+
+  source "${SCRIPT_BIN_DIR}src_print"
+  source "${SCRIPT_BIN_DIR}src_auto_xorg"
+  source "${SCRIPT_BIN_DIR}src_libvirt_hooks"
+  source "${SCRIPT_BIN_DIR}src_looking_glass"
+  source "${SCRIPT_BIN_DIR}src_zram_swap"
+
+#
+# setter logic
+#
+  #
+  # DESC: globals
+  #
+    function set_globals
+    {
+      if [[ "${BOOL_SRC_POST_SETUP_SET_GLOBALS}" == true ]]; then
+        return 0
+      fi
+
+      declare -g BOOL_SRC_POST_SETUP_SET_GLOBALS=true
+
+      declare -g BOOL_DO_INSTALL_AUDIO_LOOPBACK=true
+      declare -g BOOL_DO_INSTALL_AUTO_XORG=true
+      declare -g BOOL_DO_INSTALL_LIBVIRT_HOOKS=true
+      declare -g BOOL_DO_INSTALL_LOOKING_GLASS=true
+      declare -g BOOL_DO_INSTALL_ZRAM_SWAP=true
+      declare -g STR_AUTO_XORG_ARGUMENTS=""
+    }
+
+#
+# Logic
+#
+  #
+  # DESC:   Is Linux distribution supported.
+  # RETURN: If true, return 0. If false, return 1.
+  #
+  function execute_post_setup
+  {
+    is_git_installed
+    does_git_parent_path_exist || return 1
+
+    if "${BOOL_DO_INSTALL_AUTO_XORG}"; then
+      execute_auto_xorg_installer "${STR_AUTO_XORG_ARGUMENTS}"
+    else
+      uninstall_auto_xorg
+    fi
+
+    if "${BOOL_DO_INSTALL_LIBVIRT_HOOKS}"; then
+      install_libvirt_hooks
+    else
+      uninstall_libvirt_hooks
+    fi
+
+    if "${BOOL_DO_INSTALL_LOOKING_GLASS}"; then
+      install_looking_glass
+    # else
+    #   uninstall_looking_glass
+    fi
+
+    if "${BOOL_DO_INSTALL_ZRAM_SWAP}"; then
+      install_zram_swap
+    # else
+    #   uninstall_zram_swap
+    fi
+
+    return 0
+  }
+
+#
+# main logic
+#
+  set_globals
+  unset set_globals
 
 #
 # notes:
 #
-# - [ ] make a source file for downloading, installing, and modifying each repo.
+# - [x] make a source file for downloading, installing, and modifying each repo.
 #
 # - [ ] add args to beginning of main, so that this script can be run on its' own,
 #  without deploy-vfio.
@@ -27,400 +113,10 @@
 #   - [x] second, ask to download each repo.
 #     - [x] if download fails for one, rollback changes, log error, and continue.
 #
-# - [ ] add logger
-#   - [ ] escalate by type, general output, warn, error, failure, success.
+# - [x] add logger
+#   - [x] escalate by type, general output, warn, error, failure, success.
 #
-# - [ ] add array to track which repos to execute or skip automatically.
-#   - [ ] install or uninstall.
-#    - [ ] include args too.
-
+# - [ ] add repos
+#   - [ ] "Audio Loopback"  "github.com/portellam/audio-loopback"
+#   - [ ] "Scream"          "github.com/duncanthrax/scream"
 #
-# sources
-#
-  declare -g SCRIPT_DIR="/usr/local/bin/"
-  declare -g SCRIPT_BIN_DIR="${SCRIPT_DIR}deploy-vfio.d/"
-
-  source "${SCRIPT_BIN_DIR}src_print"
-  source "${SCRIPT_BIN_DIR}src_git"
-
-#
-# title : Global parameters
-#
-  declare BOOL_DO_IGNORE_INTERNET_STATUS=false
-  declare BOOL_DO_DOWNLOAD_ALL_REPOS=true
-  declare STR_AUTO_XORG_ARGUMENTS=""
-  declare STR_LIBVIRT_HOOKS_ARGUMENTS="--install"
-  declare STR_GIT_REPO_PARENT_PATH="${HOME}/git"
-  declare -A DICT_GIT_REPO_NAME_AND_AVAILABILITY
-
-  declare -ar ARR_GIT_REPO_NAME=( \
-    "Audio Loopback" \
-    "Auto X.Org" \
-    "Libvirt Hooks" \
-    "Looking Glass" \
-    "Scream" \
-    "ZRAM Swap" \
-  )
-
-  declare -Ar DICT_GIT_REPO_NAME_AND_ADDRESS=( \
-    ["Audio Loopback"]="github.com/portellam/audio-loopback" \
-    ["Auto X.Org"]="github.com/portellam/auto-xorg" \
-    ["Libvirt Hooks"]="github.com/portellam/libvirt-hooks" \
-    ["Looking Glass"]="github.com/gnif/LookingGlass" \
-    ["Scream"]="github.com/duncanthrax/scream" \
-    ["ZRAM Swap"]="github.com/foundObjects/zram-swap" \
-  )
-
-  declare -A DICT_FEATURE_NAME_AND_ADDRESS=( \
-    ["Looking Glass"]="https://looking-glass.io/artifact/stable/source", \
-  )
-
-#
-# title : Git logic
-#
-  #
-  # desc  : Checks if any git repos exist.
-  #
-    function do_any_git_repos_exist
-    {
-      local -r str_last_dir="$( pwd )"
-
-      for str_git_repo_name in "${ARR_GIT_REPO_NAME[@]}"; do
-        local str_git_repo_address="${DICT_GIT_REPO_NAME_AND_ADDRESS[$str_git_repo_name]}"
-        does_this_git_repo_exist "${str_git_repo_name}" "${str_git_repo_address}"
-      done
-
-      readonly DICT_GIT_REPO_NAME_AND_AVAILABILITY
-      cd "${str_last_dir}"
-    }
-
-#
-# title : Install logic
-#
-  #
-  # desc  : Install Auto X.Org
-  #
-    function install_auto_xorg
-    {
-      local -r str_project_path="${STR_GIT_REPO_PARENT_PATH}/auto-xorg"
-
-      cd "${str_project_path}"
-      print "Installing Auto X.Org...\n"
-      sudo bash installer.bash "${STR_AUTO_XORG_ARGUMENTS}"
-
-      local -i int_code="${?}"
-
-      print
-
-      if [[ "${int_code}" -ne 0 ]]; then
-        print "Install failed."
-        return "${int_code}"
-      fi
-
-      print "Install successful."
-      return 0
-    }
-
-  #
-  # desc  : Install Libvirt Hooks
-  #
-    function install_libvirt_hooks
-    {
-      local -r str_project_path="${STR_GIT_REPO_PARENT_PATH}/libvirt-hooks"
-
-      cd "${str_project_path}"
-      print "Installing Libvirt Hooks...\n"
-      sudo bash installer.bash "${STR_LIBVIRT_HOOKS_ARGUMENTS}"
-
-      local -i int_code="${?}"
-
-      print
-
-      if [[ "${int_code}" -ne 0 ]]; then
-        print "Install failed."
-        return "${int_code}"
-      fi
-
-      print "Install successful."
-      return 0
-    }
-
-  #
-  # title : ZRAM Swap logic
-  #
-    #
-    # desc  : Install ZRAM Swap
-    #
-      function install_zram_swap
-      {
-        local -r str_project_path="${STR_GIT_REPO_PARENT_PATH}/zram-swap"
-
-        cd "${str_project_path}"
-        print "Installing ZRAM Swap...\n"
-        sudo bash install.sh --install
-
-        local -i int_code="${?}"
-
-        print
-
-        if [[ "${int_code}" -ne 0 ]] \
-          || ! modify_zram_swap_configuration \
-          || ! reset_zram_swap_devices; then
-          print "Install failed."
-          return "${int_code}"
-        fi
-
-        print "Install successful."
-        return 0
-      }
-
-    #
-    # desc  : Get ZRAM Swap fraction size.
-    # $1    : the fraction as a string
-    #
-      function get_zram_swap_fraction
-      {
-        is_host_memory_sufficient_for_hugepages || return 1
-
-        case "${1}" in
-          *"/"* )
-            local -i int_numerator=$( echo ${1} | cut --delimiter '/' --fields 1 )
-            local -i int_denominator=$( echo ${1} | cut --delimiter '/' --fields 2 ) ;;
-
-          "default" )
-            POST_SETUP_HAS_ARG_ZRAM_SWAP_DEFAULTS=true
-            return 0 ;;
-
-          * )
-            print_error_to_log "Not a fraction."
-            return 1 ;;
-        esac
-
-        if ! is_int "${int_numerator}" &> /dev/null \
-          || ! is_int "${int_denominator}" &> /dev/null; then
-          print_error_to_log "Numerator and/or denominator are not numbers."
-          return 1
-        fi
-
-        if [[ "${int_numerator}" -le 0 ]]; then
-          print_error_to_log "Numerator is less than or equal to zero."
-          return 1
-        fi
-
-        if [[ "${int_denominator}" -le 0 ]]; then
-          print_error_to_log "Denominator is less than or equal to zero."
-          return 1
-        fi
-
-        if [[ "${int_numerator}" -ge "${int_denominator}" ]] \
-          || [[ "${int_denominator}" -le 1 ]]; then
-          print_error_to_log "Invalid fraction."
-          return 1
-        fi
-
-        declare -g POST_SETUP_ARGS_FOR_ZRAM_SWAP_FRACTION="${1}"
-        POST_SETUP_HAS_ARG_ZRAM_SWAP_SET_FRACTION=true
-        return 0
-      }
-
-    #
-    # desc  : Get ZRAM Swap value by user input.
-    # $1    : the variable pointer
-    #
-      function get_zram_swap_fraction_prompt
-      {
-        if "${POST_SETUP_HAS_ARG_ZRAM_SWAP_DEFAULTS}" \
-          || "${POST_SETUP_HAS_ARG_ZRAM_SWAP_SET_FRACTION}"; then
-          return 0
-        fi
-
-        local -n reference="${1}"
-
-        for counter in $( seq 0 2 ); do
-          read -r -p "Set fraction of total memory for zram-swap to use " \
-            "(to calculate default, enter 'default'): " \
-            answer
-
-          if get_zram_swap_fraction "${answer}"; then
-            reference="${answer}"
-            return 0
-          fi
-        done
-
-        print_error_to_log "Not a fraction or invalid input."
-        return 1
-      }
-
-    #
-    # desc    : Get ZRAM Swap size.
-    # return  : '0' if there exists free host memory, '1' if not.
-    #
-      function is_host_memory_sufficient_for_zram_swap
-      {
-        if ! get_free_memory; then
-          print_error_to_log "Insufficient Host memory for ZRAM Swap."
-          return 1
-        fi
-      }
-
-    #
-    # desc    : Modify configuration files for ZRAM Swap.
-    # return  : '0' if output is valid and file is written, '1' if not.
-    #
-      function modify_zram_swap_configuration
-      {
-        # TODO: test code. Remove when globals are added.
-
-        POST_SETUP_ARGS_FOR_ZRAM_SWAP_FRACTION="1/8"
-        POST_SETUP_HAS_ARG_ZRAM_SWAP_DEFAULTS=""
-        POST_SETUP_HAS_ARG_ZRAM_SWAP_SET_FRACTION=""
-        AVAILABLE_MEMORY=""
-        MAX_MEMORY=""
-        POST_SETUP_HAS_ARG_ZRAM_SWAP_FORCE="false"
-
-        local -r file="/etc/default/zram-swap"
-        local line_to_match="_zram_fraction="
-        local fraction="${POST_SETUP_ARGS_FOR_ZRAM_SWAP_FRACTION}"
-
-        get_zram_swap_fraction_prompt "fraction" || return 1
-
-        if "${POST_SETUP_HAS_ARG_ZRAM_SWAP_DEFAULTS}" \
-          && ! "${POST_SETUP_HAS_ARG_ZRAM_SWAP_SET_FRACTION}"; then
-          local -ir zram_swap_available_memory=$(( AVAILABLE_MEMORY / 2 ))
-
-          # note: First evaluate the ratio of max system memory to the zram-swap
-          # available memory, as a decimal to the hundredths place.
-          # Then truncate the decimal and return an integer.
-          local -i denominator=$( printf "%.0f" \
-            $( echo "scale=2;${MAX_MEMORY}/${zram_swap_available_memory}" | bc )
-          )
-
-          # note: If denominator is odd, subtract one.
-          if [[ $( expr ${denominator} % 2 ) -eq 1 ]]; then
-            (( denominator-- ))
-          fi
-
-          if [[ "${denominator}" -le 0 ]]; then
-            print "Denominator is negative or zero."
-          fi
-
-          fraction="1/${denominator}"
-        fi
-
-        if ! sed -i '/'${line_to_match}'"*"/c\'${line_to_match}'"'${fraction}'"' \
-          "${file}"; then
-          print "Could not write output to ZRAM Swap file."
-          return 1
-        fi
-      }
-
-      function reset_zram_swap_devices
-      {
-        if ! "${POST_SETUP_HAS_ARG_ZRAM_SWAP_FORCE}" \
-          && sudo swapon --verbose | grep zram &> /dev/null \
-          && sudo swapon --verbose | grep zram &> /dev/null \
-          && ! sudo swapon --verbose | grep zram | grep 0B &> /dev/null; then
-          print "zram-swap device(s) already in use. Restart system to save changes."
-          return 0
-        fi
-
-        if sudo swapon --verbose | grep zram &> /dev/null \
-          && ! sudo swapoff /dev/zram* &> /dev/null; then
-          print_error_to_log "Could not disable zram-swap device(s)."
-          return 1
-        fi
-
-        if ! sudo systemctl daemon-reload &> /dev/null; then
-          print_error_to_log "Could not update systemd."
-          return 1
-        fi
-
-        if ! sudo systemctl restart zram-swap &> /dev/null; then
-          print_error_to_log "Could not restart zram-swap service."
-          return 1
-        fi
-
-        if ! sudo swapon --verbose | grep zram &> /dev/null; then
-          print_error_to_log "Could not enable zram-swap device."
-          return 1
-        fi
-      }
-
-#
-# title : Internet connection logic
-#
-  #
-  # desc  : Pings Internet IP addresses and domain names.
-  #
-    function do_ping_internet
-    {
-      print "Checking connection to Internet..."
-
-      if ! do_ping_server "8.8.8.8" \
-        && ! do_ping_server "8.8.4.4"; then
-        print "Failed to ping IP addresses."
-        return 1
-      fi
-
-        if ! do_ping_server "www.google.com"; then
-          print "Failed to resolve Domain names."
-        return 1
-      fi
-    }
-
-  #
-  # desc  : Pings given server address.
-  # ${1}    : the server address
-  #
-    function do_ping_server
-    {
-      ping "${1}" -c 1 &> /dev/null
-    }
-
-  #
-  # desc  : Checks if the machine is connected to Internet.
-  #
-    function is_connected_to_internet
-    {
-      if ! do_ping_internet; then
-        print "Disconnected."
-
-        if "${BOOL_DO_IGNORE_INTERNET_STATUS}" \
-          || ask_yes_or_no "Ignore and continue?"; then
-          print "Continuing."
-          return 0;
-        fi
-
-        print "Stopping."
-        return 1
-      fi
-
-      print "Connected."
-      return 0
-    }
-
-#
-# title : Main logic
-# $@
-#
-  function main
-  {
-    print "Executing post-setup."
-
-    if ! is_connected_to_internet \
-      || ! is_git_installed \
-      || ! does_git_parent_path_exist \
-      || ! do_any_git_repos_exist \
-      || ! install_auto_xorg \
-      || ! install_libvirt_hooks
-    then
-      print "Post-setup failed."
-      return 1
-    fi
-
-    print "Post-setup successful."
-    return 0
-  }
-
-main
-exit "$?"
