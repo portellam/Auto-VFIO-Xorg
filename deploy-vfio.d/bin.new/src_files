@@ -1,0 +1,158 @@
+#!/bin/false
+
+#
+# Filename:       src_files
+# Description:    File read/write and validation.
+# Author(s):      Alex Portell <github.com/portellam>
+# Maintainer(s):  Alex Portell <github.com/portellam>
+#
+
+#
+# sources
+#
+  declare -g SCRIPT_DIR="/usr/local/bin/"
+  declare -g SCRIPT_BIN_DIR="${SCRIPT_DIR}deploy-vfio.d/"
+
+  source "${SCRIPT_BIN_DIR}src_print"
+
+#
+# logic
+#
+  #
+  # DESC:   Create temp file of given file.
+  # $1:     the file name as a string
+  # RETURN: If temp file creation is successful, return 0. If false, return 1.
+  #
+    function create_temp_file_of_file
+    {
+      is_file "${1}" &> /dev/null || return 0
+
+      local -r str_filename="${1}"
+      local -r str_temp_filename="${str_filename}.tmp"
+
+      if ! cp --force "${str_filename}" "${str_temp_filename}"; then
+        print_error_to_log "Could not create temp file of '${str_filename}'."
+        return 1
+      fi
+
+      return 0
+    }
+
+  #
+  # DESC:   Copy the temp file to the given file.
+  # $1:     the file name as a string
+  # RETURN: If file overwrite is successful, return 0. If false, return 1.
+  #
+    function copy_temp_file_to_file
+    {
+      is_file "${1}" &> /dev/null || return 0
+
+      local -r str_filename="${1}"
+      local -r str_temp_filename="${str_filename}.tmp"
+
+      is_file "${str_temp_filename}" || return 1
+
+      if ! cp --force "${str_temp_filename}" "${str_filename}"; then
+        print_error_to_log "Could not overwrite file '${str_filename}'."
+        return 1
+      fi
+
+      return 0
+    }
+
+  #
+  # DESC:   Copy first file to second file.
+  # $1:     the file name as a string
+  # $2:     the file name as a string
+  # RETURN: If file copy is successful, return 0. If false, return 1.
+  #
+    function copy_this_file_to_other_file
+    {
+      if [[ "${2}" == "" ]]; then
+        return 1
+      fi
+
+      is_file "${1}" || return 1
+      cp --force "${1}" "${2}" || return 1
+      return 0
+    }
+
+  #
+  # DESC:   Delete the temp file of the given file.
+  # $1:     the file name as a string
+  # RETURN: If temp file deletion is successful, return 0. If false, return 1.
+  #
+    function delete_temp_file_of_file
+    {
+      is_file "${1}" &> /dev/null || return 0
+
+      local -r str_filename="${1}"
+      local -r str_temp_filename="${str_filename}.tmp"
+
+      is_file "${str_temp_filename}" &> /dev/null || return 0
+
+      if ! rm --force --recursive "${str_temp_filename}"; then
+        print_error_to_log "Could not delete temp file '${str_temp_filename}'."
+        return 1
+      fi
+
+      return 0
+    }
+
+  #
+  # DESC:   Is file valid.
+  # $1:     the pointer of the array of lines
+  # $2:     the file name as a string
+  # RETURN: If file write is successful, return 0. If false, return 1.
+  #
+    function append_to_file_correctly
+    {
+      if ! is_file "${2}" \
+        || [[ -z "${1}" ]]; then
+        return 1
+      fi
+
+      local -nr ref_arr_lines="${1}"
+      local -r str_filename="${2}"
+
+      for str_line in ${ref_arr_lines[*]}; do
+        if ! sudo echo -e "${str_line}" >> "${str_filename}"; then
+          print_error_to_log "Could not append to file."
+          return 1
+        fi
+      done
+
+      return 0
+    }
+
+  #
+  # DESC:   Is file valid.
+  # $1:     the file name as a string
+  # RETURN: If file is valid, return 0. If false, return 1.
+  #
+    function is_file
+    {
+      if [[ -z "${1}" ]] \
+        || [[ ! -e "${1}" ]]; then
+        print_error_to_log "File does not exist."
+        return 1
+      fi
+
+      return 0
+    }
+
+  #
+  # DESC:   If file not empty.
+  # $1:     the file name as a string
+  # RETURN: If file is not empty, return 0. If false, return 1.
+  #
+    function is_file_not_empty
+    {
+      if [[ -z "${1}" ]] \
+        || [[ ! -s "${1}" ]]; then
+        print_error_to_log "File is empty."
+        return 1
+      fi
+
+      return 0
+    }
