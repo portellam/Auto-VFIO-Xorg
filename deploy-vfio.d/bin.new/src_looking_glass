@@ -81,6 +81,13 @@
       cd client/build
       cmake ../
       make
+
+
+
+      # TODO: as this is run as root, copy build to local user. Create log and pop up
+      # to inform user how to run Looking Glass.
+
+      # TODO: create libvirt hook to execute Looking glass at start of Guest!
     }
 
   #
