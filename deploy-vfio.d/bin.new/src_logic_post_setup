@@ -3,6 +3,8 @@
 #
 # notes:
 #
+# - [ ] make a source file for downloading, installing, and modifying each repo.
+#
 # - [ ] add args to beginning of main, so that this script can be run on its' own,
 #  without deploy-vfio.
 #
@@ -31,6 +33,15 @@
 # - [ ] add array to track which repos to execute or skip automatically.
 #   - [ ] install or uninstall.
 #    - [ ] include args too.
+
+#
+# sources
+#
+  declare -g SCRIPT_DIR="/usr/local/bin/"
+  declare -g SCRIPT_BIN_DIR="${SCRIPT_DIR}deploy-vfio.d/"
+
+  source "${SCRIPT_BIN_DIR}src_print"
+  source "${SCRIPT_BIN_DIR}src_git"
 
 #
 # title : Global parameters
@@ -63,26 +74,6 @@
   declare -A DICT_FEATURE_NAME_AND_ADDRESS=( \
     ["Looking Glass"]="https://looking-glass.io/artifact/stable/source", \
   )
-
-#
-# title : Commonly used logic
-#
-
-  #
-  # ${1}  : the line of text
-  #
-    function print
-    {
-      echo -e "${1}"
-    }
-
-  #
-  # ${1}  : the line of text
-  #
-    function print_without_newline
-    {
-      echo -en "${1}"
-    }
 
 #
 # title : Git logic
@@ -355,20 +346,6 @@
         fi
       }
 
-
-
-# TODO: define!
-function is_host_memory_sufficient_for_hugepages
-{
-
-}
-
-# TODO: define!
-function get_free_memory
-{
-
-}
-
 #
 # title : Internet connection logic
 #
@@ -433,6 +410,7 @@ function get_free_memory
     if ! is_connected_to_internet \
       || ! is_git_installed \
       || ! does_git_parent_path_exist \
+      || ! do_any_git_repos_exist \
       || ! install_auto_xorg \
       || ! install_libvirt_hooks
     then
