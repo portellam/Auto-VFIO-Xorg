@@ -126,6 +126,41 @@
     }
 
   #
+  # DESC:   Is directory valid.
+  # $1:     the directory name as a string
+  # RETURN: If directory is valid, return 0. If false, return 1.
+  #
+    function is_dir
+    {
+      if [[ -z "${1}" ]] \
+        || [[ ! -d "${1}" ]]; then
+        print_error_to_log "Folder does not exist."
+        return 1
+      fi
+
+      return 0
+    }
+
+  #
+  # DESC:   Is directory not empty.
+  # $1:     the directory name as a string
+  # RETURN: If directory is not empty, return 0. If false, return 1.
+  #
+    function is_dir_not_empty
+    {
+      if ! is_dir "${1}"; then
+        return 1
+      fi
+
+      if ! ls --almost-all "${1}" | head --lines 1 &> /dev/null; then
+        print_error_to_log "Folder is empty."
+        return 1
+      fi
+
+      return 0
+    }
+
+  #
   # DESC:   Is file valid.
   # $1:     the file name as a string
   # RETURN: If file is valid, return 0. If false, return 1.
