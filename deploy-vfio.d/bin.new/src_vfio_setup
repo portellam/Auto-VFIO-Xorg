@@ -6,3 +6,13 @@
 # Author(s):      Alex Portell <github.com/portellam>
 # Maintainer(s):  Alex Portell <github.com/portellam>
 #
+
+#
+# sources
+#
+  declare -g SCRIPT_DIR="/usr/local/bin/"
+  declare -g SCRIPT_BIN_DIR="${SCRIPT_DIR}deploy-vfio.d/"
+
+  source "${SCRIPT_BIN_DIR}src_print"
+  source "${SCRIPT_BIN_DIR}src_iommu"
+  source "${SCRIPT_BIN_DIR}src_pre_setup"
