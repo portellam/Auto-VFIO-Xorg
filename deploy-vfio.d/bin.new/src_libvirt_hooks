@@ -1,0 +1,80 @@
+#!/bin/false
+
+#
+# Filename:       src_libvirt_hooks
+# Description:    Logic to update and install Libvirt hooks.
+# Author(s):      Alex Portell <github.com/portellam>
+# Maintainer(s):  Alex Portell <github.com/portellam>
+#
+
+#
+# sources
+#
+  declare -g SCRIPT_DIR="/usr/local/bin/"
+  declare -g SCRIPT_BIN_DIR="${SCRIPT_DIR}deploy-vfio.d/"
+
+  source "${SCRIPT_BIN_DIR}src_print"
+  source "${SCRIPT_BIN_DIR}src_git"
+
+#
+# logic
+#
+  #
+  # DESC:   Checks if any git repos exist.
+  # RETURN: If repo exists, return 0. If false, return 1.
+  #
+    function does_libvirt_hooks_repo_exist
+    {
+      local -r str_last_dir="$( pwd )"
+      does_this_git_repo_exist "Libvirt Hooks" "github.com/portellam/libvirt-hooks"
+      cd "${str_last_dir}"
+    }
+
+  #
+  # DESC:   Execute Libvirt Hooks installer.
+  # $1:     the command line arguments
+  # RETURN: If execution is successful, return 0. If false, return 1.
+  #
+    function execute_libvirt_hooks_installer
+    {
+      local -r str_arguments="${*}"
+      local -r str_project_path="${STR_GIT_REPO_PARENT_PATH}/libvirt-hooks"
+
+      cd "${str_project_path}"
+      print_output_to_log "Executing Libvirt Hooks installer...\n"
+      sudo bash installer.bash "${str_arguments}"
+
+      local -i int_code="${?}"
+
+      echo
+
+      if [[ "${int_code}" -ne 0 ]]; then
+        print_output_to_log "Execution failed."
+        return "${int_code}"
+      fi
+
+      print_output_to_log "Execution successful."
+      return 0
+    }
+
+  #
+  # DESC:   Install Libvirt Hooks.
+  # $1:     the command line arguments
+  # RETURN: If install is successful, return 0. If false, return 1.
+  #
+    function install_libvirt_hooks
+    {
+      execute_libvirt_hooks_installer "--install"
+      return "${?}"
+    }
+
+  #
+  # DESC:   Uninstall Libvirt Hooks.
+  # $1:     the command line arguments
+  # RETURN: If uninstall is successful, return 0. If false, return 1.
+  #
+    function uninstall_libvirt_hooks
+    {
+      execute_libvirt_hooks_installer "--uninstall"
+      return "${?}"
+    }
