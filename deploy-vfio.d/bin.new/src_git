@@ -1,0 +1,145 @@
+#!/bin/false
+
+#
+# Filename:       src_git
+# Description:    Git download and validation logic.
+# Author(s):      Alex Portell <github.com/portellam>
+# Maintainer(s):  Alex Portell <github.com/portellam>
+#
+
+#
+# sources
+#
+  declare -g SCRIPT_DIR="/usr/local/bin/"
+  declare -g SCRIPT_BIN_DIR="${SCRIPT_DIR}deploy-vfio.d/"
+
+  source "${SCRIPT_BIN_DIR}src_print"
+  source "${SCRIPT_BIN_DIR}src_files"
+
+#
+# setter logic
+#
+  #
+  # DESC: globals
+  #
+  function set_globals
+  {
+    if [[ "${BOOL_SRC_GIT_SET_GLOBALS}" == true ]]; then
+      return 0
+    fi
+
+    declare -g BOOL_SRC_GIT_SET_GLOBALS=true
+
+    declare STR_GIT_REPO_PARENT_PATH="${HOME}/git"
+  }
+
+#
+# logic
+#
+  # DESC:   Checks if the parent path for git repos exists.
+  # RETURN: If user is root return 0. If false, return 1.
+  #
+    function does_git_parent_path_exist
+    {
+      local -r str_last_dir="$( pwd )"
+
+      if ! is_dir "${STR_GIT_REPO_PARENT_PATH}"; then
+        print_error_to_log "Git directory missing. Attemping to create..."
+
+        if ! mkdir --parent "${STR_GIT_REPO_PARENT_PATH}" &> /dev/null; then
+          print_error_to_log "Failed to create Git directory."
+          return 1
+        fi
+      fi
+
+      return 0
+    }
+
+  #
+  # DESC:   Checks if the provided git repo exists.
+  # $1:     the git repo name
+  # $2:     the git repo address
+  # RETURN: If user is root, return 0. If false, return 1.
+  #
+    function does_this_git_repo_exist
+    {
+      local str_git_repo_name="${1}"
+      local str_git_repo_address="${2}"
+
+      cd "${STR_GIT_REPO_PARENT_PATH}"
+
+      DICT_GIT_REPO_NAME_AND_AVAILABILITY["${str_git_repo_name}"]=false
+      local str_prompt="Download '${str_git_repo_name}'?"
+
+      if ! "${BOOL_DO_DOWNLOAD_ALL_REPOS}"; then
+        ask_yes_or_no "${str_prompt}"
+      fi
+
+      local -i int_code="$?"
+
+      if [[ "${int_code}" -ne 0 ]]; then
+        print_output_to_log "Skipped."
+        return 0
+      fi
+
+      local str_git_repo_full_address="https://www.${str_git_repo_address}"
+
+      print "Cloning '${str_git_repo_name}'..."
+      git clone "${str_git_repo_full_address}" &> /dev/null
+      int_code="$?"
+
+      if [[ "${int_code}" -eq 0 ]]; then
+        print_pass_to_log "Clone successful."
+        DICT_GIT_REPO_NAME_AND_AVAILABILITY["${str_git_repo_name}"]=true
+        return 0
+      fi
+
+      local str_git_repo_path="$( basename ${str_git_repo_address} )"
+
+      if [[ "${int_code}" -eq 128 ]]; then
+        print_output_to_log "Repo exists. Updating..."
+        cd "${str_git_repo_path}" || return 1
+
+        if ! git pull &> /dev/null; then
+          print_error_to_log "Update failed."
+          return 1
+        fi
+
+        print_pass_to_log "Update successful."
+        DICT_GIT_REPO_NAME_AND_AVAILABILITY["${str_git_repo_name}"]=true
+        return 0
+      fi
+
+      print_error_to_log "Clone failed."
+      return 1
+    }
+
+  #
+  # DESC:   Checks if git command is installed. Installs if absent.
+  # RETURN: If user is root return 0. If false, return 1.
+  #
+    function is_git_installed
+    {
+      local -lr str_command="git"
+
+      if command -v "${str_command}" &> /dev/null; then
+        print_output_to_log "'git' is installed."
+        return 0
+      fi
+
+      print_output_to_log "'git' is not installed. Attempting to install..."
+
+      if ! sudo apt install -y "${str_command}"; then
+        print_error_to_log "'git' is not installed."
+        return 1
+      fi
+
+      print_output_to_log "'git' is installed."
+      return 0
+    }
+
+#
+# main logic
+#
+  set_globals
+  unset set_globals
