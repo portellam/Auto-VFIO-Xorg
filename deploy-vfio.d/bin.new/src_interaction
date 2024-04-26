@@ -1,0 +1,44 @@
+#!/bin/false
+
+#
+# Filename:       src_interaction
+# Description:    User input logic.
+# Author(s):      Alex Portell <github.com/portellam>
+# Maintainer(s):  Alex Portell <github.com/portellam>
+#
+
+#
+# logic
+#
+  #
+  # DESC:   Ask yes or no question.
+  # $1:     the output as a string
+  # RETURN: If answer is 'Y' return 0. If 'N' return 255. If else return 1.
+  #
+    function ask_yes_or_no
+    {
+      local str_output=""
+
+      if [[ ! -z "${1}" ]]; then
+        str_output="${1} "
+      fi
+
+      for int_count in $( seq 0 2 ); do
+        local str_answer=""
+        echo -en "${str_output}[Y/n]: "
+        read -r -p "" str_answer
+
+        case "${str_answer}" in
+          [Yy]* )
+            return 0 ;;
+
+          [Nn]* )
+            return 255 ;;
+
+          * )
+            echo "Please answer 'Y' or 'N'." ;;
+        esac
+      done
+
+      return 1
+    }
