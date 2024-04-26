@@ -1,0 +1,115 @@
+#!/bin/false
+
+#
+# Filename:       src_datatype
+# Description:    Datatype validation.
+# Author(s):      Alex Portell <github.com/portellam>
+# Maintainer(s):  Alex Portell <github.com/portellam>
+#
+
+#
+# sources
+#
+  declare -g SCRIPT_DIR="/usr/local/bin/"
+  declare -g SCRIPT_BIN_DIR="${SCRIPT_DIR}deploy-vfio.d/"
+
+  source "${SCRIPT_BIN_DIR}src_print"
+
+#
+# logic
+#
+  #
+  # DESC:   Get the given enum as a comma-delimited string.
+  # $1:     the pointer of the enum
+  # $2:     the pointer of the delimited string
+  # RETURN: If true return 0. If false return 1.
+  #
+  function get_comma_delimited_string_from_enum
+  {
+    local -n ref_this_enum="${1}"
+    local -n ref_this_delimited_string="${2}"
+
+    for var_value in ${ref_this_enum[@]}; do
+      this_delimited_string+="${var_value},"
+    done
+
+    if [[ ${ref_this_delimited_string: -1} == "," ]]; then
+      ref_this_delimited_string="${ref_this_delimited_string::-1}"
+    fi
+
+    return 0
+  }
+
+  #
+  # DESC:   Is reference variable an enum.
+  # $1:     the pointer
+  # RETURN: If true return 0. If false return 1.
+  #
+    function is_enum
+    {
+      local -n ref_this_enum="${1}"
+
+      if ! [[ "${#ref_this_enum[@]}" -gt 0 ]]; then
+        print_error_to_log "Invalid enum."
+        return 1
+      fi
+
+      return 0
+    }
+
+  #
+  # DESC:   Is reference variable a non-empty enum.
+  # $1:     the pointer
+  # RETURN: If true return 0. If false return 1.
+  #
+    function is_enum_not_empty
+    {
+      is_enum "${1}" || return 1
+      local -n ref_this_enum="${1}"
+
+      for var_value in "${ref_this_enum[@]}"; do
+        if is_string "${var_value}" &> /dev/null; then
+          return 0
+        fi
+      done
+
+      print_error_to_log "Empty enum."
+      return 1
+    }
+
+  #
+  # DESC:   Is reference variable an int.
+  # $1:     the pointer
+  # RETURN: If true return 0. If false return 1.
+  #
+    function is_int
+    {
+      if ! [[ "${1}" =~ ^[0-9]+$ ]] \
+        && ! [[ "${1}" =~ ^[-][0-9]+$ ]]; then
+        print_error_to_log "Invalid integer."
+        return 1
+      fi
+
+      return 0
+    }
+
+  #
+  # DESC:   Is reference variable a string.
+  # $1:     the pointer
+  # RETURN: If true return 0. If false return 1.
+  #
+    function is_string
+    {
+      if [[ "${1}" == "" ]]; then
+        print_error_to_log "Empty string."
+        return 1
+      fi
+
+      return 0
+    }
+
+#
+# main logic
+#
+  set_globals
+  unset set_globals
