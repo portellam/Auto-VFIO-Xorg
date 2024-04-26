@@ -73,31 +73,6 @@
 
   #
   # DESC:   Execute cmake. If any dependency fails, disable and try again.
-  # RETURN: If cmake execute, return 0. If false, return 1.
-  #
-    function build_looking_glass
-    {
-      mkdir client/build
-      cd client/build
-
-      execute_cmake "../"
-
-
-      make
-
-
-
-      # TODO: as this is run as root, copy build to local user. Create log and pop up
-      # to inform user how to run Looking Glass.
-
-      # TODO: create libvirt hook to execute Looking glass at start of Guest!
-
-      # TODO: follow all advice in install documentations
-      # (clipboard, vm setup, tuning, memory calculating)
-    }
-
-  #
-  # DESC:   Execute cmake. If any dependency fails, disable and try again.
   # $1:     the arguments for cmake as a string
   # RETURN: If cmake execute, return 0. If false, return 1.
   #
@@ -110,7 +85,7 @@
       fi
 
       local -r str_disable_backtrace="-DENABLE_BACKTRACE=no binutils-dev"
-      print_output_to_log "Executing cmake with disabled backtrace dependencies..."
+      print_output_to_log "Executing 'cmake' with disabled backtrace dependencies..."
 
       if cmake "${str_disable_backtrace}" "${str_arguments}" &> /dev/null; then
         return 0
@@ -119,7 +94,7 @@
       local -r str_disable_x11="-DENABLE_X11=no libx11-dev libxfixes-dev libxi-dev " \
         "libxinerama-dev libxss-dev libxcursor-dev libxpresent-dev"
 
-      print_output_to_log "Executing cmake with disabled X11 dependencies..."
+      print_output_to_log "Executing 'cmake' with disabled X11 dependencies..."
 
       if cmake "${str_disable_x11}" "${str_arguments}" &> /dev/null; then
         return 0
@@ -128,7 +103,7 @@
       local -r str_disable_wayland="-DENABLE_WAYLAND=no libxkbcommon-dev " \
         "libwayland-bin libwayland-dev wayland-protocols"
 
-      print_output_to_log "Executing cmake with disabled Wayland dependencies..."
+      print_output_to_log "Executing 'cmake' with disabled Wayland dependencies..."
 
       if cmake cmake "${str_disable_wayland}" "${str_arguments}" &> /dev/null; then
         return 0
@@ -137,7 +112,7 @@
       local -r str_disable_pipewire="-DENABLE_PIPEWIRE=no libpipewire-0.3-dev " \
         "libsamplerate0-dev"
 
-      print_output_to_log "Executing cmake with disabled Pipe Wire dependencies..."
+      print_output_to_log "Executing 'cmake' with disabled Pipe Wire dependencies..."
 
       if cmake cmake "${str_disable_pipewire}" "${str_arguments}" &> /dev/null; then
         return 0
@@ -146,24 +121,25 @@
       local -r str_disable_pulseaudio="-DENABLE_PULSEAUDIO=no libpulse-dev " \
         "libsamplerate0-dev"
 
-      print_output_to_log "Executing cmake with disabled Pulse Audio dependencies..."
+      print_output_to_log "Executing 'cmake' with disabled Pulse Audio dependencies..."
 
       if cmake cmake "${str_disable_pulseaudio}" "${str_arguments}" &> /dev/null; then
         return 0
       fi
 
-      print_output_to_log "Executing cmake with all disabled dependencies..."
+      print_output_to_log "Executing 'cmake' with all disabled dependencies..."
 
-      if ! cmake cmake "${str_disable_backtrace}" \
+      if ! cmake "${str_disable_backtrace}" \
         "${str_disable_x11}" \
         "${str_disable_wayland}" \
         "${str_disable_pipewire}" \
         "${str_disable_pulseaudio}" \
         "${str_arguments}" &> /dev/null; then
-        print_error_to_log "Could not execute cmake."
+        print_error_to_log "'cmake' failed."
         return 1
       fi
 
+      print_pass_to_log "'cmake' successful."
       return 0
     }
 
@@ -179,22 +155,35 @@
     }
 
   #
-  # DESC:   Execute Looking Glass installer.
-  # $1:     the command line arguments
-  # RETURN: If execution is successful, return 0. If false, return 1.
+  # DESC:   Install Looking Glass.
+  # RETURN: If install is successful, return 0. If false, return 1.
   #
-    function execute_looking_glass_installer
+    function install_looking_glass
     {
-      local -r str_arguments="${*}"
       local -r str_project_path="${STR_GIT_REPO_PARENT_PATH}/LookingGlass"
 
       cd "${str_project_path}"
-      print_output_to_log "Executing Looking Glass installer...\n"
-      sudo bash installer.bash "${str_arguments}"
+      print_output_to_log "Installing Looking Glass..."
 
-      local -i int_code="${?}"
+      if ! mkdir --parent "client/build" &> /dev/null; then
+        print_error_to_log "Could not create build folder."
+        return 1
+      fi
 
-      echo
+      cd "client/build"
+
+      if ! execute_cmake "../"; then
+        return 1
+      fi
+
+      print_output_to_log "Executing 'make'..."
+
+      if ! make &> /dev/null; then
+        print_error_to_log "'make' failed."
+        return 1
+      fi
+
+      print_output_to_log "'make' sucessful."
 
       if [[ "${int_code}" -ne 0 ]]; then
         print_output_to_log "Execution failed."
@@ -202,27 +191,14 @@
       fi
 
       print_output_to_log "Execution successful."
+
+      print_output_to_log "For usage on how to run Looking Glass, execute: " \
+        "'looking-glass-client --help"
+
+      # TODO: create libvirt hook to execute Looking glass at start of Guest!
+
+      # TODO: follow all advice in install documentations
+      # (clipboard, vm setup, tuning, memory calculating)
+
       return 0
-    }
-
-  #
-  # DESC:   Install Looking Glass.
-  # $1:     the command line arguments
-  # RETURN: If install is successful, return 0. If false, return 1.
-  #
-    function install_looking_glass
-    {
-      execute_looking_glass_installer "--install"
-      return "${?}"
-    }
-
-  #
-  # DESC:   Uninstall Looking Glass.
-  # $1:     the command line arguments
-  # RETURN: If uninstall is successful, return 0. If false, return 1.
-  #
-    function uninstall_looking_glass
-    {
-      execute_looking_glass_installer "--uninstall"
-      return "${?}"
     }
