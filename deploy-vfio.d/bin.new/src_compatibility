@@ -104,7 +104,28 @@
     }
 
   #
-  # DESC:   s the Host machine supported in general.
+  # DESC:   Is given package installed as a command or in the APT package manager.
+  # $1:     the package name as a string
+  # RETURN: If true, return 0. If false, return 1.
+  #
+    function is_package_installed
+    {
+      local str_package_name="${1}"
+
+      if command -v "${str_package_name}" &> /dev/null; then
+        return 0
+      fi
+
+      if ! sudo apt list --installed "${str_package_name}" | \
+        grep "${str_package_name}" &> /dev/null; then
+        return 1
+      fi
+
+      return 0
+    }
+
+  #
+  # DESC:   Is the Host machine supported in general.
   # RETURN: If true, return 0. If false, return 1.
   #
     function is_system_supported
