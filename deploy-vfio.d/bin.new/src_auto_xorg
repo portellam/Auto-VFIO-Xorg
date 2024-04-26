@@ -20,7 +20,7 @@
 # logic
 #
   #
-  # DESC:   Checks if any git repos exist.
+  # DESC:   Checks if git repo exists.
   # RETURN: If repo exists, return 0. If false, return 1.
   #
     function does_auto_xorg_repo_exist
@@ -37,10 +37,10 @@
   #
     function execute_auto_xorg
     {
-      local -r str_arguments="${*}"
-      local -r str_project_path="${STR_GIT_REPO_PARENT_PATH}/auto-xorg"
+      does_auto_xorg_repo_exist || return 1
 
-      cd "${str_project_path}"
+      local -r str_arguments="${*}"
+
       print_output_to_log "Executing Auto X.Org...\n"
       sudo bash auto-xorg "${str_arguments}"
 
@@ -64,6 +64,8 @@
   #
     function execute_auto_xorg_installer
     {
+      does_auto_xorg_repo_exist || return 1
+
       local -r str_arguments="${*}"
       local -r str_project_path="${STR_GIT_REPO_PARENT_PATH}/auto-xorg"
 
