@@ -79,7 +79,10 @@
     {
       mkdir client/build
       cd client/build
-      cmake ../
+
+      execute_cmake "../"
+
+
       make
 
 
@@ -88,6 +91,9 @@
       # to inform user how to run Looking Glass.
 
       # TODO: create libvirt hook to execute Looking glass at start of Guest!
+
+      # TODO: follow all advice in install documentations
+      # (clipboard, vm setup, tuning, memory calculating)
     }
 
   #
