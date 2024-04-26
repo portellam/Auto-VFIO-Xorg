@@ -24,17 +24,17 @@ exit
   #
   # DESC: globals
   #
-  function set_globals
-  {
-    # NOTE: set the global params once and only once.
-    if [[ "${BOOL_SRC_TEMPLATE_SET_GLOBALS}" == true ]]; then
-      return 0
-    fi
+    function set_globals
+    {
+      # NOTE: set the global params once and only once.
+      if [[ "${BOOL_SRC_TEMPLATE_SET_GLOBALS}" == true ]]; then
+        return 0
+      fi
 
-    declare -g BOOL_SRC_TEMPLATE_SET_GLOBALS=true
+      declare -g BOOL_SRC_TEMPLATE_SET_GLOBALS=true
 
-    # NOTE: global params and setter functions go here.
-  }
+      # NOTE: global params and setter functions go here.
+    }
 
   #
   # DESC:   Setter function
