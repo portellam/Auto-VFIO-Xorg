@@ -1,0 +1,215 @@
+#!/bin/false
+
+#
+# Filename:       src_looking_glass
+# Description:    Logic to update and install Looking Glass.
+# Author(s):      Alex Portell <github.com/portellam>
+# Maintainer(s):  Alex Portell <github.com/portellam>
+#
+
+#
+# sources
+#
+  declare -g SCRIPT_DIR="/usr/local/bin/"
+  declare -g SCRIPT_BIN_DIR="${SCRIPT_DIR}deploy-vfio.d/"
+
+  source "${SCRIPT_BIN_DIR}src_print"
+  source "${SCRIPT_BIN_DIR}src_git"
+  source "${SCRIPT_BIN_DIR}src_compatibility"
+
+#
+# logic
+#
+  #
+  # DESC:   Check if all required build dependencies are installed.
+  # RETURN: If dependencies are installed, return 0. If false, return 1.
+  #
+    function are_looking_glass_dependencies_installed
+    {
+      local -a arr_dependencies=( \
+        "cmake" \
+        "gcc" "g++" "clang" \
+        "libegl-dev" \
+        "libgl-dev" \
+        "libfontconfig-dev" \
+        "libgmp-dev" \
+        "libspice-protocol-dev" \
+        "make" \
+        "nettle-dev"
+        "pkg-config"
+      )
+
+      local str_packages_to_install=""
+
+      for var_key in "${!arr_dependencies[@]}"; do
+        local -l str_dependency="${arr_dependencies["${var_key}"]}"
+
+        if ! is_package_installed "${str_dependency}"; then
+          if is_string "str_packages_to_install" &> /dev/null; then
+            str_packages_to_install+=" ${str_dependency}"
+          else
+            str_packages_to_install+="${str_dependency}"
+          fi
+        fi
+      done
+
+      if ! is_string "str_packages_to_install" &> /dev/null; then
+        print_output_to_log "All required build dependencies are installed." \
+          "Glass."
+
+        return 0
+      fi
+
+      print_output_to_log "Installing required build dependencies..."
+
+      if ! sudo apt install -y "${str_packages_to_install}" &> /dev/null; then
+        print_error_to_log "Could not install required build dependencies..."
+        return 1
+      fi
+
+      print_output_to_log "Installed required build dependencies..."
+      return 0
+    }
+
+  #
+  # DESC:   Execute cmake. If any dependency fails, disable and try again.
+  # RETURN: If cmake execute, return 0. If false, return 1.
+  #
+    function build_looking_glass
+    {
+      mkdir client/build
+      cd client/build
+      cmake ../
+      make
+    }
+
+  #
+  # DESC:   Execute cmake. If any dependency fails, disable and try again.
+  # $1:     the arguments for cmake as a string
+  # RETURN: If cmake execute, return 0. If false, return 1.
+  #
+    function execute_cmake
+    {
+      local str_arguments="${1}"
+
+      if cmake "${str_arguments}" &> /dev/null; then
+        return 0
+      fi
+
+      local -r str_disable_backtrace="-DENABLE_BACKTRACE=no binutils-dev"
+      print_output_to_log "Executing cmake with disabled backtrace dependencies..."
+
+      if cmake "${str_disable_backtrace}" "${str_arguments}" &> /dev/null; then
+        return 0
+      fi
+
+      local -r str_disable_x11="-DENABLE_X11=no libx11-dev libxfixes-dev libxi-dev " \
+        "libxinerama-dev libxss-dev libxcursor-dev libxpresent-dev"
+
+      print_output_to_log "Executing cmake with disabled X11 dependencies..."
+
+      if cmake "${str_disable_x11}" "${str_arguments}" &> /dev/null; then
+        return 0
+      fi
+
+      local -r str_disable_wayland="-DENABLE_WAYLAND=no libxkbcommon-dev " \
+        "libwayland-bin libwayland-dev wayland-protocols"
+
+      print_output_to_log "Executing cmake with disabled Wayland dependencies..."
+
+      if cmake cmake "${str_disable_wayland}" "${str_arguments}" &> /dev/null; then
+        return 0
+      fi
+
+      local -r str_disable_pipewire="-DENABLE_PIPEWIRE=no libpipewire-0.3-dev " \
+        "libsamplerate0-dev"
+
+      print_output_to_log "Executing cmake with disabled Pipe Wire dependencies..."
+
+      if cmake cmake "${str_disable_pipewire}" "${str_arguments}" &> /dev/null; then
+        return 0
+      fi
+
+      local -r str_disable_pulseaudio="-DENABLE_PULSEAUDIO=no libpulse-dev " \
+        "libsamplerate0-dev"
+
+      print_output_to_log "Executing cmake with disabled Pulse Audio dependencies..."
+
+      if cmake cmake "${str_disable_pulseaudio}" "${str_arguments}" &> /dev/null; then
+        return 0
+      fi
+
+      print_output_to_log "Executing cmake with all disabled dependencies..."
+
+      if ! cmake cmake "${str_disable_backtrace}" \
+        "${str_disable_x11}" \
+        "${str_disable_wayland}" \
+        "${str_disable_pipewire}" \
+        "${str_disable_pulseaudio}" \
+        "${str_arguments}" &> /dev/null; then
+        print_error_to_log "Could not execute cmake."
+        return 1
+      fi
+
+      return 0
+    }
+
+  #
+  # DESC:   Checks if any git repos exist.
+  # RETURN: If repo exists, return 0. If false, return 1.
+  #
+    function does_looking_glass_repo_exist
+    {
+      local -r str_last_dir="$( pwd )"
+      does_this_git_repo_exist "Looking Glass" "github.com/gnif/LookingGlass"
+      cd "${str_last_dir}"
+    }
+
+  #
+  # DESC:   Execute Looking Glass installer.
+  # $1:     the command line arguments
+  # RETURN: If execution is successful, return 0. If false, return 1.
+  #
+    function execute_looking_glass_installer
+    {
+      local -r str_arguments="${*}"
+      local -r str_project_path="${STR_GIT_REPO_PARENT_PATH}/LookingGlass"
+
+      cd "${str_project_path}"
+      print_output_to_log "Executing Looking Glass installer...\n"
+      sudo bash installer.bash "${str_arguments}"
+
+      local -i int_code="${?}"
+
+      echo
+
+      if [[ "${int_code}" -ne 0 ]]; then
+        print_output_to_log "Execution failed."
+        return "${int_code}"
+      fi
+
+      print_output_to_log "Execution successful."
+      return 0
+    }
+
+  #
+  # DESC:   Install Looking Glass.
+  # $1:     the command line arguments
+  # RETURN: If install is successful, return 0. If false, return 1.
+  #
+    function install_looking_glass
+    {
+      execute_looking_glass_installer "--install"
+      return "${?}"
+    }
+
+  #
+  # DESC:   Uninstall Looking Glass.
+  # $1:     the command line arguments
+  # RETURN: If uninstall is successful, return 0. If false, return 1.
+  #
+    function uninstall_looking_glass
+    {
+      execute_looking_glass_installer "--uninstall"
+      return "${?}"
+    }
