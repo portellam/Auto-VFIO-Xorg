@@ -199,6 +199,8 @@
 
       # TODO: follow all advice in install documentations
       # (clipboard, vm setup, tuning, memory calculating)
+      # https://looking-glass.io/docs/B6/install/#client-install
+      # https://looking-glass.io/docs/B6/usage/
 
       return 0
     }
