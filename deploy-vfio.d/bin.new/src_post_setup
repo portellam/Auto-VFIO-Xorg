@@ -91,7 +91,7 @@
 #
 # - [x] make a source file for downloading, installing, and modifying each repo.
 #
-# - [ ] add args to beginning of main, so that this script can be run on its' own,
+# - [x] add args to beginning of main, so that this script can be run on its' own,
 #  without deploy-vfio.
 #
 # - [x] check if git exists
