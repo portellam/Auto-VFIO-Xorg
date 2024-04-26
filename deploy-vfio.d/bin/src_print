@@ -1,0 +1,141 @@
+#!/bin/false
+
+#
+# Filename:       src_print
+# Description:    Print logic and loggers.
+# Author(s):      Alex Portell <github.com/portellam>
+# Maintainer(s):  Alex Portell <github.com/portellam>
+#
+
+#
+# traps
+#
+  trap 'catch_error' SIGINT SIGTERM ERR
+  trap 'catch_exit' EXIT
+  trap 'uncatch_exit' EXIT 3
+#
+# setter logic
+#
+  #
+  # DESC: globals
+  #
+  function set_globals
+  {
+    if [[ "${BOOL_SRC_PRINT_SET_GLOBALS}" == true ]]; then
+      return 0
+    fi
+
+    declare -g BOOL_SRC_PRINT_SET_GLOBALS=true
+
+    #
+    # DESC:   vanity
+    #
+      declare -gr STR_SCRIPT_NAME="deploy-vfio"
+
+    #
+    # DESC:   color coding
+    #
+      declare -gr STR_SET_COLOR_GREEN='\033[0;32m'
+      declare -gr STR_SET_COLOR_RED='\033[0;31m'
+      declare -gr STR_SET_COLOR_YELLOW='\033[0;33m'
+      declare -gr STR_RESET_COLOR='\033[0m'
+
+    #
+    # DESC:   font handling
+    #
+      declare -gr STR_SET_BOLD='\e[1m'
+      declare -gr STR_SET_ITALIC='\e[3m'
+      declare -gr STR_SET_UNDERLINE='\e[4m'
+      declare -gr STR_RESET_TEXT='\e[0m'
+
+    #
+    # DESC:   prompt prefixes
+    #
+      declare -gr STR_PREFIX_PROMPT="${STR_SCRIPT_NAME}: "
+      declare -gr STR_PREFIX_NOTE="${STR_PREFIX_PROMPT}${STR_SET_COLOR_YELLOW}Note:${STR_RESET_COLOR} "
+      declare -gr STR_PREFIX_ERROR="${STR_PREFIX_PROMPT}${STR_SET_COLOR_YELLOW}An error occurred:${STR_RESET_COLOR} "
+      declare -gr STR_PREFIX_FAIL="${STR_PREFIX_PROMPT}${STR_SET_COLOR_RED}Failure:${STR_RESET_COLOR} "
+      declare -gr STR_PREFIX_PASS="${STR_PREFIX_PROMPT}${STR_SET_COLOR_GREEN}Success:${STR_RESET_COLOR} "
+  }
+
+#
+# logic
+#
+  #
+  # DESC:   Print and log error.
+  # $1:     line of text as a string
+  # RETURN: Always return 0.
+  #
+    function print_error_to_log
+    {
+       echo -e "${STR_PREFIX_ERROR}${1}" >&2
+    }
+
+  #
+  # DESC:   Print and log failure.
+  # $1:     line of text as a string
+  # RETURN: Always return 0.
+  #
+    function print_fail_to_log
+    {
+      echo -e "${STR_PREFIX_FAIL}${1}" >&2
+    }
+
+  #
+  # DESC:   Print and log error.
+  # $1:     line of text as a string
+  # RETURN: Always return 0.
+  #
+    function print_output_to_log
+    {
+      echo -e "${STR_PREFIX_PROMPT}${1}" >&1
+    }
+
+  #
+  # DESC:   Print notable output.
+  # $1:     line of text as a string
+  # RETURN: Always return 0.
+  #
+    function print_note
+    {
+      echo -e "${STR_PREFIX_NOTE}${1}"
+    }
+
+  #
+  # DESC:   Print and log error.
+  # $1:     line of text as a string
+  # RETURN: Return incoming return code. If 0, output success. If 255, output
+  # skipped. If else, output failure.
+  #
+    function print_pass_or_fail_to_log
+    {
+      local -ir int_return_code="${?}"
+
+      if [[ "${int_return_code}" -eq 255 ]]; then
+        print_output_to_log "Skipped."
+        return "${int_return_code}"
+      fi
+
+      if [[ "${int_return_code}" -ne 0 ]]; then
+        print_fail_to_log "Failure."
+        return "${int_return_code}"
+      fi
+
+      print_pass_to_log "Success."
+    }
+
+  #
+  # DESC:   Print and log success.
+  # $1:     line of text as a string
+  # RETURN: Always return 0.
+  #
+    function print_pass_to_log
+    {
+      echo -e "${STR_PREFIX_PASS}${1}" >&1
+    }
+
+#
+# main logic
+#
+  set_globals
+  unset set_globals
