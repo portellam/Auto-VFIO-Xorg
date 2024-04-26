@@ -1,0 +1,70 @@
+#!/bin/false
+
+#
+# Filename:       src_template
+# Description:    Copy this file as needed.
+# Author(s):      Alex Portell <github.com/portellam>
+# Maintainer(s):  Alex Portell <github.com/portellam>
+#
+
+# NOTE: remove this line.
+exit
+
+#
+# sources
+#
+  declare -g SCRIPT_DIR="/usr/local/bin/"
+  declare -g SCRIPT_BIN_DIR="${SCRIPT_DIR}deploy-vfio.d/"
+
+  source "${SCRIPT_BIN_DIR}name_of_source"
+
+#
+# setter logic
+#
+  #
+  # DESC: globals
+  #
+  function set_globals
+  {
+    # NOTE: set the global params once and only once.
+    if [[ "${BOOL_SRC_TEMPLATE_SET_GLOBALS}" == true ]]; then
+      return 0
+    fi
+
+    declare -g BOOL_SRC_TEMPLATE_SET_GLOBALS=true
+
+    # NOTE: global params and setter functions go here.
+  }
+
+  #
+  # DESC:   Setter function
+  # RETURN: If true return 0, if false return 1.
+  #
+    function setter_function
+    {
+      # NOTE: add code here.
+      echo
+    }
+
+
+#
+# logic
+#
+  #
+  # DESC:   Another function
+  # $1:     Input value description
+  # RETURN: If true return 0, if false return 1.
+  #
+    function another_function
+    {
+      # NOTE: add code here.
+      local str_input="${1}"
+      echo "${str_input}"
+    }
+
+# NOTE: call setter logic here, and then unload it from scope.
+#
+# main logic
+#
+  set_globals
+  unset set_globals
