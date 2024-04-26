@@ -1,0 +1,33 @@
+#!/bin/false
+
+#
+# Filename:       src_privileges
+# Description:    User privilege authentication.
+# Author(s):      Alex Portell <github.com/portellam>
+# Maintainer(s):  Alex Portell <github.com/portellam>
+#
+
+#
+# sources
+#
+  declare -g SCRIPT_DIR="/usr/local/bin/"
+  declare -g SCRIPT_BIN_DIR="${SCRIPT_DIR}deploy-vfio.d/"
+
+  source "${SCRIPT_BIN_DIR}src_print"
+
+#
+# logic
+#
+  #
+  # DESC:   Is user superuser.
+  # RETURN: If user is root return 0. If false, return 1.
+  #
+    function is_user_superuser
+    {
+      if [[ $( whoami ) != "root" ]]; then
+        print_error_to_log "User is not sudo or root."
+        return 1
+      fi
+
+      return 0
+    }
