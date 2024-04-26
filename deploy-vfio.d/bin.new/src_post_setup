@@ -89,32 +89,6 @@
 #
 # notes:
 #
-# - [x] make a source file for downloading, installing, and modifying each repo.
-#
-# - [x] add args to beginning of main, so that this script can be run on its' own,
-#  without deploy-vfio.
-#
-# - [x] check if git exists
-#   - [x] if not, attempt to install
-#     - [x] if internet cannot be reached, log error and exit.
-#     - [x] if that fails, warn user, log error and exit.
-#
-# - [x] if git repos exist locally,
-#   - [x] first, ask user to check for updates for all.
-#     - [x] if yes...
-#       - [x] if internet cannot be reached, log error and exit.
-#       - [x] if given repo fails to update, rollback.
-#   - [x] second, ask to download each repo.
-#     - [x] if install fails for one, rollback changes, log error, and continue.
-#
-# - [x] if git repos do not exist locally,
-#   - [x] first, download each repo.
-#     - [x] if internet cannot be reached, log error and exit.
-#   - [x] second, ask to download each repo.
-#     - [x] if download fails for one, rollback changes, log error, and continue.
-#
-# - [x] add logger
-#   - [x] escalate by type, general output, warn, error, failure, success.
 #
 # - [ ] add repos
 #   - [ ] "Audio Loopback"  "github.com/portellam/audio-loopback"
