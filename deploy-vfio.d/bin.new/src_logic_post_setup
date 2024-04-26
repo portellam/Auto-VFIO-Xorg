@@ -67,37 +67,6 @@
 #
 # title : Commonly used logic
 #
-  #
-  # desc    : (Optionally) ask a yes or no question.
-  # ${1}      : the yes or no question
-  # return  : '0' if answer is 'Y', '1' if answer is 'N'
-  #
-    function ask_yes_or_no_to_execute
-    {
-      local str_output=""
-
-      if [[ ! -z "${1}" ]]; then
-        str_output="${1} "
-      fi
-
-      for counter in $( seq 0 2 ); do
-        print_without_newline "${str_output}[Y/n]: "
-        read -r -p "" answer
-
-        case "${answer}" in
-          [Yy]* )
-            return 0 ;;
-
-          [Nn]* )
-            return 255 ;;
-
-          * )
-            echo "Please answer 'Y' or 'N'." ;;
-        esac
-      done
-
-      return 1
-    }
 
   #
   # ${1}  : the line of text
@@ -167,7 +136,7 @@
       local str_prompt="Download '${str_git_repo_name}'?"
 
       if ! "${BOOL_DO_DOWNLOAD_ALL_REPOS}"; then
-        ask_yes_or_no_to_execute "${str_prompt}"
+        ask_yes_or_no "${str_prompt}"
       fi
 
       local -i int_code="$?"
@@ -538,7 +507,7 @@ function get_free_memory
         print "Disconnected."
 
         if "${BOOL_DO_IGNORE_INTERNET_STATUS}" \
-          || ask_yes_or_no_to_execute "Ignore and continue?"; then
+          || ask_yes_or_no "Ignore and continue?"; then
           print "Continuing."
           return 0;
         fi
