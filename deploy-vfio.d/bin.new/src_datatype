@@ -24,21 +24,21 @@
   # $2:     the pointer of the delimited string
   # RETURN: If true return 0. If false return 1.
   #
-  function get_comma_delimited_string_from_enum
-  {
-    local -n ref_this_enum="${1}"
-    local -n ref_this_delimited_string="${2}"
+    function get_comma_delimited_string_from_enum
+    {
+      local -n ref_this_enum="${1}"
+      local -n ref_this_delimited_string="${2}"
 
-    for var_value in ${ref_this_enum[@]}; do
-      this_delimited_string+="${var_value},"
-    done
+      for var_value in ${ref_this_enum[@]}; do
+        this_delimited_string+="${var_value},"
+      done
 
-    if [[ ${ref_this_delimited_string: -1} == "," ]]; then
-      ref_this_delimited_string="${ref_this_delimited_string::-1}"
-    fi
+      if [[ ${ref_this_delimited_string: -1} == "," ]]; then
+        ref_this_delimited_string="${ref_this_delimited_string::-1}"
+      fi
 
-    return 0
-  }
+      return 0
+    }
 
   #
   # DESC:   Is reference variable an enum.
@@ -107,9 +107,3 @@
 
       return 0
     }
-
-#
-# main logic
-#
-  set_globals
-  unset set_globals
