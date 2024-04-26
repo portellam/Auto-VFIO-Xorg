@@ -1,0 +1,99 @@
+#!/bin/false
+
+#
+# Filename:       logic_compatibility
+# Description:    System checks and validation.
+# Author(s):      Alex Portell <github.com/portellam>
+# Maintainer(s):  Alex Portell <github.com/portellam>
+#
+
+# <params>
+  declare -g SCRIPT_DIR="/usr/local/bin/"
+  declare -g SCRIPT_BIN_DIR="${SCRIPT_DIR}deploy-vfio.d/"
+# <params>
+
+# <sources>
+  source "${SCRIPT_BIN_DIR}logic_common"
+# </sources>
+
+# <functions>
+  function declare_parameters
+  {
+    if [[ "${COMPATIBILITY_ARE_PARAMS_SET}" == true ]]; then
+      return 0
+    fi
+
+    declare -g COMPATIBILITY_ARE_PARAMS_SET=true
+
+    declare -g COMPATIBILITY_DO_IGNORE_DISTRO=false
+  }
+
+  function is_distribution_supported
+  {
+    if "${COMPATIBILITY_DO_IGNORE_DISTRO}"; then
+      return 0
+    fi
+
+    local -r operating_system="$( lsb_release --id --short )"
+    local -lr operating_system_lowercase="${operating_system}"
+
+    if [[ "${operating_system_lowercase}" != *"debian"* ]] \
+      && [[ "${operating_system_lowercase}" != *"ubuntu"* ]]; then
+      print_error_to_log "System distribution '${operating_system_lowercase}' is not explicitly supported."
+      return 1
+    fi
+  }
+
+  function is_iommu_enabled
+  {
+    if ! compgen -G "/sys/kernel/iommu_groups/*/devices/*" &> /dev/null; then
+      print_error_to_log "System does not support IOMMU groups."
+      return 1
+    fi
+  }
+
+  function is_system_supported
+  {
+    if ! is_virtualization_enabled \
+      || ! is_iommu_enabled \
+      || ! is_systemd_installed \
+      || ! is_xml_library_installed \
+      || ! is_distribution_supported; then
+      print_error_to_log "System is not supported."
+      exit 1
+    fi
+
+    print_pass_to_log "System is supported."
+  }
+
+  function is_systemd_installed
+  {
+    if ! command -v systemd &> /dev/null; then
+      print_error_to_log "'systemd' is not installed."
+      return 1
+    fi
+  }
+
+  function is_virtualization_enabled
+  {
+    if ! LC_ALL=C lscpu | grep Virtualization &> /dev/null \
+      && ! grep --extended-regexp --quiet --color=auto 'vmx|svm|0xc0f' /proc/cpuinfo &> /dev/null; then
+      print_error_to_log "System does not or cannot support hardware virtualization."
+      return 1
+    fi
+  }
+
+  function is_xml_library_installed
+  {
+    if ! command -v "xmlstarlet" &> /dev/null; then
+      print_error_to_log "Required 'XML' libraries are not installed."
+      echo -e "To install, enter 'sudo apt install -y xmlstarlet'."
+      return 1
+    fi
+  }
+# </functions>
+
+# <code>
+  declare_parameters
+  unset declare_parameters
+# </code
