@@ -22,32 +22,32 @@
   #
   # DESC: globals
   #
-  function set_globals
-  {
-    if [[ "${BOOL_SRC_MEMORY_SET_GLOBALS}" == true ]]; then
-      return 0
-    fi
+    function set_globals
+    {
+      if [[ "${BOOL_SRC_MEMORY_SET_GLOBALS}" == true ]]; then
+        return 0
+      fi
 
-    declare -g BOOL_SRC_MEMORY_SET_GLOBALS=true
+      declare -g BOOL_SRC_MEMORY_SET_GLOBALS=true
 
-    declare -g BOOL_DO_USE_FOUR_KIB_HUGEPAGES=false
-    declare -g BOOL_DO_USE_TWO_MIB_HUGEPAGES=false
-    declare -g BOOL_DO_USE_ONE_GIB_HUGEPAGES=true
+      declare -g BOOL_DO_USE_FOUR_KIB_HUGEPAGES=false
+      declare -g BOOL_DO_USE_TWO_MIB_HUGEPAGES=false
+      declare -g BOOL_DO_USE_ONE_GIB_HUGEPAGES=true
 
-    declare -gir INT_TWO_TO_POWER_OF_TEN=$(( 2 ** 10 ))
-    declare -gir INT_FOUR_KIB_IN_KIB=4
-    declare -gir INT_TWO_MIB_IN_KIB=$(( 2 * ${INT_TWO_TO_POWER_OF_TEN} ))
-    declare -gir INT_ONE_GIB_IN_KIB=$(( ${INT_TWO_TO_POWER_OF_TEN} ** 2 ))
+      declare -gir INT_TWO_TO_POWER_OF_TEN=$(( 2 ** 10 ))
+      declare -gir INT_FOUR_KIB_IN_KIB=4
+      declare -gir INT_TWO_MIB_IN_KIB=$(( 2 * ${INT_TWO_TO_POWER_OF_TEN} ))
+      declare -gir INT_ONE_GIB_IN_KIB=$(( ${INT_TWO_TO_POWER_OF_TEN} ** 2 ))
 
-    declare -gi INT_CURRENT_FREE_MEMORY_BYTES=0
-    declare -gi INT_MIN_FREE_MEMORY_BYTES=0
+      declare -gi INT_CURRENT_FREE_MEMORY_BYTES=0
+      declare -gi INT_MIN_FREE_MEMORY_BYTES=0
 
-    declare -gir INT_MAX_FREE_MEMORY_BYTES=$( cat /proc/meminfo | grep MemTotal \
-      | cut --delimiter ":" --fields 2 | awk 'END {print $1}' )
+      declare -gir INT_MAX_FREE_MEMORY_BYTES=$( cat /proc/meminfo | grep MemTotal \
+        | cut --delimiter ":" --fields 2 | awk 'END {print $1}' )
 
-    find_lowest_common_factor_memory_channel_size
-    set_free_memory
-  }
+      find_lowest_common_factor_memory_channel_size
+      set_free_memory
+    }
 
   #
   # DESC:   Sets the global parameter.

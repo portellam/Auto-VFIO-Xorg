@@ -21,16 +21,16 @@
   #
   # DESC: globals
   #
-  function set_globals
-  {
-    if [[ "${BOOL_SRC_COMPATIBILITY_SET_GLOBALS}" == true ]]; then
-      return 0
-    fi
+    function set_globals
+    {
+      if [[ "${BOOL_SRC_COMPATIBILITY_SET_GLOBALS}" == true ]]; then
+        return 0
+      fi
 
-    declare -g BOOL_SRC_COMPATIBILITY_SET_GLOBALS=true
+      declare -g BOOL_SRC_COMPATIBILITY_SET_GLOBALS=true
 
-    declare BOOL_COMPATIBILITY_DO_IGNORE_DISTRO="${HOME}/git"
-  }
+      declare BOOL_COMPATIBILITY_DO_IGNORE_DISTRO="${HOME}/git"
+    }
 
 #
 # Argument logic

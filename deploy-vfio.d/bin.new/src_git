@@ -22,16 +22,16 @@
   #
   # DESC: globals
   #
-  function set_globals
-  {
-    if [[ "${BOOL_SRC_GIT_SET_GLOBALS}" == true ]]; then
-      return 0
-    fi
+    function set_globals
+    {
+      if [[ "${BOOL_SRC_GIT_SET_GLOBALS}" == true ]]; then
+        return 0
+      fi
 
-    declare -g BOOL_SRC_GIT_SET_GLOBALS=true
+      declare -g BOOL_SRC_GIT_SET_GLOBALS=true
 
-    declare STR_GIT_REPO_PARENT_PATH="${HOME}/git"
-  }
+      declare STR_GIT_REPO_PARENT_PATH="${HOME}/git"
+    }
 
 #
 # logic
