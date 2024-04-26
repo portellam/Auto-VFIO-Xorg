@@ -31,17 +31,44 @@
     }
 
   #
-  # DESC:   Install Auto X.Org
+  # DESC:   Execute Auto X.Org.
   # $1:     the command line arguments
-  # RETURN: If install finished, return 0. If false, return 1.
+  # RETURN: If execution is successful, return 0. If false, return 1.
   #
-    function install_auto_xorg
+    function execute_auto_xorg
     {
       local -r str_arguments="${*}"
       local -r str_project_path="${STR_GIT_REPO_PARENT_PATH}/auto-xorg"
 
       cd "${str_project_path}"
-      print_output_to_log "Installing Auto X.Org...\n"
+      print_output_to_log "Executing Auto X.Org...\n"
+      sudo bash auto-xorg "${str_arguments}"
+
+      local -i int_code="${?}"
+
+      echo
+
+      if [[ "${int_code}" -ne 0 ]]; then
+        print_output_to_log "Execution failed."
+        return "${int_code}"
+      fi
+
+      print_output_to_log "Execution successful."
+      return 0
+    }
+
+  #
+  # DESC:   Execute Auto X.Org installer.
+  # $1:     the command line arguments
+  # RETURN: If execution is successful, return 0. If false, return 1.
+  #
+    function execute_auto_xorg_installer
+    {
+      local -r str_arguments="${*}"
+      local -r str_project_path="${STR_GIT_REPO_PARENT_PATH}/auto-xorg"
+
+      cd "${str_project_path}"
+      print_output_to_log "Executing Auto X.Org installer...\n"
       sudo bash installer.bash "${str_arguments}"
 
       local -i int_code="${?}"
@@ -49,10 +76,10 @@
       echo
 
       if [[ "${int_code}" -ne 0 ]]; then
-        print_output_to_log "Install failed."
+        print_output_to_log "Execution failed."
         return "${int_code}"
       fi
 
-      print_output_to_log "Install successful."
+      print_output_to_log "Execution successful."
       return 0
     }
