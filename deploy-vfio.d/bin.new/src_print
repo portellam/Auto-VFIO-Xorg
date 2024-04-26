@@ -13,6 +13,7 @@
   trap 'catch_error' SIGINT SIGTERM ERR
   trap 'catch_exit' EXIT
   trap 'uncatch_exit' EXIT 3
+
 #
 # setter logic
 #
@@ -100,7 +101,7 @@
     }
 
   #
-  # DESC:   Print and log error.
+  # DESC:   Print and log.
   # $1:     line of text as a string
   # RETURN: Always return 0.
   #
