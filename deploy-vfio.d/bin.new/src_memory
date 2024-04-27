@@ -36,7 +36,10 @@
 
       declare -gir SRC_MEMORY_INT_TWO_TO_POWER_OF_TEN=$(( 2 ** 10 ))
       declare -gir SRC_MEMORY_INT_FOUR_KIB_IN_KIB=4
-      declare -gir SRC_MEMORY_INT_TWO_MIB_IN_KIB=$(( 2 * ${SRC_MEMORY_INT_TWO_TO_POWER_OF_TEN} ))
+
+      declare -gir SRC_MEMORY_INT_TWO_MIB_IN_KIB=$(( \
+        2 * ${SRC_MEMORY_INT_TWO_TO_POWER_OF_TEN} \
+      ))
 
       declare -gir SRC_MEMORY_INT_ONE_GIB_IN_KIB=$(( \
         ${SRC_MEMORY_INT_TWO_TO_POWER_OF_TEN} ** 2 \
@@ -46,7 +49,9 @@
       declare -gi SRC_MEMORY_INT_MIN_FREE_MEMORY_BYTES=0
 
       declare -gir SRC_MEMORY_INT_MAX_FREE_MEMORY_BYTES=$( cat /proc/meminfo | \
-        grep MemTotal | cut --delimiter ":" --fields 2 | awk 'END {print $1}' )
+        grep --ignore-case MemTotal | \
+        cut --delimiter ":" --fields 2 | awk 'END {print $1}' \
+      )
 
       find_lowest_common_factor_memory_channel_size
       set_free_memory
