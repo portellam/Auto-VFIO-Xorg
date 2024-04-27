@@ -67,7 +67,7 @@
       does_auto_xorg_repo_exist || return 1
 
       local -r str_arguments="${*}"
-      local -r str_project_path="${STR_GIT_REPO_PARENT_PATH}/auto-xorg"
+      local -r str_project_path="${STR_GIT_STR_REPO_PARENT_PATH}/auto-xorg"
 
       cd "${str_project_path}"
       print_output_to_log "Executing Auto X.Org installer...\n"

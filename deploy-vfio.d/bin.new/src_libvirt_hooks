@@ -40,7 +40,7 @@
       does_libvirt_hooks_repo_exist || return 1
 
       local -r str_arguments="${*}"
-      local -r str_project_path="${STR_GIT_REPO_PARENT_PATH}/libvirt-hooks"
+      local -r str_project_path="${STR_GIT_STR_REPO_PARENT_PATH}/libvirt-hooks"
 
       cd "${str_project_path}"
       print_output_to_log "Executing Libvirt Hooks installer...\n"

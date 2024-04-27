@@ -24,13 +24,13 @@
   #
     function set_globals
     {
-      if [[ "${BOOL_SRC_GIT_SET_GLOBALS}" == true ]]; then
+      if [[ "${SRC_GIT_BOOL_SET_GLOBALS}" == true ]]; then
         return 0
       fi
 
-      declare -g BOOL_SRC_GIT_SET_GLOBALS=true
+      declare -g SRC_GIT_BOOL_SET_GLOBALS=true
 
-      declare STR_GIT_REPO_PARENT_PATH="${HOME}/git"
+      declare STR_GIT_STR_REPO_PARENT_PATH="${HOME}/git"
     }
 
 #
@@ -44,10 +44,10 @@
     {
       local -r str_last_dir="$( pwd )"
 
-      if ! is_dir "${STR_GIT_REPO_PARENT_PATH}"; then
+      if ! is_dir "${STR_GIT_STR_REPO_PARENT_PATH}"; then
         print_error_to_log "Git directory missing. Attemping to create..."
 
-        if ! mkdir --parent "${STR_GIT_REPO_PARENT_PATH}" &> /dev/null; then
+        if ! mkdir --parent "${STR_GIT_STR_REPO_PARENT_PATH}" &> /dev/null; then
           print_error_to_log "Failed to create Git directory."
           return 1
         fi
@@ -67,7 +67,7 @@
       local str_git_repo_name="${1}"
       local str_git_repo_address="${2}"
 
-      cd "${STR_GIT_REPO_PARENT_PATH}"
+      cd "${STR_GIT_STR_REPO_PARENT_PATH}"
 
       DICT_GIT_REPO_NAME_AND_AVAILABILITY["${str_git_repo_name}"]=false
       local str_prompt="Download '${str_git_repo_name}'?"
