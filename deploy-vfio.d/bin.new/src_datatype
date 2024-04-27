@@ -41,6 +41,24 @@
     }
 
   #
+  # DESC:   Is input a bool.
+  # $1:     the input
+  # RETURN: If true return 0. If false return 1.
+  #
+    function is_bool
+    {
+      local str_result="${1}"
+
+      if [[ "${str_result}" != "true" ]] \
+        && [[ "${str_result}" != "false" ]]; then
+        print_error_to_log "Invalid bool."
+        return 1
+      fi
+
+      return 0
+    }
+
+  #
   # DESC:   Is reference variable an enum.
   # $1:     the pointer
   # RETURN: If true return 0. If false return 1.
@@ -78,8 +96,8 @@
     }
 
   #
-  # DESC:   Is reference variable an int.
-  # $1:     the pointer
+  # DESC:   Is input an int.
+  # $1:     the input
   # RETURN: If true return 0. If false return 1.
   #
     function is_int
@@ -94,8 +112,8 @@
     }
 
   #
-  # DESC:   Is reference variable a string.
-  # $1:     the pointer
+  # DESC:   Is input a string.
+  # $1:     the input
   # RETURN: If true return 0. If false return 1.
   #
     function is_string
