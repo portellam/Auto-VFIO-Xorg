@@ -23,13 +23,13 @@
   #
     function set_globals
     {
-      if [[ "${BOOL_SRC_COMPATIBILITY_SET_GLOBALS}" == true ]]; then
+      if [[ "${SRC_COMPATIBILITY_BOOL_SET_GLOBALS}" == true ]]; then
         return 0
       fi
 
-      declare -g BOOL_SRC_COMPATIBILITY_SET_GLOBALS=true
+      declare -g SRC_COMPATIBILITY_BOOL_SET_GLOBALS=true
 
-      declare BOOL_COMPATIBILITY_DO_IGNORE_DISTRO="${HOME}/git"
+      declare SRC_COMPATIBILITY_BOOL_DO_IGNORE_DISTRO="${HOME}/git"
     }
 
 #
@@ -42,13 +42,13 @@
     function is_option_ignore_distro
     {
       if [[ "${1}" != "--ignore-distro" ]]; then
-        BOOL_COMPATIBILITY_DO_IGNORE_DISTRO=false
+        SRC_COMPATIBILITY_BOOL_DO_IGNORE_DISTRO=false
         print_output_to_log "Enabled system distribution check."
         return 1
       fi
 
       print_output_to_log "Disabled system distribution check."
-      BOOL_COMPATIBILITY_DO_IGNORE_DISTRO=true
+      SRC_COMPATIBILITY_BOOL_DO_IGNORE_DISTRO=true
       return 0
     }
 
@@ -71,7 +71,7 @@
   #
     function is_distribution_supported
     {
-      if "${BOOL_COMPATIBILITY_DO_IGNORE_DISTRO}"; then
+      if "${SRC_COMPATIBILITY_BOOL_DO_IGNORE_DISTRO}"; then
         print_output_to_log "Skipped system distribution check."
         return 0
       fi
@@ -186,8 +186,8 @@
       if ! command -v "xmlstarlet" &> /dev/null; then
         print_error_to_log "Required XML libraries are not installed."
 
-        print_output_to_log "To install, execute 'sudo apt install -y " \
-          "xmlstarlet'."
+        print_output_to_log "To install, execute 'sudo apt install -y  \
+          xmlstarlet'."
 
         return 1
       fi
