@@ -24,26 +24,29 @@
   #
     function set_globals
     {
-      if [[ "${BOOL_SRC_MEMORY_SET_GLOBALS}" == true ]]; then
+      if [[ "${SRC_MEMORY_BOOL_SET_GLOBALS}" == true ]]; then
         return 0
       fi
 
-      declare -g BOOL_SRC_MEMORY_SET_GLOBALS=true
+      declare -g SRC_MEMORY_BOOL_SET_GLOBALS=true
 
-      declare -g BOOL_DO_USE_FOUR_KIB_HUGEPAGES=false
-      declare -g BOOL_DO_USE_TWO_MIB_HUGEPAGES=false
-      declare -g BOOL_DO_USE_ONE_GIB_HUGEPAGES=true
+      declare -g SRC_MEMORY_BOOL_DO_USE_FOUR_KIB_HUGEPAGES=false
+      declare -g SRC_MEMORY_BOOL_DO_USE_TWO_MIB_HUGEPAGES=false
+      declare -g SRC_MEMORY_BOOL_DO_USE_ONE_GIB_HUGEPAGES=true
 
-      declare -gir INT_TWO_TO_POWER_OF_TEN=$(( 2 ** 10 ))
-      declare -gir INT_FOUR_KIB_IN_KIB=4
-      declare -gir INT_TWO_MIB_IN_KIB=$(( 2 * ${INT_TWO_TO_POWER_OF_TEN} ))
-      declare -gir INT_ONE_GIB_IN_KIB=$(( ${INT_TWO_TO_POWER_OF_TEN} ** 2 ))
+      declare -gir SRC_MEMORY_INT_TWO_TO_POWER_OF_TEN=$(( 2 ** 10 ))
+      declare -gir SRC_MEMORY_INT_FOUR_KIB_IN_KIB=4
+      declare -gir SRC_MEMORY_INT_TWO_MIB_IN_KIB=$(( 2 * ${SRC_MEMORY_INT_TWO_TO_POWER_OF_TEN} ))
 
-      declare -gi INT_CURRENT_FREE_MEMORY_BYTES=0
-      declare -gi INT_MIN_FREE_MEMORY_BYTES=0
+      declare -gir SRC_MEMORY_INT_ONE_GIB_IN_KIB=$(( \
+        ${SRC_MEMORY_INT_TWO_TO_POWER_OF_TEN} ** 2 \
+      ))
 
-      declare -gir INT_MAX_FREE_MEMORY_BYTES=$( cat /proc/meminfo | grep MemTotal \
-        | cut --delimiter ":" --fields 2 | awk 'END {print $1}' )
+      declare -gi SRC_MEMORY_INT_CURRENT_FREE_MEMORY_BYTES=0
+      declare -gi SRC_MEMORY_INT_MIN_FREE_MEMORY_BYTES=0
+
+      declare -gir SRC_MEMORY_INT_MAX_FREE_MEMORY_BYTES=$( cat /proc/meminfo | \
+        grep MemTotal | cut --delimiter ":" --fields 2 | awk 'END {print $1}' )
 
       find_lowest_common_factor_memory_channel_size
       set_free_memory
@@ -55,14 +58,15 @@
   #
     function set_free_memory
     {
-      if ! is_int "INT_MAX_FREE_MEMORY_BYTES" \
-        || ! is_int "INT_MIN_FREE_MEMORY_BYTES"; then
+      if ! is_int "SRC_MEMORY_INT_MAX_FREE_MEMORY_BYTES" \
+        || ! is_int "SRC_MEMORY_INT_MIN_FREE_MEMORY_BYTES"; then
         print_error_to_log "Failed to get current free memory."
         return 1
       fi
 
-      INT_CURRENT_FREE_MEMORY_BYTES=$(( INT_MAX_FREE_MEMORY_BYTES - \
-        INT_MIN_FREE_MEMORY_BYTES ))
+      SRC_MEMORY_INT_CURRENT_FREE_MEMORY_BYTES=$(( \
+        SRC_MEMORY_INT_MAX_FREE_MEMORY_BYTES - SRC_MEMORY_INT_MIN_FREE_MEMORY_BYTES \
+      ))
     }
 
   #
@@ -71,37 +75,40 @@
   #
     function set_huge_memory_page_size
     {
-      if "${BOOL_DO_USE_FOUR_KIB_HUGEPAGES}"; then
+      if "${SRC_MEMORY_BOOL_DO_USE_FOUR_KIB_HUGEPAGES}"; then
         print_output_to_log "Set huge memory page size: 4 KiB"
         return 0
       fi
 
-      if "${BOOL_DO_USE_TWO_MIB_HUGEPAGES}"; then
+      if "${SRC_MEMORY_BOOL_DO_USE_TWO_MIB_HUGEPAGES}"; then
         print_output_to_log "Set huge memory page size: 2 MiB"
         return 0
       fi
 
-      if "${BOOL_DO_USE_ONE_GIB_HUGEPAGES}"; then
+      if "${SRC_MEMORY_BOOL_DO_USE_ONE_GIB_HUGEPAGES}"; then
         print_output_to_log "Set huge memory page size: 1 GiB"
         return 0
       fi
 
-      local -i int_quotient=$(( ${INT_MIN_FREE_MEMORY_BYTES}/${INT_TWO_TO_POWER_OF_TEN} ))
+      local -i int_quotient=$(( \
+        ${SRC_MEMORY_INT_MIN_FREE_MEMORY_BYTES} / \
+        ${SRC_MEMORY_INT_TWO_TO_POWER_OF_TEN} \
+      ))
 
-      if [[ ${int_quotient} -ge ${INT_FOUR_KIB_IN_KIB} ]] \
-        && [[ ${int_quotient} -lt ${INT_TWO_MIB_IN_KIB} ]]; then
-        BOOL_DO_USE_FOUR_KIB_HUGEPAGES=true
+      if [[ ${int_quotient} -ge ${SRC_MEMORY_INT_FOUR_KIB_IN_KIB} ]] \
+        && [[ ${int_quotient} -lt ${SRC_MEMORY_INT_TWO_MIB_IN_KIB} ]]; then
+        SRC_MEMORY_BOOL_DO_USE_FOUR_KIB_HUGEPAGES=true
         print_output_to_log "Set huge memory page size: 4 KiB"
         return 0
 
-      elif [[ ${int_quotient} -ge ${INT_TWO_MIB_IN_KIB} ]] \
-        && [[ ${int_quotient} -lt ${INT_ONE_GIB_IN_KIB} ]]; then
-        BOOL_DO_USE_TWO_MIB_HUGEPAGES=true
+      elif [[ ${int_quotient} -ge ${SRC_MEMORY_INT_TWO_MIB_IN_KIB} ]] \
+        && [[ ${int_quotient} -lt ${SRC_MEMORY_INT_ONE_GIB_IN_KIB} ]]; then
+        SRC_MEMORY_BOOL_DO_USE_TWO_MIB_HUGEPAGES=true
         print_output_to_log "Set huge memory page size: 2 MiB"
         return 0
 
-      elif [[ ${int_quotient} -ge ${INT_ONE_GIB_IN_KIB} ]]; then
-        BOOL_DO_USE_ONE_GIB_HUGEPAGES=true
+      elif [[ ${int_quotient} -ge ${SRC_MEMORY_INT_ONE_GIB_IN_KIB} ]]; then
+        SRC_MEMORY_BOOL_DO_USE_ONE_GIB_HUGEPAGES=true
         print_output_to_log "Set huge memory page size: 1 GiB"
         return 0
 
@@ -150,10 +157,10 @@
         return 1
       fi
 
-      INT_MIN_FREE_MEMORY_BYTES=$( declare -p arr_sorted | \
+      SRC_MEMORY_INT_MIN_FREE_MEMORY_BYTES=$( declare -p arr_sorted | \
         head --lines 1)
 
-      if ! is_int "INT_MIN_FREE_MEMORY_BYTES"; then
+      if ! is_int "SRC_MEMORY_INT_MIN_FREE_MEMORY_BYTES"; then
         print_error_to_log "Could not find lowest memory channel size value."
         return 1
       fi
@@ -166,7 +173,9 @@
     function set_minimum_memory
     {
       if ! "${BOOL_DO_USE_TWO_MIB_HUGEPAGES}"; then
-        declare -gi INT_MIN_FREE_MEMORY_BYTES=$(( 8 * ${INT_ONE_GIB_IN_KIB} ))
+        declare -gi SRC_MEMORY_INT_MIN_FREE_MEMORY_BYTES=$(( \
+          8 * ${SRC_MEMORY_INT_ONE_GIB_IN_KIB} \
+        ))
       fi
     }
 
@@ -179,7 +188,7 @@
   #
     function is_any_host_memory_available
     {
-      if [[ "${INT_CURRENT_FREE_MEMORY_BYTES}" -le 0 ]]; then
+      if [[ "${SRC_MEMORY_INT_CURRENT_FREE_MEMORY_BYTES}" -le 0 ]]; then
         print_error_to_log "Insufficient Host memory available."
         return 1
       fi
@@ -203,19 +212,19 @@
 
       case "${str_memory_channel_size}" in
           "K" | "KB" | "KIB" )
-            int_memory_channel_bytes=$(( ${INT_TWO_TO_POWER_OF_TEN} ** 1 ))
+            int_memory_channel_bytes=$(( ${SRC_MEMORY_INT_TWO_TO_POWER_OF_TEN} ** 1 ))
             ;;
 
           "M" | "MB" | "MIB" )
-            int_memory_channel_bytes=$(( ${INT_TWO_TO_POWER_OF_TEN} ** 2 ))
+            int_memory_channel_bytes=$(( ${SRC_MEMORY_INT_TWO_TO_POWER_OF_TEN} ** 2 ))
             ;;
 
           "G" | "GB" | "GIB" )
-            int_memory_channel_bytes=$(( ${INT_TWO_TO_POWER_OF_TEN} ** 3 ))
+            int_memory_channel_bytes=$(( ${SRC_MEMORY_INT_TWO_TO_POWER_OF_TEN} ** 3 ))
             ;;
 
           "T" | "TB" | "TIB" )
-            int_memory_channel_bytes=$(( ${INT_TWO_TO_POWER_OF_TEN} ** 4 ))
+            int_memory_channel_bytes=$(( ${SRC_MEMORY_INT_TWO_TO_POWER_OF_TEN} ** 4 ))
             ;;
 
           * )
