@@ -27,18 +27,20 @@
   #
     function set_globals
     {
-      if [[ "${BOOL_SRC_POST_SETUP_SET_GLOBALS}" == true ]]; then
+      if [[ "${SRC_POST_SETUP_BOOL_SET_GLOBALS}" == true ]]; then
         return 0
       fi
 
-      declare -g BOOL_SRC_POST_SETUP_SET_GLOBALS=true
+      declare -g SRC_POST_SETUP_BOOL_SET_GLOBALS=true
 
-      declare -g BOOL_DO_INSTALL_AUDIO_LOOPBACK=true
-      declare -g BOOL_DO_INSTALL_AUTO_XORG=true
-      declare -g BOOL_DO_INSTALL_LIBVIRT_HOOKS=true
-      declare -g BOOL_DO_INSTALL_LOOKING_GLASS=true
-      declare -g BOOL_DO_INSTALL_ZRAM_SWAP=true
-      declare -g STR_AUTO_XORG_ARGUMENTS=""
+      declare -g SRC_POST_SETUP_BOOL_DO_INSTALL_AUDIO_LOOPBACK=false
+      declare -g SRC_POST_SETUP_BOOL_DO_INSTALL_AUTO_XORG=true
+      declare -g SRC_POST_SETUP_BOOL_DO_INSTALL_LIBVIRT_HOOKS=true
+      declare -g SRC_POST_SETUP_BOOL_DO_INSTALL_LOOKING_GLASS=true
+      declare -g SRC_POST_SETUP_BOOL_DO_INSTALL_SCREAM=false
+      declare -g SRC_POST_SETUP_BOOL_DO_INSTALL_ZRAM_SWAP=true
+
+      declare -g SRC_POST_SETUP_STR_AUTO_XORG_ARGUMENTS=""
     }
 
 #
@@ -53,25 +55,25 @@
     is_git_installed
     does_git_parent_path_exist || return 1
 
-    if "${BOOL_DO_INSTALL_AUTO_XORG}"; then
-      execute_auto_xorg_installer "${STR_AUTO_XORG_ARGUMENTS}"
+    if "${SRC_POST_SETUP_BOOL_DO_INSTALL_AUTO_XORG}"; then
+      execute_auto_xorg_installer "${SRC_POST_SETUP_STR_AUTO_XORG_ARGUMENTS}"
     else
       uninstall_auto_xorg
     fi
 
-    if "${BOOL_DO_INSTALL_LIBVIRT_HOOKS}"; then
+    if "${SRC_POST_SETUP_BOOL_DO_INSTALL_LIBVIRT_HOOKS}"; then
       install_libvirt_hooks
     else
       uninstall_libvirt_hooks
     fi
 
-    if "${BOOL_DO_INSTALL_LOOKING_GLASS}"; then
+    if "${SRC_POST_SETUP_BOOL_DO_INSTALL_LOOKING_GLASS}"; then
       install_looking_glass
     # else
     #   uninstall_looking_glass
     fi
 
-    if "${BOOL_DO_INSTALL_ZRAM_SWAP}"; then
+    if "${SRC_POST_SETUP_BOOL_DO_INSTALL_ZRAM_SWAP}"; then
       install_zram_swap
     # else
     #   uninstall_zram_swap
