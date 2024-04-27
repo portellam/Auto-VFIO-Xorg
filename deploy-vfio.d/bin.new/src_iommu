@@ -10,7 +10,57 @@
 #
 # sources
 #
-  declare -g SCRIPT_DIR="/usr/local/bin/"
-  declare -g SCRIPT_BIN_DIR="${SCRIPT_DIR}deploy-vfio.d/"
+  declare -g SRC_STR_SCRIPT_DIR="/usr/local/bin/"
+  declare -g SRC_STR_SCRIPT_BIN_DIR="${SRC_STR_SCRIPT_DIR}deploy-vfio.d/"
 
-  source "${SCRIPT_BIN_DIR}src_print"
+  source "${SRC_STR_SCRIPT_BIN_DIR}src_print"
+
+#
+# setter logic
+#
+  #
+  # DESC: globals
+  #
+    function set_globals
+    {
+      if [[ "${SRC_IOMMU_BOOL_SET_GLOBALS}" == true ]]; then
+        return 0
+      fi
+
+      declare -g SRC_IOMMU_BOOL_SET_GLOBALS=true
+
+      declare -g SRC_IOMMU_BOOL_DO_PARSE_DATABASE=false
+      declare -g SRC_IOMMU_BOOL_DO_PARSE_DATABASE_FROM_XML=false
+      declare -g SRC_IOMMU_BOOL_DO_NOT_PARSE_DATABASE_FROM_XML=false
+      declare -g SRC_IOMMU_BOOL_XML_FILE_IS_SPECIFIED=false
+      declare -g SRC_IOMMU_BOOL_HAS_ARG_PARSE_IOMMU=false
+      declare -g SRC_IOMMU_BOOL_HAS_ARG_PARSE_IOMMU_SELECT_ALL=false
+      declare -g SRC_IOMMU_BOOL_HAS_ARG_PARSE_IOMMU_SELECT_SOME=false
+
+      declare -gr SRC_IOMMU_STR_GET_DEVICES_FOR_IOMMU_GROUP='' + \
+        'ls /sys/kernel/iommu_groups/"${int_iommu_group_id}"/devices/'
+
+      declare -gr SRC_IOMMU_STR_GET_PARSE_FROM_XML='' + \
+        'xmllint "${STR_SRC_IOMMU_XML_FILE}" | grep --invert-match "xml"'
+
+      declare -gA SRC_IOMMU_DICT_DEVICE_DRIVER_XML
+
+      declare -ga SRC_IOMMU_ARR_IOMMU_GROUP_ID=( \
+        $( ls /sys/kernel/iommu_groups/ | sort --numeric-sort )
+      )
+
+      declare -ga SRC_IOMMU_ARR_IOMMU_GROUPS_FOR_HOST \
+        SRC_IOMMU_ARR_IOMMU_GROUPS_FOR_VFIO \
+        SRC_IOMMU_ARR_IOMMU_GROUPS_WITH_VGA_FOR_HOST \
+        SRC_IOMMU_ARR_IOMMU_GROUPS_WITH_VGA_FOR_VFIO
+
+      declare -gr SRC_IOMMU_STR_DEFAULT_XML_FILE="" + \
+        "${ETC_BACKUPS_PATH}parse.xml"
+
+      declare -g SRC_IOMMU_STR_XML_FILE="${SRC_IOMMU_STR_DEFAULT_XML_FILE}"
+    }
+
+# main logic
+#
+  set_globals
+  unset set_globals
