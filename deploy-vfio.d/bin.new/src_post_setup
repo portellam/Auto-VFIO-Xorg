@@ -10,14 +10,14 @@
 #
 # sources
 #
-  declare -g SCRIPT_DIR="/usr/local/bin/"
-  declare -g SCRIPT_BIN_DIR="${SCRIPT_DIR}deploy-vfio.d/"
+  declare -g SRC_STR_SCRIPT_DIR="/usr/local/bin/"
+  declare -g SRC_STR_SCRIPT_BIN_DIR="${SRC_STR_SCRIPT_DIR}deploy-vfio.d/"
 
-  source "${SCRIPT_BIN_DIR}src_print"
-  source "${SCRIPT_BIN_DIR}src_auto_xorg"
-  source "${SCRIPT_BIN_DIR}src_libvirt_hooks"
-  source "${SCRIPT_BIN_DIR}src_looking_glass"
-  source "${SCRIPT_BIN_DIR}src_zram_swap"
+  source "${SRC_STR_SCRIPT_BIN_DIR}src_print"
+  source "${SRC_STR_SCRIPT_BIN_DIR}src_auto_xorg"
+  source "${SRC_STR_SCRIPT_BIN_DIR}src_libvirt_hooks"
+  source "${SRC_STR_SCRIPT_BIN_DIR}src_looking_glass"
+  source "${SRC_STR_SCRIPT_BIN_DIR}src_zram_swap"
 
 #
 # setter logic
