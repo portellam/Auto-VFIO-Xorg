@@ -1,0 +1,146 @@
+#!/bin/false
+
+#
+# Filename:       src_iommu_presentation
+# Description:    Presentation logic for individual IOMMU groups.
+# Author(s):      Alex Portell <github.com/portellam>
+# Maintainer(s):  Alex Portell <github.com/portellam>
+#
+
+#
+# TODO:
+# - [ ] determine if this class needs globals.
+# - [ ] rename params.
+# - [ ] double-check external class params are named properly.
+# - [ ] refactor.
+# - [ ] add comments.
+#
+
+#
+# sources
+#
+  declare -g SRC_STR_SCRIPT_DIR="/usr/local/bin/"
+  declare -g SRC_STR_SCRIPT_BIN_DIR="${SRC_STR_SCRIPT_DIR}deploy-vfio.d/"
+
+  source "${SRC_STR_SCRIPT_BIN_DIR}src_print"
+
+#
+# logic
+#
+    function do_select_iommu_group
+    {
+      local -ir iommu_group_id="${1}"
+      IOMMU_GROUPS_FOR_VFIO_ENUM+=( "${iommu_group_id}" )
+
+      if does_iommu_group_have_vga_device "${iommu_group_id}" &> /dev/null; then
+        IOMMU_GROUPS_WITH_VGA_FOR_VFIO_ENUM+=( "${iommu_group_id}" )
+      fi
+    }
+
+    function do_not_select_iommu_group
+    {
+      local -ir iommu_group_id="${1}"
+
+      if does_iommu_group_have_vga_device "${iommu_group_id}" &> /dev/null; then
+        IOMMU_GROUPS_WITH_VGA_FOR_HOST_ENUM+=( "${iommu_group_id}" )
+      else
+        IOMMU_GROUPS_FOR_HOST_ENUM+=( "${iommu_group_id}" )
+      fi
+    }
+
+    function print_iommu_group
+    {
+      local -r device="${1}"
+      local class driver hwid name vendor
+
+      get_device_class "${device}" "class"
+      get_device_driver "${device}" "driver"
+      get_device_hardware_id "${device}" "hwid"
+      get_device_name "${device}" "name"
+      get_device_vendor "${device}" "vendor"
+
+      echo -e "\tSlot ID:\t${device}"
+      echo -e "\tVendor name:\t${vendor}"
+      echo -e "\tDevice name:\t${name}"
+      echo -e "\tClass/Type:\t${class}"
+      echo -e "\tHardware ID:\t${hwid}"
+      local driver_output="\tDriver:\t\t"
+
+      if is_string "${driver}" &> /dev/null; then
+        driver_output+="${driver}"
+      else
+        driver_output+="N/A"
+      fi
+
+      echo -e "${driver_output}"
+      echo
+    }
+
+    function print_iommu_group_enum
+    {
+      local -ir iommu_group_id="${1}"
+      local -ar device_enum="$( eval "${GET_DEVICES_FOR_IOMMU_GROUP}" )"
+
+      for device in ${device_enum[@]}; do
+        is_device_external "${device}" && print_iommu_group "${device}"
+      done
+    }
+
+    function has_prespecified_iommu_group_enum
+    {
+      if ! is_enum "IOMMU_GROUPS_FOR_HOST_ENUM" \
+        && ! is_enum "IOMMU_GROUPS_WITH_VGA_FOR_HOST_ENUM"; then
+        return 1
+      fi
+
+      if ! is_enum "IOMMU_GROUPS_FOR_VFIO_ENUM" \
+        && ! is_enum "IOMMU_GROUPS_WITH_VGA_FOR_VFIO_ENUM"; then
+        return 1
+      fi
+    }
+
+    function specify_iommu_group
+    {
+      local -ir iommu_group_id="${1}"
+
+      if ! does_iommu_group_have_external_devices "${iommu_group_id}"; then
+        IOMMU_GROUPS_FOR_HOST_ENUM+=( "${iommu_group_id}" )
+        return 1
+      fi
+
+      if ! print_iommu_group_enum "${iommu_group_id}" \
+        || ! specify_iommu_group_prompt "${iommu_group_id}"; then
+        return 1
+      fi
+    }
+
+    function specify_iommu_group_enum
+    {
+      has_prespecified_iommu_group_enum && return 0
+
+      local -n reference="IOMMU_GROUP_ID_ENUM"
+      echo
+
+      for iommu_group_id in ${reference[@]}; do
+        specify_iommu_group "${iommu_group_id}"
+      done
+    }
+
+    function specify_iommu_group_prompt
+    {
+      local -ir iommu_group_id="${1}"
+
+      if execute_or_skip_prompt "Select IOMMU group ${SET_COLOR_YELLOW}${iommu_group_id}${RESET_COLOR}?"; then
+        do_select_iommu_group "${iommu_group_id}"
+      else
+        do_not_select_iommu_group "${iommu_group_id}"
+      fi
+
+      echo
+    }
+
+
+# main logic
+#
+  set_globals
+  unset set_globals
