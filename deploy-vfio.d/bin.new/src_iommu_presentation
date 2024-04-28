@@ -27,6 +27,11 @@
 #
 # logic
 #
+  #
+  # DESC:   lorem ipsum
+  # $1:     lorem ipsum
+  # RETURN: lorem ipsum
+  #
     function do_select_iommu_group
     {
       local -ir iommu_group_id="${1}"
@@ -37,6 +42,11 @@
       fi
     }
 
+  #
+  # DESC:   lorem ipsum
+  # $1:     lorem ipsum
+  # RETURN: lorem ipsum
+  #
     function do_not_select_iommu_group
     {
       local -ir iommu_group_id="${1}"
@@ -48,6 +58,11 @@
       fi
     }
 
+  #
+  # DESC:   lorem ipsum
+  # $1:     lorem ipsum
+  # RETURN: lorem ipsum
+  #
     function print_iommu_group
     {
       local -r device="${1}"
@@ -76,6 +91,11 @@
       echo
     }
 
+  #
+  # DESC:   lorem ipsum
+  # $1:     lorem ipsum
+  # RETURN: lorem ipsum
+  #
     function print_iommu_group_enum
     {
       local -ir iommu_group_id="${1}"
@@ -86,6 +106,10 @@
       done
     }
 
+  #
+  # DESC:   lorem ipsum
+  # RETURN: lorem ipsum
+  #
     function has_prespecified_iommu_group_enum
     {
       if ! is_enum "IOMMU_GROUPS_FOR_HOST_ENUM" \
@@ -99,6 +123,11 @@
       fi
     }
 
+  #
+  # DESC:   lorem ipsum
+  # $1:     lorem ipsum
+  # RETURN: lorem ipsum
+  #
     function specify_iommu_group
     {
       local -ir iommu_group_id="${1}"
@@ -114,6 +143,10 @@
       fi
     }
 
+  #
+  # DESC:   lorem ipsum
+  # RETURN: lorem ipsum
+  #
     function specify_iommu_group_enum
     {
       has_prespecified_iommu_group_enum && return 0
@@ -126,6 +159,11 @@
       done
     }
 
+  #
+  # DESC:   lorem ipsum
+  # $1:     lorem ipsum
+  # RETURN: lorem ipsum
+  #
     function specify_iommu_group_prompt
     {
       local -ir iommu_group_id="${1}"
@@ -138,9 +176,3 @@
 
       echo
     }
-
-
-# main logic
-#
-  set_globals
-  unset set_globals
