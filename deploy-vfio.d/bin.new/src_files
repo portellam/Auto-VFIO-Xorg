@@ -20,50 +20,59 @@
 #
   #
   # DESC:   Create temp file of given file.
-  # $1:     the file name as a string
+  # $1:     the file name as a string.
   # RETURN: If temp file creation is successful, return 0. If false, return 1.
   #
     function create_temp_file_of_file
     {
-      is_file "${1}" &> /dev/null || return 0
+      if is_file "${1}" &> /dev/null; then
+        print_output_to_log "File exists."
+        return 0
+      fi
+      local -r str_file_name="${1}"
+      local -r str_temp_file_name="${str_file_name}.tmp"
 
-      local -r str_filename="${1}"
-      local -r str_temp_filename="${str_filename}.tmp"
-
-      if ! cp --force "${str_filename}" "${str_temp_filename}"; then
-        print_error_to_log "Could not create temp file of '${str_filename}'."
+      if ! cp --force "${str_file_name}" "${str_temp_file_name}"; then
+        print_error_to_log "Could not create temp file of '${str_file_name}'."
         return 1
       fi
 
+      print_output_to_log "Created temp file of '${str_file_name}'."
       return 0
     }
 
   #
   # DESC:   Copy the temp file to the given file.
-  # $1:     the file name as a string
+  # $1:     the file name as a string.
   # RETURN: If file overwrite is successful, return 0. If false, return 1.
   #
     function copy_temp_file_to_file
     {
-      is_file "${1}" &> /dev/null || return 0
+      if is_file "${1}" &> /dev/null; then
+        print_output_to_log "Skipped overwrite of file."
+        return 0
+      fi
 
-      local -r str_filename="${1}"
-      local -r str_temp_filename="${str_filename}.tmp"
+      local -r str_file_name="${1}"
+      local -r str_temp_file_name="${str_file_name}.tmp"
 
-      is_file "${str_temp_filename}" || return 1
-
-      if ! cp --force "${str_temp_filename}" "${str_filename}"; then
-        print_error_to_log "Could not overwrite file '${str_filename}'."
+      if ! is_file "${str_temp_file_name}"; then
         return 1
       fi
 
+      if ! cp --force "${str_temp_file_name}" "${str_file_name}"; then
+        print_error_to_log "Could not overwrite file '${str_file_name}'."
+        return 1
+      fi
+
+      print_output_to_log "Overwrote file '${str_file_name}'."
       return 0
     }
 
   #
   # DESC:   Copy first file to second file.
-  # $1:     the file name as a string
-  # $2:     the file name as a string
+  # $1:     the file name as a string.
+  # $2:     the file name as a string.
   # RETURN: If file copy is successful, return 0. If false, return 1.
   #
     function copy_this_file_to_other_file
@@ -72,62 +81,45 @@
         return 1
       fi
 
-      is_file "${1}" || return 1
-      cp --force "${1}" "${2}" || return 1
+      if ! is_file "${1}" \
+        || cp --force "${1}" "${2}"; then
+        return 1
+      fi
+
       return 0
     }
 
   #
   # DESC:   Delete the temp file of the given file.
-  # $1:     the file name as a string
+  # $1:     the file name as a string.
   # RETURN: If temp file deletion is successful, return 0. If false, return 1.
   #
     function delete_temp_file_of_file
     {
-      is_file "${1}" &> /dev/null || return 0
+      if is_file "${1}" &> /dev/null; then
+        return 0
+      fi
 
-      local -r str_filename="${1}"
-      local -r str_temp_filename="${str_filename}.tmp"
+      local -r str_file_name="${1}"
+      local -r str_temp_file_name="${str_file_name}.tmp"
 
-      is_file "${str_temp_filename}" &> /dev/null || return 0
+      if is_file "${str_temp_file_name}" &> /dev/null; then
+        return 0
+      fi
 
-      if ! rm --force --recursive "${str_temp_filename}"; then
-        print_error_to_log "Could not delete temp file '${str_temp_filename}'."
+      if ! rm --force --recursive "${str_temp_file_name}"; then
+        print_error_to_log "Could not delete temp file '${str_temp_file_name}'."
         return 1
       fi
 
+      print_output_to_log "Deleted temp file '${str_temp_file_name}'."
       return 0
     }
 
-  #
-  # DESC:   Is file valid.
-  # $1:     the pointer of the array of lines
-  # $2:     the file name as a string
-  # RETURN: If file write is successful, return 0. If false, return 1.
-  #
-    function append_to_file_correctly
-    {
-      if ! is_file "${2}" \
-        || [[ -z "${1}" ]]; then
-        return 1
-      fi
-
-      local -nr ref_arr_lines="${1}"
-      local -r str_filename="${2}"
-
-      for str_line in ${ref_arr_lines[*]}; do
-        if ! sudo echo -e "${str_line}" >> "${str_filename}"; then
-          print_error_to_log "Could not append to file."
-          return 1
-        fi
-      done
-
-      return 0
-    }
 
   #
   # DESC:   Is directory valid.
-  # $1:     the directory name as a string
+  # $1:     the directory name as a string.
   # RETURN: If directory is valid, return 0. If false, return 1.
   #
     function is_dir
@@ -138,12 +130,13 @@
         return 1
       fi
 
+      print_output_to_log "Folder does not exist."
       return 0
     }
 
   #
   # DESC:   Is directory not empty.
-  # $1:     the directory name as a string
+  # $1:     the directory name as a string.
   # RETURN: If directory is not empty, return 0. If false, return 1.
   #
     function is_dir_not_empty
@@ -157,12 +150,13 @@
         return 1
       fi
 
+      print_output_to_log "Folder is not empty."
       return 0
     }
 
   #
   # DESC:   Is file valid.
-  # $1:     the file name as a string
+  # $1:     the file name as a string.
   # RETURN: If file is valid, return 0. If false, return 1.
   #
     function is_file
@@ -173,12 +167,13 @@
         return 1
       fi
 
+      print_output_to_log "File does exist."
       return 0
     }
 
   #
   # DESC:   If file not empty.
-  # $1:     the file name as a string
+  # $1:     the file name as a string.
   # RETURN: If file is not empty, return 0. If false, return 1.
   #
     function is_file_not_empty
@@ -189,5 +184,54 @@
         return 1
       fi
 
+      print_output_to_log "File is not empty."
+      return 0
+    }
+
+  #
+  # DESC:   Overwrite file with contents of enum.
+  # $1:     the reference of the output as an enum.
+  # $2:     the file name as a string.
+  # RETURN: If enum is not empty and write is successful, return 0. If else, return 1.
+  #
+    function overwrite_file
+    {
+      local -n ref_enum_output="${1}"
+      local -n str_file_name="${2}"
+
+      if ! is_enum_not_empty "ref_enum_output" \
+        || ! sudo echo -e "${ref_enum_output[*]}" > "${str_file_name}"; then
+        print_error_to_log "Could not overwrite file '${str_file_name}'."
+        return 1
+      fi
+
+      print_output_to_log "Overwrote file '${str_file_name}'."
+      return 0
+    }
+
+  #
+  # DESC:   Write to file with contents of enum.
+  # $1:     the reference of the output as an enum.
+  # $2:     the file name as a string.
+  # RETURN: If enum is not empty and write is successful, return 0. If else, return 1.
+  #
+    function write_file
+    {
+      if ! is_file "${2}" \
+        || [[ -z "${1}" ]]; then
+        return 1
+      fi
+
+      local -nr ref_enum_lines="${1}"
+      local -r str_file_name="${2}"
+
+      for str_line in ${ref_enum_lines[*]}; do
+        if ! sudo echo -e "${str_line}" >> "${str_file_name}"; then
+          print_error_to_log "Could not write to file '${str_file_name}'."
+          return 1
+        fi
+      done
+
+      print_output_to_log "Wrote to file '${str_file_name}'."
       return 0
     }
