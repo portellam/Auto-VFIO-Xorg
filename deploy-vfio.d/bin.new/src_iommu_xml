@@ -30,7 +30,6 @@
       declare -g SRC_IOMMU_XML_BOOL_SET_GLOBALS=true
 
       declare -g SRC_IOMMU_XML_BOOL_DO_PARSE_IOMMU_GROUPS_FROM_XML_FILE=false
-      #declare -g SRC_IOMMU_XML_BOOL_DO_NOT_PARSE_DATABASE_FROM_XML_FILE=false             # TODO: delete?
       declare -g SRC_IOMMU_XML_BOOL_XML_FILE_IS_SPECIFIED=false
 
       declare -gr SRC_IOMMU_XML_STR_GET_DEVICES_FOR_IOMMU_GROUP=''\
