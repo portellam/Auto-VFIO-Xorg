@@ -76,22 +76,6 @@
     }
 
   #
-  # DESC:   Clean up the IOMMU database.
-  # RETURN: If clean up is successful, return 1. If failed, return 1.
-  #
-    function cleanup_iommu_database
-    {
-      if ! restore_temp_files_for_database \
-        || ! delete_temp_files_for_database; then
-        print_error_to_log "Clean-up of database failed."
-        return 1
-      fi
-
-      print_error_to_log "Clean-up of database successful."
-      return 0
-    }
-
-  #
   # DESC:   Try to parse the IOMMU database.
   # RETURN: If parse is successful, return 0. If false, return 1.
   #
@@ -139,30 +123,6 @@
       return 0
     }
 
-  # <summary>Files</summary>
-    function create_temp_files_for_database
-    {
-      create_temp_file_of_file "${XML_FILE}" || return 1
-    }
-
-    function restore_temp_files_for_database
-    {
-      copy_temp_file_to_file "${XML_FILE}" || return 1
-    }
-
-    function delete_temp_files_for_database
-    {
-      delete_temp_file_of_file "${XML_FILE}" || return 1
-    }
-
-    function is_xml_file_created
-    {
-      if ! is_file "${XML_FILE}" &> /dev/null \
-        && ! sudo touch "${XML_FILE}"; then
-        print_error_to_log "Could not create '${XML_FILE}'".
-        return 1
-      fi
-    }
 
   # <summary>Getters</summary>
     function get_device_class
