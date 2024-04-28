@@ -29,17 +29,16 @@
 
       declare -g SRC_IOMMU_XML_BOOL_SET_GLOBALS=true
 
-      declare -g SRC_IOMMU_XML_BOOL_DO_PARSE_DATABASE=false
-      declare -g SRC_IOMMU_XML_BOOL_DO_PARSE_DATABASE_FROM_XML=false
-      #declare -g SRC_IOMMU_XML_BOOL_DO_NOT_PARSE_DATABASE_FROM_XML=false             # TODO: delete?
+      declare -g SRC_IOMMU_XML_BOOL_DO_PARSE_IOMMU_GROUPS_FROM_XML_FILE=false
+      #declare -g SRC_IOMMU_XML_BOOL_DO_NOT_PARSE_DATABASE_FROM_XML_FILE=false             # TODO: delete?
       declare -g SRC_IOMMU_XML_BOOL_XML_FILE_IS_SPECIFIED=false
 
-      declare -gr SRC_IOMMU_XML_STR_GET_DEVICES_FOR_IOMMU_GROUP='' + \
+      declare -gr SRC_IOMMU_XML_STR_GET_DEVICES_FOR_IOMMU_GROUP=''\
         'ls /sys/kernel/iommu_groups/"${str_iommu_group_id}"/devices/'
 
-      declare -gA SRC_IOMMU_XML_DICT_DEVICE_DRIVER_XML
+      declare -gA SRC_IOMMU_XML_DICT_DEVICE_DRIVERS_FROM_XML_FILE
 
-      declare -gr SRC_IOMMU_XML_STR_DEFAULT_XML_FILE="" + \
+      declare -gr SRC_IOMMU_XML_STR_DEFAULT_XML_FILE=""\
         "${SRC_BACKUPS_ETC_PATH}parse.xml"                                            # TODO: create source file and define this!
 
       declare -g SRC_IOMMU_XML_STR_XML_FILE=""
@@ -50,7 +49,7 @@
   # $1:     the XML file name as a string.
   # RETURN: If specified, return 0. If false, return 1.
   #
-    function set_xml_file
+    function set_iommu_groups_xml_file
     {
       SRC_IOMMU_XML_STR_XML_FILE="${1}"
 
@@ -70,21 +69,74 @@
   # $1:     the XML file name as a string.
   # RETURN: If specified, return 0. If false, return 1.
   #
-    function set_xml_to_default
+    function set_iommu_groups_xml_file_to_default
     {
-      set_xml_to_default "${STR_SRC_IOMMU_XML_DEFAULT_XML_FILE}"
+      set_iommu_groups_xml_file "${STR_SRC_IOMMU_XML_DEFAULT_XML_FILE}"
     }
 
 #
 # logic
 #
   #
+  # DESC:   Clean up the IOMMU database.
+  # RETURN: If clean up is successful, return 1.
+  #         If failed, return 1.
+  #
+    function cleanup_iommu_groups_xml_file
+    {
+      if ! restore_temp_files_for_iommu_groups_xml_file \
+        || ! delete_temp_files_for_iommu_groups_xml_file; then
+        print_error_to_log "Clean-up of XML file failed."
+        return 1
+      fi
+
+      print_error_to_log "Clean-up of XML file successful."
+      return 0
+    }
+
+  #
+  # DESC:   Create temp files for IOMMU groups XML file.
+  # RETURN: If temp files are created, return 0.
+  #         If false, return 1.
+  #
+    function create_temp_files_for_iommu_groups_xml_file
+    {
+      if ! create_temp_file_of_file "${SRC_IOMMU_XML_STR_XML_FILE}" &> /dev/null; then
+        print_error_to_log "Could not create temp file for IOMMU groups XML file "\
+          "'${SRC_IOMMU_XML_STR_XML_FILE}'".
+
+        return 1
+      fi
+
+      print_output_to_log "Created temp file for IOMMU groups XML file "\
+        "'${SRC_IOMMU_XML_STR_XML_FILE}'".
+    }
+
+  #
+  # DESC:   Delete temp files for IOMMU groups XML file.
+  # RETURN: If temp files are deleted, return 0.
+  #         If false, return 1.
+  #
+    function delete_temp_files_for_iommu_groups_xml_file
+    {
+      if ! delete_temp_file_of_file "${SRC_IOMMU_XML_STR_XML_FILE}" &> /dev/null; then
+        print_error_to_log "Could not delete temp files for IOMMU groups XML file "\
+          "'${SRC_IOMMU_XML_STR_XML_FILE}'".
+
+        return 1
+      fi
+
+      print_output_to_log "Deleted temp files for IOMMU groups XML file "\
+        "'${SRC_IOMMU_XML_STR_XML_FILE}'".
+    }
+
+  #
   # DESC:   Export IOMMU database to XML file.
   # $1:     the XML file name as a string.
   # RETURN: If export is successful, return 0.
   #         If else, return 1.
   #
-    function export_iommu_database_to_xml_file
+    function export_iommu_groups_to_xml_file
     {
       local -r str_xml_file_name="${1}"
 
@@ -103,19 +155,21 @@
 
         local -a arr_this_device_output=( )
 
-        local str_line_iommu_id="<${str_iommu_id_tag}>${str_iommu_group_id}" + \
+        local str_line_iommu_id="<${str_iommu_id_tag}>${str_iommu_group_id}"\
           "</${str_iommu_id_tag}>"
 
-        for str_device in $( eval "${SRC_IOMMU_XML_STR_GET_DEVICES_FOR_IOMMU_GROUP}" ); do
+        for str_device in $( \
+            eval "${SRC_IOMMU_XML_STR_GET_DEVICES_FOR_IOMMU_GROUP}" \
+          ); do
           local str_device_driver="$( \
             lspci -ks ${str_device} | \grep --ignore-case "driver" | \
             cut --delimiter ' ' --fields 5 \
           )"
 
-          local str_line_device_id="<${str_device_id_tag}>${str_device}" + \
+          local str_line_device_id="<${str_device_id_tag}>${str_device}"\
             "</${str_device_id_tag}>"
 
-          local str_line_device_driver="<${str_device_driver_tag}>" + \
+          local str_line_device_driver="<${str_device_driver_tag}>"\
             "${str_device_driver}</${str_device_driver_tag}>"
 
           arr_this_device_output+=(
@@ -190,11 +244,11 @@
           break
         fi
 
-        SRC_IOMMU_XML_DICT_DEVICE_DRIVER_XML+=( ["${str_device_id}"]="${str_driver}" )
+        SRC_IOMMU_XML_DICT_DEVICE_DRIVERS_FROM_XML_FILE+=( ["${str_device_id}"]="${str_driver}" )
         (( int_counter++ ))
       done
 
-      if ! is_enum_not_empty "SRC_IOMMU_XML_DICT_DEVICE_DRIVER_XML" &> /dev/null; then
+      if ! is_enum_not_empty "SRC_IOMMU_XML_DICT_DEVICE_DRIVERS_FROM_XML_FILE" &> /dev/null; then
         print_error_to_log "XML file is empty."
         return 1
       fi
@@ -204,12 +258,33 @@
     }
 
   #
+  # DESC:   Is IOMMU groups XML file created.
+  # RETURN: If file is created, return 0.
+  #         If false, return 1.
+  #
+    function is_iommu_groups_xml_file_created
+    {
+      if ! is_file "${SRC_IOMMU_XML_STR_XML_FILE}" &> /dev/null \
+        && ! sudo touch "${SRC_IOMMU_XML_STR_XML_FILE}"; then
+        print_error_to_log "Could not create IOMMU groups XML file "\
+          "'${SRC_IOMMU_XML_STR_XML_FILE}'".
+
+        return 1
+      fi
+
+      print_output_to_log "IOMMU groups XML file "\
+        "'${SRC_IOMMU_XML_STR_XML_FILE}' exists".
+
+      return 0
+    }
+
+  #
   # DESC:   Is given XML file valid or not.
   # $1:     the XML file name as a string.
   # RETURN: If given XML file is valid, return 0.
   #         If false, return 1.
   #
-    function is_xml_file_valid
+    function is_iommu_groups_xml_file_valid
     {
       local -r str_xml_file_name="${1}"
 
@@ -238,21 +313,21 @@
   # RETURN: If parse is successful or skipped, return 0.
   #         If failed, return 1.
   #
-    function parse_iommu_database_from_xml_file
+    function parse_iommu_groups_from_xml_file
     {
       if is_bool "${1}" &> /dev/null \
         && "${1}"; then
-        SRC_IOMMU_XML_BOOL_DO_PARSE_DATABASE_FROM_XML=false
+        SRC_IOMMU_XML_BOOL_DO_PARSE_IOMMU_GROUPS_FROM_XML_FILE=false
         print_output_to_log "Skipped parse of IOMMU groups by XML file."
         return 0
       fi
 
       if ! execute_or_skip_prompt "Cross-reference database with XML file?"; then
-        SRC_IOMMU_XML_BOOL_DO_PARSE_DATABASE_FROM_XML=false
+        SRC_IOMMU_XML_BOOL_DO_PARSE_IOMMU_GROUPS_FROM_XML_FILE=false
         return 1
       fi
 
-      SRC_IOMMU_XML_BOOL_DO_PARSE_DATABASE_FROM_XML=true
+      SRC_IOMMU_XML_BOOL_DO_PARSE_IOMMU_GROUPS_FROM_XML_FILE=true
       return 0
     }
 
@@ -262,7 +337,7 @@
   #         If specified file exists, return 0.
   #         If else, return 1.
   #
-    function specify_existing_xml_file_prompt
+    function specify_existing_iommu_groups_xml_file_prompt
     {
       local -r str_output="Enter XML file name (leave blank for default): "
 
@@ -270,7 +345,7 @@
           read -r -p "${str_output}" str_answer
 
           if ! is_string "${str_answer}" &> /dev/null; then
-            set_xml_to_default
+            set_iommu_groups_xml_file_to_default
             return 0
           fi
 
@@ -279,7 +354,7 @@
             continue
           fi
 
-          set_xml_file "${str_answer}"
+          set_iommu_groups_xml_file "${str_answer}"
           return 0
         done
 
@@ -294,7 +369,7 @@
   # RETURN: If file is specified and selected, return 0.
   #         If false, return 1.
   #
-    function specify_xml_file
+    function specify_iommu_groups_xml_file
     {
       local bool_does_xml_file_exist \
         bool_do_parse_from_xml_file
@@ -309,24 +384,47 @@
 
       if "${bool_does_xml_file_exist}" \
         && "${bool_do_parse_from_xml_file}"; then
-        print_output_to_log "An XML file is specified and selected to be parsed."
+        print_output_to_log "XML file '${SRC_IOMMU_XML_STR_XML_FILE}'"\
+          "is specified and selected to be parsed."
+
         return 0
       fi
 
       if ! "${var_does_xml_file_exist}" \
         && ! "${var_do_parse_from_xml_file}"; then
-        set_xml_file "${SRC_IOMMU_XML_STR_DEFAULT_XML_FILE}"
-        print_output_to_log "The default XML file is selected to be parsed."
+        set_iommu_groups_xml_file "${SRC_IOMMU_XML_STR_DEFAULT_XML_FILE}"
+
+        print_output_to_log "The default XML file "\
+          "'${SRC_IOMMU_XML_STR_DEFAULT_XML_FILE}'is selected to be parsed."
+
         return 0
       fi
 
       print_output_to_log "XML file name is not specified."
 
-      if ! specify_existing_xml_file_prompt; then
+      if ! specify_existing_iommu_groups_xml_file_prompt; then
         return 1
       fi
 
       return 0
+    }
+
+  #
+  # DESC:   Restore IOMMU groups XML file from temp file.
+  # RETURN: If file is restored, return 0.
+  #         If false, return 1.
+  #
+    function restore_temp_files_for_iommu_groups_xml_file
+    {
+      if ! copy_temp_file_to_file "${SRC_IOMMU_XML_STR_XML_FILE}"; then
+        print_error_to_log "Could not restore IOMMU groups XML file "\
+          "'${SRC_IOMMU_XML_STR_XML_FILE}' from temp file".
+
+        return 1
+      fi
+
+      print_output_to_log "Restored IOMMU groups XML file "\
+        "'${SRC_IOMMU_XML_STR_XML_FILE}' from temp file".
     }
 
 # main logic
