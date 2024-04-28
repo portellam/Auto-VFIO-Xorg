@@ -2,7 +2,7 @@
 
 #
 # Filename:       src_iommu_xml
-# Description:    Parse IOMMU database XML file logic.
+# Description:    Parse IOMMU groups from XML file.
 # Author(s):      Alex Portell <github.com/portellam>
 # Maintainer(s):  Alex Portell <github.com/portellam>
 #
