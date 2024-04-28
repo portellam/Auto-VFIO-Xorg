@@ -23,26 +23,26 @@
   #
     function set_globals
     {
-      if [[ "${SRC_IOMMU_BOOL_SET_GLOBALS}" == true ]]; then
+      if [[ "${SRC_IOMMU_XML_BOOL_SET_GLOBALS}" == true ]]; then
         return 0
       fi
 
-      declare -g SRC_IOMMU_BOOL_SET_GLOBALS=true
+      declare -g SRC_IOMMU_XML_BOOL_SET_GLOBALS=true
 
-      declare -g SRC_IOMMU_BOOL_DO_PARSE_DATABASE=false
-      declare -g SRC_IOMMU_BOOL_DO_PARSE_DATABASE_FROM_XML=false
-      #declare -g SRC_IOMMU_BOOL_DO_NOT_PARSE_DATABASE_FROM_XML=false                 # TODO: delete?
-      declare -g SRC_IOMMU_BOOL_XML_FILE_IS_SPECIFIED=false
+      declare -g SRC_IOMMU_XML_BOOL_DO_PARSE_DATABASE=false
+      declare -g SRC_IOMMU_XML_BOOL_DO_PARSE_DATABASE_FROM_XML=false
+      #declare -g SRC_IOMMU_XML_BOOL_DO_NOT_PARSE_DATABASE_FROM_XML=false             # TODO: delete?
+      declare -g SRC_IOMMU_XML_BOOL_XML_FILE_IS_SPECIFIED=false
 
-      declare -gr SRC_IOMMU_STR_GET_DEVICES_FOR_IOMMU_GROUP='' + \
+      declare -gr SRC_IOMMU_XML_STR_GET_DEVICES_FOR_IOMMU_GROUP='' + \
         'ls /sys/kernel/iommu_groups/"${str_iommu_group_id}"/devices/'
 
-      declare -gA SRC_IOMMU_DICT_DEVICE_DRIVER_XML
+      declare -gA SRC_IOMMU_XML_DICT_DEVICE_DRIVER_XML
 
-      declare -gr SRC_IOMMU_STR_DEFAULT_XML_FILE="" + \
+      declare -gr SRC_IOMMU_XML_STR_DEFAULT_XML_FILE="" + \
         "${SRC_BACKUPS_ETC_PATH}parse.xml"                                            # TODO: create source file and define this!
 
-      declare -g SRC_IOMMU_STR_XML_FILE=""
+      declare -g SRC_IOMMU_XML_STR_XML_FILE=""
     }
 
   #
@@ -52,16 +52,16 @@
   #
     function set_xml_file
     {
-      SRC_IOMMU_STR_XML_FILE="${1}"
+      SRC_IOMMU_XML_STR_XML_FILE="${1}"
 
-      if ! is_string "${SRC_IOMMU_STR_XML_FILE}"; then
-        SRC_IOMMU_BOOL_XML_FILE_IS_SPECIFIED=false
+      if ! is_string "${SRC_IOMMU_XML_STR_XML_FILE}"; then
+        SRC_IOMMU_XML_BOOL_XML_FILE_IS_SPECIFIED=false
         print_output_to_log "XML file is not specifed."
         return 1
       fi
 
-      SRC_IOMMU_BOOL_XML_FILE_IS_SPECIFIED=true
-      print_output_to_log "XML file '${SRC_IOMMU_STR_XML_FILE}' is specifed."
+      SRC_IOMMU_XML_BOOL_XML_FILE_IS_SPECIFIED=true
+      print_output_to_log "XML file '${SRC_IOMMU_XML_STR_XML_FILE}' is specifed."
       return 0
     }
 
@@ -72,7 +72,7 @@
   #
     function set_xml_to_default
     {
-      set_xml_to_default "${STR_SRC_IOMMU_DEFAULT_XML_FILE}"
+      set_xml_to_default "${STR_SRC_IOMMU_XML_DEFAULT_XML_FILE}"
     }
 
 #
@@ -106,7 +106,7 @@
         local str_line_iommu_id="<${str_iommu_id_tag}>${str_iommu_group_id}" + \
           "</${str_iommu_id_tag}>"
 
-        for str_device in $( eval "${SRC_IOMMU_STR_GET_DEVICES_FOR_IOMMU_GROUP}" ); do
+        for str_device in $( eval "${SRC_IOMMU_XML_STR_GET_DEVICES_FOR_IOMMU_GROUP}" ); do
           local str_device_driver="$( \
             lspci -ks ${str_device} | \grep --ignore-case "driver" | \
             cut --delimiter ' ' --fields 5 \
@@ -190,11 +190,11 @@
           break
         fi
 
-        SRC_IOMMU_DICT_DEVICE_DRIVER_XML+=( ["${str_device_id}"]="${str_driver}" )
+        SRC_IOMMU_XML_DICT_DEVICE_DRIVER_XML+=( ["${str_device_id}"]="${str_driver}" )
         (( int_counter++ ))
       done
 
-      if ! is_enum_not_empty "SRC_IOMMU_DICT_DEVICE_DRIVER_XML" &> /dev/null; then
+      if ! is_enum_not_empty "SRC_IOMMU_XML_DICT_DEVICE_DRIVER_XML" &> /dev/null; then
         print_error_to_log "XML file is empty."
         return 1
       fi
@@ -242,17 +242,17 @@
     {
       if is_bool "${1}" &> /dev/null \
         && "${1}"; then
-        SRC_IOMMU_BOOL_DO_PARSE_DATABASE_FROM_XML=false
+        SRC_IOMMU_XML_BOOL_DO_PARSE_DATABASE_FROM_XML=false
         print_output_to_log "Skipped parse of IOMMU groups by XML file."
         return 0
       fi
 
       if ! execute_or_skip_prompt "Cross-reference database with XML file?"; then
-        SRC_IOMMU_BOOL_DO_PARSE_DATABASE_FROM_XML=false
+        SRC_IOMMU_XML_BOOL_DO_PARSE_DATABASE_FROM_XML=false
         return 1
       fi
 
-      SRC_IOMMU_BOOL_DO_PARSE_DATABASE_FROM_XML=true
+      SRC_IOMMU_XML_BOOL_DO_PARSE_DATABASE_FROM_XML=true
       return 0
     }
 
@@ -284,7 +284,7 @@
 
       if ! "${var_does_xml_file_exist}" \
         && ! "${var_do_parse_from_xml_file}"; then
-        set_xml_file "${SRC_IOMMU_STR_DEFAULT_XML_FILE}"
+        set_xml_file "${SRC_IOMMU_XML_STR_DEFAULT_XML_FILE}"
         print_output_to_log "The default XML file is selected to be parsed."
         return 0
       fi
