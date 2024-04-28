@@ -2,7 +2,7 @@
 
 #
 # Filename:       src_iommu_xml
-# Description:    Parse IOMMU XML file logic.
+# Description:    Parse IOMMU database XML file logic.
 # Author(s):      Alex Portell <github.com/portellam>
 # Maintainer(s):  Alex Portell <github.com/portellam>
 #
@@ -31,34 +31,18 @@
 
       declare -g SRC_IOMMU_BOOL_DO_PARSE_DATABASE=false
       declare -g SRC_IOMMU_BOOL_DO_PARSE_DATABASE_FROM_XML=false
-      declare -g SRC_IOMMU_BOOL_DO_NOT_PARSE_DATABASE_FROM_XML=false
+      #declare -g SRC_IOMMU_BOOL_DO_NOT_PARSE_DATABASE_FROM_XML=false                 # TODO: delete?
       declare -g SRC_IOMMU_BOOL_XML_FILE_IS_SPECIFIED=false
-      declare -g SRC_IOMMU_BOOL_HAS_ARG_PARSE_IOMMU=false
-      declare -g SRC_IOMMU_BOOL_HAS_ARG_PARSE_IOMMU_SELECT_ALL=false
-      declare -g SRC_IOMMU_BOOL_HAS_ARG_PARSE_IOMMU_SELECT_SOME=false
 
       declare -gr SRC_IOMMU_STR_GET_DEVICES_FOR_IOMMU_GROUP='' + \
         'ls /sys/kernel/iommu_groups/"${str_iommu_group_id}"/devices/'
 
-      # TODO: determine if this is used?
-      declare -gr SRC_IOMMU_STR_GET_PARSE_FROM_XML='' + \
-        'xmllint "${STR_SRC_IOMMU_XML_FILE}" | grep --invert-match "xml"'
-
       declare -gA SRC_IOMMU_DICT_DEVICE_DRIVER_XML
 
-      declare -ga SRC_IOMMU_ARR_IOMMU_GROUP_ID=( \
-        $( ls /sys/kernel/iommu_groups/ | sort --numeric-sort )
-      )
-
-      declare -ga SRC_IOMMU_ARR_IOMMU_GROUPS_FOR_HOST \
-        SRC_IOMMU_ARR_IOMMU_GROUPS_FOR_VFIO \
-        SRC_IOMMU_ARR_IOMMU_GROUPS_WITH_VGA_FOR_HOST \
-        SRC_IOMMU_ARR_IOMMU_GROUPS_WITH_VGA_FOR_VFIO
-
       declare -gr SRC_IOMMU_STR_DEFAULT_XML_FILE="" + \
-        "${ETC_BACKUPS_PATH}parse.xml"
+        "${SRC_BACKUPS_ETC_PATH}parse.xml"                                            # TODO: create source file and define this!
 
-      declare -g SRC_IOMMU_STR_XML_FILE="${SRC_IOMMU_STR_DEFAULT_XML_FILE}"
+      declare -g SRC_IOMMU_STR_XML_FILE=""
     }
 
   #
@@ -68,16 +52,16 @@
   #
     function set_xml_file
     {
-      STR_SRC_IOMMU_XML_FILE="${1}"
+      SRC_IOMMU_STR_XML_FILE="${1}"
 
-      if ! is_string "${STR_SRC_IOMMU_XML_FILE}"; then
+      if ! is_string "${SRC_IOMMU_STR_XML_FILE}"; then
         SRC_IOMMU_BOOL_XML_FILE_IS_SPECIFIED=false
         print_output_to_log "XML file is not specifed."
         return 1
       fi
 
       SRC_IOMMU_BOOL_XML_FILE_IS_SPECIFIED=true
-      print_output_to_log "XML file '${STR_SRC_IOMMU_XML_FILE}' is specifed."
+      print_output_to_log "XML file '${SRC_IOMMU_STR_XML_FILE}' is specifed."
       return 0
     }
 
