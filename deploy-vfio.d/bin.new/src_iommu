@@ -50,36 +50,6 @@
     }
 
   #
-  # DESC:   Set the XML file name. If valid, set the boolean flag accordingly.
-  # $1:     the XML file name as a string.
-  # RETURN: If specified, return 0. If false, return 1.
-  #
-    function set_xml_file
-    {
-      STR_SRC_IOMMU_XML_FILE="${1}"
-
-      if ! is_string "${STR_SRC_IOMMU_XML_FILE}"; then
-        SRC_IOMMU_BOOL_XML_FILE_IS_SPECIFIED=false
-        print_output_to_log "XML file is not specifed."
-        return 1
-      fi
-
-      SRC_IOMMU_BOOL_XML_FILE_IS_SPECIFIED=true
-        print_output_to_log "XML file '${STR_SRC_IOMMU_XML_FILE}' is specifed."
-      return 0
-    }
-
-  #
-  # DESC:   Set the XML file name to default.
-  # $1:     the XML file name as a string.
-  # RETURN: If specified, return 0. If false, return 1.
-  #
-    function set_xml_to_default
-    {
-      set_xml_to_default "${STR_SRC_IOMMU_DEFAULT_XML_FILE}"
-    }
-
-  #
   # DESC:   Do parse the IOMMU database.
   # $1:     boolean; if true, skip parse.
   # RETURN: If parse is successful or skipped, return 0. If failed, return 1.
