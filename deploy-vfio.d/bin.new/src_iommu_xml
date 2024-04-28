@@ -257,6 +257,37 @@
     }
 
   #
+  # DESC:   Prompt to specify existing XML file name.
+  # RETURN: If specified file name is blank, return 0.
+  #         If specified file exists, return 0.
+  #         If else, return 1.
+  #
+    function specify_existing_xml_file_prompt
+    {
+      local -r str_output="Enter XML file name (leave blank for default): "
+
+      for int_counter in $( seq 0 2 ); do
+          read -r -p "${str_output}" str_answer
+
+          if ! is_string "${str_answer}" &> /dev/null; then
+            set_xml_to_default
+            return 0
+          fi
+
+          if ! is_file "${str_answer}" \
+            || ! is_file_not_empty "${str_answer}"; then
+            continue
+          fi
+
+          set_xml_file "${str_answer}"
+          return 0
+        done
+
+      print_error_to_log "XML file name is not specified."
+      return 1
+    }
+
+  #
   # DESC:   Parse the IOMMU database from XML file.
   # $1:     does XML file exist.
   # $2:     do parse from XML file.
@@ -296,37 +327,6 @@
       fi
 
       return 0
-    }
-
-  #
-  # DESC:   Prompt to specify existing XML file name.
-  # RETURN: If specified file name is blank, return 0.
-  #         If specified file exists, return 0.
-  #         If else, return 1.
-  #
-    function specify_existing_xml_file_prompt
-    {
-      local -r str_output="Enter XML file name (leave blank for default): "
-
-      for int_counter in $( seq 0 2 ); do
-          read -r -p "${str_output}" str_answer
-
-          if ! is_string "${str_answer}" &> /dev/null; then
-            set_xml_to_default
-            return 0
-          fi
-
-          if ! is_file "${str_answer}" \
-            || ! is_file_not_empty "${str_answer}"; then
-            continue
-          fi
-
-          set_xml_file "${str_answer}"
-          return 0
-        done
-
-      print_error_to_log "XML file name is not specified."
-      return 1
     }
 
 # main logic
