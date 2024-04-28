@@ -70,7 +70,7 @@
   #
     function set_iommu_groups_xml_file_to_default
     {
-      set_iommu_groups_xml_file "${STR_SRC_IOMMU_XML_DEFAULT_XML_FILE}"
+      set_iommu_groups_xml_file "${SRC_IOMMU_XML_STR_DEFAULT_XML_FILE}"
     }
 
 #
