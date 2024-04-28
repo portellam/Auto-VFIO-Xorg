@@ -1,0 +1,351 @@
+#!/bin/false
+
+#
+# Filename:       src_iommu_xml
+# Description:    Parse IOMMU XML file logic.
+# Author(s):      Alex Portell <github.com/portellam>
+# Maintainer(s):  Alex Portell <github.com/portellam>
+#
+
+#
+# sources
+#
+  declare -g SRC_STR_SCRIPT_DIR="/usr/local/bin/"
+  declare -g SRC_STR_SCRIPT_BIN_DIR="${SRC_STR_SCRIPT_DIR}deploy-vfio.d/"
+
+  source "${SRC_STR_SCRIPT_BIN_DIR}src_print"
+
+#
+# setter logic
+#
+  #
+  # DESC: globals
+  #
+    function set_globals
+    {
+      if [[ "${SRC_IOMMU_BOOL_SET_GLOBALS}" == true ]]; then
+        return 0
+      fi
+
+      declare -g SRC_IOMMU_BOOL_SET_GLOBALS=true
+
+      declare -g SRC_IOMMU_BOOL_DO_PARSE_DATABASE=false
+      declare -g SRC_IOMMU_BOOL_DO_PARSE_DATABASE_FROM_XML=false
+      declare -g SRC_IOMMU_BOOL_DO_NOT_PARSE_DATABASE_FROM_XML=false
+      declare -g SRC_IOMMU_BOOL_XML_FILE_IS_SPECIFIED=false
+      declare -g SRC_IOMMU_BOOL_HAS_ARG_PARSE_IOMMU=false
+      declare -g SRC_IOMMU_BOOL_HAS_ARG_PARSE_IOMMU_SELECT_ALL=false
+      declare -g SRC_IOMMU_BOOL_HAS_ARG_PARSE_IOMMU_SELECT_SOME=false
+
+      declare -gr SRC_IOMMU_STR_GET_DEVICES_FOR_IOMMU_GROUP='' + \
+        'ls /sys/kernel/iommu_groups/"${str_iommu_group_id}"/devices/'
+
+      # TODO: determine if this is used?
+      declare -gr SRC_IOMMU_STR_GET_PARSE_FROM_XML='' + \
+        'xmllint "${STR_SRC_IOMMU_XML_FILE}" | grep --invert-match "xml"'
+
+      declare -gA SRC_IOMMU_DICT_DEVICE_DRIVER_XML
+
+      declare -ga SRC_IOMMU_ARR_IOMMU_GROUP_ID=( \
+        $( ls /sys/kernel/iommu_groups/ | sort --numeric-sort )
+      )
+
+      declare -ga SRC_IOMMU_ARR_IOMMU_GROUPS_FOR_HOST \
+        SRC_IOMMU_ARR_IOMMU_GROUPS_FOR_VFIO \
+        SRC_IOMMU_ARR_IOMMU_GROUPS_WITH_VGA_FOR_HOST \
+        SRC_IOMMU_ARR_IOMMU_GROUPS_WITH_VGA_FOR_VFIO
+
+      declare -gr SRC_IOMMU_STR_DEFAULT_XML_FILE="" + \
+        "${ETC_BACKUPS_PATH}parse.xml"
+
+      declare -g SRC_IOMMU_STR_XML_FILE="${SRC_IOMMU_STR_DEFAULT_XML_FILE}"
+    }
+
+  #
+  # DESC:   Set the XML file name. If valid, set the boolean flag accordingly.
+  # $1:     the XML file name as a string.
+  # RETURN: If specified, return 0. If false, return 1.
+  #
+    function set_xml_file
+    {
+      STR_SRC_IOMMU_XML_FILE="${1}"
+
+      if ! is_string "${STR_SRC_IOMMU_XML_FILE}"; then
+        SRC_IOMMU_BOOL_XML_FILE_IS_SPECIFIED=false
+        print_output_to_log "XML file is not specifed."
+        return 1
+      fi
+
+      SRC_IOMMU_BOOL_XML_FILE_IS_SPECIFIED=true
+      print_output_to_log "XML file '${STR_SRC_IOMMU_XML_FILE}' is specifed."
+      return 0
+    }
+
+  #
+  # DESC:   Set the XML file name to default.
+  # $1:     the XML file name as a string.
+  # RETURN: If specified, return 0. If false, return 1.
+  #
+    function set_xml_to_default
+    {
+      set_xml_to_default "${STR_SRC_IOMMU_DEFAULT_XML_FILE}"
+    }
+
+#
+# logic
+#
+  #
+  # DESC:   Export IOMMU database to XML file.
+  # $1:     the XML file name as a string.
+  # RETURN: If export is successful, return 0.
+  #         If else, return 1.
+  #
+    function export_iommu_database_to_xml_file
+    {
+      local -r str_xml_file_name="${1}"
+
+      local -r str_device_tag="device"
+      local -r str_device_driver_tag="driver"
+      local -r str_device_id_tag="device_id"
+      local -r str_iommu_id_tag="iommu_id"
+
+      local -a arr_xml_output=( )
+      local -a arr_devices_output=( )
+
+      for str_iommu_group_id in $( \
+          ls -1v /sys/kernel/iommu_groups/ | \
+          sort --human-numeric-sort
+        ); do
+
+        local -a arr_this_device_output=( )
+
+        local str_line_iommu_id="<${str_iommu_id_tag}>${str_iommu_group_id}" + \
+          "</${str_iommu_id_tag}>"
+
+        for str_device in $( eval "${SRC_IOMMU_STR_GET_DEVICES_FOR_IOMMU_GROUP}" ); do
+          local str_device_driver="$( \
+            lspci -ks ${str_device} | \grep --ignore-case "driver" | \
+            cut --delimiter ' ' --fields 5 \
+          )"
+
+          local str_line_device_id="<${str_device_id_tag}>${str_device}" + \
+            "</${str_device_id_tag}>"
+
+          local str_line_device_driver="<${str_device_driver_tag}>" + \
+            "${str_device_driver}</${str_device_driver_tag}>"
+
+          arr_this_device_output+=(
+            "\t<${str_device_tag}>"
+            "\t\t${str_line_iommu_id}"
+            "\t\t${str_line_device_id}"
+            "\t\t${str_line_device_driver}"
+            "\t</${str_device_tag}>"
+          )
+        done
+
+        arr_devices_output+=( "${arr_this_device_output[@]}" )
+      done
+
+      arr_xml_output=(
+        "<xml>"
+        "${arr_devices_output[@]}"
+        "</xml>"
+      )
+
+      if ! sudo echo -e "${arr_xml_output[*]}" > "${str_xml_file_name}"; then
+        print_error_to_log "Could not write to file '${str_xml_file_name}'."
+        return 1
+      fi
+
+      print_output_to_log "Wrote to file '${str_xml_file_name}'."
+      return 0
+    }
+
+  #
+  # DESC:   Import IOMMU database from XML file.
+  # $1:     the XML file name as a string.
+  # RETURN: If import is successful or skipped, return 0.
+  #         If file does not exist, or is empty, or does not contain valid XML,
+  #         return 1.
+  #
+    function import_iommu_groups_from_xml_file
+    {
+      local -r str_xml_file_name="${1}"
+
+      if ! is_file "${str_xml_file_name}" &> /dev/null; then
+        print_error_to_log "XML file does not exist."
+        return 1
+      fi
+
+      if ! is_file_not_empty "${str_xml_file_name}" &> /dev/null; then
+        print_error_to_log "XML file is empty."
+        return 1
+      fi
+
+      local -i int_counter=1
+
+      while true; do
+        local str_device_id=$( \
+          xmlstarlet select --template --match \
+          "//xml/device[${int_counter}]/str_device_id" --value-of . --nl \
+          "${str_xml_file_name}" | awk 'END {print $1}'
+        )
+
+        local -l str_driver=$( \
+          xmlstarlet select --template --match "//xml/device[${int_counter}]/driver" \
+          --value-of . --nl "${str_xml_file_name}" | awk 'END {print $1}' \
+        )
+
+        if [[ "${str_driver}" == "vfio-pci" ]]; then
+          print_error_to_log "Detected VFIO drivers in XML file."
+          return 1
+        fi
+
+        if ! is_device_id_valid "${str_device_id}" &> /dev/null \
+          || ! is_string "${str_device_id}" &> /dev/null; then
+          break
+        fi
+
+        SRC_IOMMU_DICT_DEVICE_DRIVER_XML+=( ["${str_device_id}"]="${str_driver}" )
+        (( int_counter++ ))
+      done
+
+      if ! is_enum_not_empty "SRC_IOMMU_DICT_DEVICE_DRIVER_XML" &> /dev/null; then
+        print_error_to_log "XML file is empty."
+        return 1
+      fi
+
+      print_output_to_log "Parsed XML file."
+      return 0
+    }
+
+  #
+  # DESC:   Is given XML file valid or not.
+  # $1:     the XML file name as a string.
+  # RETURN: If given XML file is valid, return 0.
+  #         If false, return 1.
+  #
+    function is_xml_file_valid
+    {
+      local -r str_xml_file_name="${1}"
+
+      if ! is_file "${str_xml_file_name}" &> /dev/null; then
+        print_error_to_log "XML file does not exist."
+        return 1
+      fi
+
+      if ! is_file_not_empty "${str_xml_file_name}" &> /dev/null; then
+        print_error_to_log "XML file is empty."
+        return 1
+      fi
+
+      if ! xmllint "${str_xml_file_name}" &> /dev/null; then
+        print_error_to_log "XML file is not valid."
+        return 1
+      fi
+
+      print_output_to_log "XML file is valid."
+      return 0
+    }
+
+  #
+  # DESC:   Parse the IOMMU database from XML file.
+  # $1:     do parse the XML file.
+  # RETURN: If parse is successful or skipped, return 0.
+  #         If failed, return 1.
+  #
+    function parse_iommu_database_from_xml_file
+    {
+      if is_bool "${1}" &> /dev/null \
+        && "${1}"; then
+        SRC_IOMMU_BOOL_DO_PARSE_DATABASE_FROM_XML=false
+        print_output_to_log "Skipped parse of IOMMU groups by XML file."
+        return 0
+      fi
+
+      if ! execute_or_skip_prompt "Cross-reference database with XML file?"; then
+        SRC_IOMMU_BOOL_DO_PARSE_DATABASE_FROM_XML=false
+        return 1
+      fi
+
+      SRC_IOMMU_BOOL_DO_PARSE_DATABASE_FROM_XML=true
+      return 0
+    }
+
+  #
+  # DESC:   Parse the IOMMU database from XML file.
+  # $1:     does XML file exist.
+  # $2:     do parse from XML file.
+  # RETURN: If file is specified and selected, return 0.
+  #         If false, return 1.
+  #
+    function specify_xml_file
+    {
+      local bool_does_xml_file_exist \
+        bool_do_parse_from_xml_file
+
+      if ! is_bool "${1}" &> /dev/null; then
+        bool_does_xml_file_exist=false
+      fi
+
+      if ! is_bool "${2}" &> /dev/null; then
+        bool_do_parse_from_xml_file=false
+      fi
+
+      if "${bool_does_xml_file_exist}" \
+        && "${bool_do_parse_from_xml_file}"; then
+        print_output_to_log "An XML file is specified and selected to be parsed."
+        return 0
+      fi
+
+      if ! "${var_does_xml_file_exist}" \
+        && ! "${var_do_parse_from_xml_file}"; then
+        set_xml_file "${SRC_IOMMU_STR_DEFAULT_XML_FILE}"
+        print_output_to_log "The default XML file is selected to be parsed."
+        return 0
+      fi
+
+      print_output_to_log "XML file name is not specified."
+
+      if ! specify_existing_xml_file_prompt; then
+        return 1
+      fi
+
+      return 0
+    }
+
+  #
+  # DESC:   Prompt to specify existing XML file name.
+  # RETURN: If specified file name is blank, return 0.
+  #         If specified file exists, return 0.
+  #         If else, return 1.
+  #
+    function specify_existing_xml_file_prompt
+    {
+      local -r str_output="Enter XML file name (leave blank for default): "
+
+      for int_counter in $( seq 0 2 ); do
+          read -r -p "${str_output}" str_answer
+
+          if ! is_string "${str_answer}" &> /dev/null; then
+            set_xml_to_default
+            return 0
+          fi
+
+          if ! is_file "${str_answer}" \
+            || ! is_file_not_empty "${str_answer}"; then
+            continue
+          fi
+
+          set_xml_file "${str_answer}"
+          return 0
+        done
+
+      print_error_to_log "XML file name is not specified."
+      return 1
+    }
+
+# main logic
+#
+  set_globals
+  unset set_globals
