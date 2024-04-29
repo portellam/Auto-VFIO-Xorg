@@ -9,12 +9,13 @@
 
 #
 # TODO:
-# - [ ] migrate logic and params into separate source files.
+# - [x] migrate logic and params into separate source files.
 # - [ ] rename params.
 # - [ ] double-check external class params are named properly.
 # - [ ] refactor.
-# - [ ] add comments.
+# - [x] add comments.
 # - [ ] add bools?
+# - [ ] test.
 #
 
 #
