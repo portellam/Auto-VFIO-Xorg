@@ -29,6 +29,7 @@
     {
       local -r str_device="${1}"
       local -n ref="${2}"
+
       ref="$( lspci -ms ${str_device} | cut --delimiter '"' --fields 2 )"
     }
 
@@ -89,45 +90,48 @@
     }
 
   #
-  # DESC:   
-  # $1:     
-  # $2:     
-  # RETURN: 
+  # DESC:   Get device hardware ID.
+  # $1:     the device info as a string.
+  # $2:     the reference variable.
+  # RETURN: If device hardware ID is found, return 0.
+  #         If not, return 1.
   #
     function get_device_hardware_id
     {
-      local -r device="${1}"
-      local -n reference="${2}"
+      local -r str_device="${1}"
+      local -n ref="${2}"
 
-      reference="$( lspci -ns ${device} | cut --delimiter ' ' --fields 3 )"
+      ref="$( lspci -ns ${str_device} | cut --delimiter ' ' --fields 3 )"
     }
 
   #
-  # DESC:   
-  # $1:     
-  # $2:     
-  # RETURN: 
+  # DESC:   Get device name.
+  # $1:     the device info as a string.
+  # $2:     the reference variable.
+  # RETURN: If device name is found, return 0.
+  #         If not, return 1.
   #
     function get_device_name
     {
-      local -r device="${1}"
-      local -n reference="${2}"
+      local -r str_device="${1}"
+      local -n ref="${2}"
 
-      reference="$( lspci -ms ${device}  | cut --delimiter '"' --fields 6 )"
+      ref="$( lspci -ms ${str_device}  | cut --delimiter '"' --fields 6 )"
     }
 
   #
-  # DESC:   
-  # $1:     
-  # $2:     
-  # RETURN: 
+  # DESC:   Get device vendor.
+  # $1:     the device info as a string.
+  # $2:     the reference variable.
+  # RETURN: If device vendor is found, return 0.
+  #         If not, return 1.
   #
     function get_device_vendor
     {
-      local -r device="${1}"
-      local -n reference="${2}"
+      local -r str_device="${1}"
+      local -n ref="${2}"
 
-      reference="$( lspci -ms ${device} | cut --delimiter '"' --fields 4 )"
+      ref="$( lspci -ms ${str_device} | cut --delimiter '"' --fields 4 )"
     }
 
   #
