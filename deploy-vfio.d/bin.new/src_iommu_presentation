@@ -29,13 +29,16 @@
 #
   #
   # DESC:   Determine if any devices are reserved for Host machine.
+  # $1:     the array of reserved IOMMU groups for Host machine as a reference.
+  # $2:     the array of reserved IOMMU groups with VGA for Host machine as a
+  #         reference.
   # RETURN: If more than one device is reserved for the Host machine, return 0.
   #         If none are reserved, return 1.
   #
-    function src_iommu_check_if_host_has_reserved_devices
+    function check_if_host_has_reserved_devices
     {
-      if ! is_enum_not_empty "SRC_IOMMU_ARR_IOMMU_GROUPS_FOR_HOST" &> /dev/null \
-        && ! is_enum_not_empty "SRC_IOMMU_ARR_IOMMU_GROUPS_WITH_VGA_FOR_HOST" &> /dev/null; then
+      if ! is_enum_not_empty "${1}" &> /dev/null \
+        && ! is_enum_not_empty "${2}" &> /dev/null; then
         print_error_to_log "No devices reserved for Host machine."
         return 1
       fi
@@ -46,13 +49,15 @@
 
   #
   # DESC:   Determine if any devices are reserved for VFIO.
+  # $1:     the array of reserved IOMMU groups for VFIO as a reference.
+  # $2:     the array of reserved IOMMU groups with VGA for VFIO as a reference.
   # RETURN: If more than one is reserved for VFIO, return 0.
   #         If none are reserved, return 1.
   #
-    function src_iommu_check_if_vfio_has_reserved_devices
+    function check_if_vfio_has_reserved_devices
     {
-      if ! is_enum_not_empty "SRC_IOMMU_ARR_IOMMU_GROUPS_FOR_VFIO" &> /dev/null \
-        && ! is_enum_not_empty "SRC_IOMMU_ARR_IOMMU_GROUPS_WITH_VGA_FOR_VFIO" &> /dev/null; then
+      if ! is_enum_not_empty "${1}" &> /dev/null \
+        && ! is_enum_not_empty "${2}" &> /dev/null; then
         print_error_to_log "No devices reserved for VFIO."
         return 1
       fi
@@ -63,56 +68,56 @@
 
   #
   # DESC:   Reserve the given IOMMU group for the Host machine.
-  # $1:     the IOMMU group ID as an int.
+  # $1:     the array of reserved IOMMU groups for Host machine as a reference.
+  # $2:     the array of reserved IOMMU groups with VGA for Host machine as a
+  #         reference.
+  # $3:     the IOMMU group ID as an int.
   # RETURN: If IOMMU group ID is valid, return 0.
   #         If not valid, return 1.
   #
-    function src_iommu_do_reserve_iommu_group_for_host
+    function do_reserve_iommu_group_for_host
     {
-      if ! is_valid_iommu_group_id "${1}"; then
-        return 1
-      fi
-
-      local -ir int_iommu_group_id="${1}"
+      local -n arr_iommu_groups_for_host="${1}"
+      local -n arr_iommu_groups_with_vga_for_host="${2}"
+      local -ir int_iommu_group_id="${3}"
+      arr_iommu_groups_for_host+=( "${int_iommu_group_id}" )
 
       if does_iommu_group_have_external_devices "${int_iommu_group_id}"; then
         return 1
       fi
 
       if ! does_iommu_group_have_vga_device "${int_iommu_group_id}" &> /dev/null; then
-        SRC_IOMMU_ARR_IOMMU_GROUPS_FOR_HOST+=( "${int_iommu_group_id}" )
+        arr_iommu_groups_for_host+=( "${int_iommu_group_id}" )
       else
-        SRC_IOMMU_ARR_IOMMU_GROUPS_WITH_VGA_FOR_HOST+=( "${int_iommu_group_id}" )
+        arr_iommu_groups_with_vga_for_host+=( "${int_iommu_group_id}" )
       fi
 
-      print_output_to_log "Reserved IOMMU group '${int_iommu_group_id}' "\
-          "for Host machine."
+      print_output_to_log "Reserved IOMMU group '${int_iommu_group_id}' for Host "\
+        "machine."
 
       return 0
     }
 
   #
   # DESC:   Reserve the given IOMMU group for VFIO.
-  # $1:     the IOMMU group ID as an int.
+  # $1:     the array of reserved IOMMU groups for VFIO as a reference.
+  # $2:     the array of reserved IOMMU groups with VGA for VFIO as a reference.
+  # $3:     the IOMMU group ID as an int.
   # RETURN: If IOMMU group ID is valid, return 0.
   #         If not valid, return 1.
   #
-    function src_iommu_do_reserve_iommu_group_for_vfio
+    function do_reserve_iommu_group_for_vfio
     {
-      if ! is_valid_iommu_group_id "${1}"; then
-        return 1
-      fi
-
-      local -ir int_iommu_group_id="${1}"
-      SRC_IOMMU_ARR_IOMMU_GROUPS_FOR_VFIO+=( "${int_iommu_group_id}" )
+      local -n arr_iommu_groups_for_vfio="${1}"
+      local -n arr_iommu_groups_with_vga_for_vfio="${2}"
+      local -ir int_iommu_group_id="${3}"
+      arr_iommu_groups_for_vfio+=( "${int_iommu_group_id}" )
 
       if does_iommu_group_have_vga_device "${int_iommu_group_id}" &> /dev/null; then
-        SRC_IOMMU_ARR_IOMMU_GROUPS_WITH_VGA_FOR_VFIO+=( "${int_iommu_group_id}" )
+        arr_iommu_groups_with_vga_for_vfio+=( "${int_iommu_group_id}" )
       fi
 
-      print_output_to_log "Reserved IOMMU group '${int_iommu_group_id}' "\
-        "for VFIO."
-
+      print_output_to_log "Reserved IOMMU group '${int_iommu_group_id}' for VFIO."
       return 0
     }
 
@@ -123,9 +128,10 @@
   # $3:     the array of reserved IOMMU groups with VGA for Host as a reference.
   # $4:     the array of reserved IOMMU groups for VFIO as a reference.
   # $5:     the array of reserved IOMMU groups with VGA for VFIO as a reference.
-  # RETURN: Always return 0.
+  # RETURN: If one or more arrays are not valid, return 1.
+  #         Else, return 0.
   #
-    function src_iommu_do_select_iommu_group_collection
+    function do_select_iommu_group_collection
     {
       if ! is_array "${1}"; then
         print_error_to_log "Missing array reference for IOMMU group IDs."
@@ -133,12 +139,14 @@
       fi
 
       if ! is_array "${2}"; then
-        print_error_to_log "Missing array reference for Host IOMMU groups."
+        print_error_to_log "Missing array reference for Host machine IOMMU groups."
         return 1
       fi
 
       if ! is_array "${3}"; then
-        print_error_to_log "Missing array reference for Host IOMMU groups with VGA."
+        print_error_to_log "Missing array reference for Host machine IOMMU groups "\
+          "with VGA."
+
         return 1
       fi
 
@@ -162,6 +170,11 @@
       echo
 
       for int_iommu_group_id in ${arr_iommu_group_id[@]}; do
+        if ! is_valid_iommu_group_id "${1}"; then
+          continue
+        fi
+
+        print_iommu_group "${int_iommu_group_id}"
         do_select_iommu_group_prompt "${int_iommu_group_id}"
       done
 
@@ -171,11 +184,15 @@
   #
   # DESC:   Select or not select a given IOMMU group.
   # $1:     the IOMMU group ID as an int.
-  # $2:     do select the IOMMU group.
+  # $2:     the array of reserved IOMMU groups for Host as a reference.
+  # $3:     the array of reserved IOMMU groups with VGA for Host as a reference.
+  # $4:     the array of reserved IOMMU groups for VFIO as a reference.
+  # $5:     the array of reserved IOMMU groups with VGA for VFIO as a reference.
+  # $6:     do select the IOMMU group.
   # RETURN: If IOMMU group ID is valid, return 0.
   #         If not valid, return 1.
   #
-    function src_iommu_do_select_iommu_group_prompt
+    function do_select_iommu_group_prompt
     {
       if ! is_valid_iommu_group_id "${1}"; then
         return 1
@@ -184,7 +201,7 @@
       local -ir int_iommu_group_id="${1}"
       local bool_do_select=false
 
-      if ! is_bool "${2}" &> /dev/null; then
+      if ! is_bool "${6}" &> /dev/null; then
         if ! ask_yes_or_no "Select IOMMU group "\
           "${SRC_PRINT_STR_SET_COLOR_YELLOW}${int_iommu_group_id}"\
           "${SRC_PRINT_STR_RESET_COLOR}?"; then
@@ -197,9 +214,9 @@
       fi
 
       if "${bool_do_select}"; then
-        do_reserve_iommu_group_for_vfio "${int_iommu_group_id}"
+        do_reserve_iommu_group_for_vfio "${int_iommu_group_id}" "${4}" "${5}"
       else
-        do_reserve_iommu_group_for_host "${int_iommu_group_id}"
+        do_reserve_iommu_group_for_host "${int_iommu_group_id}" "${2}" "${3}"
       fi
 
       echo
@@ -212,13 +229,25 @@
   # RETURN: If the IOMMU group ID is an int and between 0 and the max value, return 0.
   #         If else, return 1.
   #
-  function src_iommu_is_valid_iommu_group_id
+  function is_valid_iommu_group_id
   {
+    if ! is_valid_iommu_group_id "${int_iommu_group_id}"; then
+        return 1
+    fi
+
+    local -ar arr_devices="$( \
+      ls "/sys/kernel/iommu_groups/${int_iommu_group_id}" \
+    )"
+
+    local -i int_last_iommu_group_id="$( \
+      ls "/sys/kernel/iommu_groups/" | sort --numeric-sort --reverse | head --lines 1
+    )"
+
     if ! is_int "${1}" &> /dev/null \
       || [[ "${1}" -lt 0 ]] \
-      || [[ "${1}" -gt "${SRC_IOMMU_ARR_IOMMU_GROUP_ID[-1]}" ]]; then
+      || [[ "${1}" -gt "${int_last_iommu_group_id}" ]]; then
       print_error_to_log "Not a valid IOMMU group ID. Values must be between '0' "\
-        "and '${SRC_IOMMU_ARR_IOMMU_GROUP_ID[-1]}'."
+        "and '${int_last_iommu_group_id}'."
 
       return 1
     fi
@@ -232,14 +261,17 @@
   # RETURN: If IOMMU group ID is valid, return 0.
   #         If not valid, return 1.
   #
-    function src_iommu_print_iommu_group
+    function print_iommu_group
     {
       if ! is_valid_iommu_group_id "${1}"; then
         return 1
       fi
 
       local -ir int_iommu_group_id="${1}"
-      local -ar arr_devices="$( eval "${SRC_IOMMU_STR_GET_DEVICES_FOR_IOMMU_GROUP}" )"
+
+      local -ar arr_devices="$( \
+        ls "/sys/kernel/iommu_groups/${int_iommu_group_id}/devices/" \
+      )"
 
       for str_device in ${arr_devices[@]}; do
         is_device_external "${str_device}" && \
@@ -254,7 +286,7 @@
   # $1:     the device info as a string
   # RETURN: If device info is not null, return 0. If null, return 1.
   #
-    function src_iommu_print_iommu_group_device
+    function print_iommu_group_device
     {
       local -r str_device="${1}"
 
