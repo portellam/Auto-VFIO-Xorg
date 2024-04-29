@@ -1,7 +1,7 @@
 #!/bin/false
 
 #
-# Filename:       src_iommu_parse
+# Filename:       src_iommu_device_getters
 # Description:    Getters for IOMMU group device information.
 # Author(s):      Alex Portell <github.com/portellam>
 # Maintainer(s):  Alex Portell <github.com/portellam>
