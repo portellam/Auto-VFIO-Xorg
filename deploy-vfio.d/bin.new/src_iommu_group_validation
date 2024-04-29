@@ -1,0 +1,400 @@
+#!/bin/false
+
+#
+# Filename:       src_iommu_group_validation
+# Description:    Logic to validate IOMMU groups.
+# Author(s):      Alex Portell <github.com/portellam>
+# Maintainer(s):  Alex Portell <github.com/portellam>
+#
+
+#
+# TODO:
+# - [ ] rename params.
+# - [ ] double-check external class params are named properly.
+# - [ ] refactor.
+# - [ ] add comments.
+#
+
+#
+# sources
+#
+  declare -g SRC_STR_SCRIPT_DIR="/usr/local/bin/"
+  declare -g SRC_STR_SCRIPT_BIN_DIR="${SRC_STR_SCRIPT_DIR}deploy-vfio.d/"
+
+  source "${SRC_STR_SCRIPT_BIN_DIR}src_print"
+  source "${SRC_STR_SCRIPT_BIN_DIR}src_iommu_device_validation"
+  source "${SRC_STR_SCRIPT_BIN_DIR}src_iommu_xml"
+
+#
+# setter logic
+#
+  #
+  # DESC: globals
+  #
+    function set_globals
+    {
+      if [[ "${SRC_IOMMU_GROUP_VALIDATION_BOOL_SET_GLOBALS}" == true ]]; then
+        return 0
+      fi
+
+      declare -g SRC_IOMMU_GROUP_VALIDATION_BOOL_SET_GLOBALS=true
+
+      declare -gr SRC_IOMMU_GROUP_VALIDATION_STR_GET_PARSE_FROM_XML='' + \
+        'xmllint "${STR_SRC_IOMMU_XML_FILE}" | grep --invert-match "xml"'
+
+      declare -ga SRC_IOMMU_GROUP_VALIDATION_ARR_IOMMU_GROUP_ID=( \
+        $( ls /sys/kernel/iommu_groups/ | sort --numeric-sort ) \
+      )
+
+      declare -gr SRC_IOMMU_GROUP_VALIDATION_STR_REGEX_NUMS_RANGE='^[0-9]+[-][0-9]+$'
+    }
+
+#
+# logic
+#
+  #
+  # DESC:   Does Host machine not have an existing VFIO setup.
+  # RETURN: If true, return 0.
+  #         If false, return 1.
+  #
+    function does_host_not_have_existing_vfio_setup
+    {
+      for int_iommu_group_id in \
+        ${SRC_IOMMU_GROUP_VALIDATION_ARR_IOMMU_GROUP_ID[@]}; do
+        if ! is_iommu_group_not_binded_to_vfio "${int_iommu_group_id}"; then
+          print_error_to_log "Detected existing VFIO setup."
+          return 1
+        fi
+      done
+    }
+
+  # TODO: add ref to enum here!
+
+  #
+  # DESC:   
+  # $1:     
+  # $2:     
+  # RETURN: 
+  #
+    function add_iommu_group_to_enum
+    {
+      if ! is_valid_iommu_group_id "${1}"; then
+        return 1
+      fi
+
+      local -ir int_iommu_group_id="${1}"
+
+      if does_iommu_group_have_external_devices "${int_iommu_group_id}"; then
+        add_iommu_group_to_vfio_enum "${int_iommu_group_id}"
+      else
+        add_iommu_group_to_host_enum "${int_iommu_group_id}"
+      fi
+    }
+
+  # TODO: add ref to enum here!
+
+  #
+  # DESC:   
+  # $1:     
+  # $2:     
+  # RETURN: 
+  #
+    function add_iommu_group_to_host_enum
+    {
+      if ! is_valid_iommu_group_id "${1}"; then
+        return 1
+      fi
+
+      local -ir int_iommu_group_id="${1}"
+
+      if does_iommu_group_have_vga_device "${int_iommu_group_id}" &> /dev/null; then
+        IOMMU_GROUPS_WITH_VGA_FOR_HOST_ENUM+=( "${int_iommu_group_id}" )
+      fi
+
+      IOMMU_GROUPS_FOR_HOST_ENUM+=( "${int_iommu_group_id}" )
+    }
+
+  # TODO: add ref to enum here!
+
+
+  #
+  # DESC:   
+  # $1:     
+  # $2:     
+  # RETURN: 
+  #
+    function add_iommu_group_to_vfio_enum
+    {
+      if ! is_valid_iommu_group_id "${1}"; then
+        return 1
+      fi
+
+      local -ir int_iommu_group_id="${1}"
+
+      if does_iommu_group_have_vga_device "${int_iommu_group_id}" &> /dev/null; then
+        IOMMU_GROUPS_WITH_VGA_FOR_VFIO_ENUM+=( "${int_iommu_group_id}" )
+      fi
+
+      IOMMU_GROUPS_FOR_VFIO_ENUM+=( "${int_iommu_group_id}" )
+    }
+
+  # TODO: add ref to enum here!
+
+  #
+  # DESC:   
+  # $1:     
+  # $2:     
+  # RETURN: 
+  #
+    function add_iommu_group_to_enum_if_not_specified
+    {
+      if ! is_valid_iommu_group_id "${1}"; then
+        return 1
+      fi
+
+      local -ir int_iommu_group_id="${1}"
+
+      for this_iommu_group_id in ${SRC_IOMMU_GROUP_VALIDATION_ARR_IOMMU_GROUP_ID[@]}; do
+        if [[ "${this_iommu_group_id}" -eq "${int_iommu_group_id}" ]]; then
+          add_iommu_group_to_vfio_enum "${int_iommu_group_id}"
+        else
+          add_iommu_group_to_host_enum "${int_iommu_group_id}"
+        fi
+      done
+    }
+
+  # TODO: add ref to enum here!
+
+  #
+  # DESC:   
+  # $1:     
+  # $2:     
+  # RETURN: 
+  #
+    function add_some_iommu_groups_to_parsed_enum
+    {
+      local -ar iommu_groups_temp_enum
+      local -ir int_iommu_group_id="${1}"
+      is_iommu_group_id_parsable "${int_iommu_group_id}" "iommu_groups_temp_enum" || return 1
+      iommu_groups_temp_enum=( $( sort --human-numeric-sort --unique <<<"${iommu_groups_temp_enum[*]}" ) )
+
+      for iommu_group_id in ${iommu_groups_temp_enum[@]}; do
+        add_iommu_group_to_enum_if_not_specified "${int_iommu_group_id}"
+      done
+    }
+
+  # TODO: add ref to enum here!
+
+  #
+  # DESC:   
+  # $1:     
+  # $2:     
+  # RETURN: 
+  #
+    function add_all_valid_iommu_groups_to_parsed_enum
+    {
+      for iommu_group_id in ${SRC_IOMMU_GROUP_VALIDATION_ARR_IOMMU_GROUP_ID[@]}; do
+        add_iommu_group_to_enum "${int_iommu_group_id}"
+      done
+    }
+
+  # TODO: add ref to enum here!
+
+  #
+  # DESC:   
+  # $1:     
+  # $2:     
+  # RETURN: 
+  #
+    function add_all_valid_iommu_groups_without_vga_to_parsed_enum
+    {
+      for iommu_group_id in ${SRC_IOMMU_GROUP_VALIDATION_ARR_IOMMU_GROUP_ID[@]}; do
+        if does_iommu_group_have_vga_device "${int_iommu_group_id}" &> /dev/null; then
+          add_iommu_group_to_host_enum "${int_iommu_group_id}"
+        else
+          add_iommu_group_to_vfio_enum "${int_iommu_group_id}"
+        fi
+      done
+    }
+
+  #
+  # DESC:   Does IOMMU group contain any external devices.
+  # $1:     the IOMMU group ID as an int.
+  # RETURN: If IOMMU group contains one or more external devices, return 0.
+  #         If not, return 1.
+  #
+    function does_iommu_group_have_external_devices
+    {
+      if ! is_valid_iommu_group_id "${1}"; then
+        return 1
+      fi
+
+      local -ir int_iommu_group_id="${1}"
+
+      local -ar arr_devices="$( \
+        eval "${SRC_IOMMU_PARSE_STR_GET_DEVICES_FOR_IOMMU_GROUP}" \
+      )"
+
+      for str_device in ${arr_devices[@]}; do
+        if is_device_external "${str_device}"; then
+          return 0
+        fi
+      done
+
+      return 1
+    }
+
+  #
+  # DESC:   Does IOMMU group contain any VGA devices.
+  # $1:     the IOMMU group ID as an int.
+  # RETURN: If IOMMU group contains one or more VGA devices, return 0.
+  #         If not, return 1.
+  #
+    function does_iommu_group_have_vga_device
+    {
+      if ! is_valid_iommu_group_id "${1}"; then
+        return 1
+      fi
+
+      local -ir int_iommu_group_id="${1}"
+
+      local -ar arr_devices="$( \
+        eval "${SRC_IOMMU_PARSE_STR_GET_DEVICES_FOR_IOMMU_GROUP}" \
+      )"
+
+      for str_device in ${arr_devices[@]}; do
+        if is_device_vga "${str_device}"; then
+          return 0
+        fi
+      done
+
+      print_error_to_log "Please enter a valid IOMMU group ID which contains one "\
+        "or more VGA devices."
+
+      return 1
+    }
+
+  #
+  # DESC:   Is IOMMU group ID parsable.
+  # $1:     the IOMMU group ID range as a string or the IOMMU group ID as an int.
+  # $2:     the reference of an array of IOMMU group IDs.
+  # RETURN: If IOMMU group ID(s) can be parsed, return 0.
+  #         If not, return 1.
+  #
+    function is_iommu_group_id_parsable
+    {
+      if ! is_enum "${2}" &> /dev/null; then
+        print_error_to_log "Missing reference to array of IOMMU group IDs."
+        return 1
+      fi
+
+      local -n ref_arr_iommu_groups="${2}"
+      local -i int_iommu_group_id=0
+      local str_iommu_group_id_range=""
+
+      if is_valid_iommu_group_id "${1}" &> /dev/null; then
+        int_iommu_group_id="${1}"
+      else
+        str_iommu_group_id_range="${1}"
+      fi
+
+      if echo "${1}" | \
+        grep --extended-regexp --quiet \
+        "${SRC_IOMMU_GROUP_VALIDATION_STR_REGEX_NUMS_RANGE}"; then
+        local -i int_range_start=$( echo "${str_iommu_group_id_range}" | cut --delimiter '-' --fields 1 )
+        local -i int_range_stop=$( echo "${str_iommu_group_id_range}" | cut --delimiter '-' --fields 2 )
+
+        if ! is_valid_iommu_group_id "${int_range_start}" \
+          || ! is_valid_iommu_group_id "${int_range_stop}"; then
+          print_error_to_log "Invalid IOMMU group ID range."
+          return 1
+        fi
+
+        ref_arr_iommu_groups+=( $( seq "${range_start}" "${range_stop}" ) )
+
+      elif is_int "${int_iommu_group_id}" &> /dev/null; then
+        if ! is_valid_iommu_group_id "${int_iommu_group_id}"; then
+          print_error_to_log "Cannot parse IOMMU group ID '${int_iommu_group_id}'."
+          return 1
+        fi
+
+        ref_arr_iommu_groups+=( "${int_iommu_group_id}" )
+
+      else
+        print_error_to_log "Invalid IOMMU group ID(s)."
+        return 1
+      fi
+    }
+
+  #
+  # DESC:   Are all devices within IOMMU group not binded to VFIO.
+  # $1:     the IOMMU group ID as an int.
+  # RETURN: If all devices are not binded to VFIO, return 0.
+  #         If any device is binded to VFIO, return 1.
+  #
+    function is_iommu_group_not_binded_to_vfio
+    {
+      if ! is_valid_iommu_group_id "${1}"; then
+        return 1
+      fi
+
+      local -ir int_iommu_group_id="${1}"
+
+      local -ar arr_devices="$( \
+        eval "${SRC_IOMMU_PARSE_STR_GET_DEVICES_FOR_IOMMU_GROUP}" \
+      )"
+
+      for str_device in ${arr_devices[@]}; do
+        if is_device_not_binded_to_vfio "${str_device}"; then
+          return 1
+        fi
+      done
+
+      return 0
+    }
+
+  #
+  # DESC:   Is IOMMU group ID valid.
+  # $1:     the IOMMU group ID as an int.
+  # RETURN: If the IOMMU group ID is an int and between 0 and the max value, return 0.
+  #         If else, return 1.
+  #
+  function is_valid_iommu_group_id
+  {
+    local -i int_last_iommu_group_id="$( \
+      ls "/sys/kernel/iommu_groups/" | sort --numeric-sort --reverse | head --lines 1
+    )"
+
+    if ! is_int "${1}" &> /dev/null \
+      || [[ "${1}" -lt 0 ]] \
+      || [[ "${1}" -gt "${int_last_iommu_group_id}" ]]; then
+      print_error_to_log "Not a valid IOMMU group ID. Values must be between '0' "\
+        "and '${int_last_iommu_group_id}'."
+
+      return 1
+    fi
+
+    return 0
+  }
+
+  #
+  # DESC:   
+  # $1:     
+  # $2:     
+  # RETURN: 
+  #
+    function is_valid_array_of_iommu_groups
+    {
+      is_enum "${1}" &> /dev/null || return 1
+      local -n ref="${1}"
+
+      for int_value in ${ref[@]}; do
+        is_int "${int_value}" &> /dev/null || return 1
+      done
+    }
+
+#
+# main logic
+#
+  set_globals
+  unset set_globals
