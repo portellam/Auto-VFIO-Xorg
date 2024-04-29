@@ -15,6 +15,7 @@
 
   source "${SRC_STR_SCRIPT_BIN_DIR}src_print"
   source "${SRC_STR_SCRIPT_BIN_DIR}src_iommu_device_getters"
+  source "${SRC_STR_SCRIPT_BIN_DIR}src_iommu_group_validation"
 
 #
 # logic
