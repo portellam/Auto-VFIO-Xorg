@@ -32,8 +32,6 @@
       declare -g SRC_IOMMU_XML_BOOL_DO_PARSE_IOMMU_GROUPS_FROM_XML_FILE=false
       declare -g SRC_IOMMU_XML_BOOL_XML_FILE_IS_SPECIFIED=false
 
-
-
       declare -gA SRC_IOMMU_XML_DICT_DEVICE_DRIVERS_FROM_XML_FILE
 
       declare -gr SRC_IOMMU_XML_STR_DEFAULT_XML_FILE=""\
@@ -182,8 +180,10 @@
         arr_devices_output+=( "${arr_this_device_output[@]}" )
       done
 
+      local -r str_xml_tag="xml"
+
       arr_xml_output=(
-        "<xml>"
+        "<${str_xml_tag}>"
         "${arr_devices_output[@]}"
         "</xml>"
       )
