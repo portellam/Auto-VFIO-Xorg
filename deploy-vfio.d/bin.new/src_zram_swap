@@ -8,6 +8,12 @@
 #
 
 #
+# TODO:
+# - [ ] develop.
+# - [ ] test.
+#
+
+#
 # sources
 #
   declare -g SRC_STR_SCRIPT_DIR="/usr/local/bin/"
@@ -20,7 +26,8 @@
 #
   #
   # DESC:   Checks if git repo exists.
-  # RETURN: If repo exists, return 0. If false, return 1.
+  # RETURN: If repo exists, return 0.
+  #         If not, return 1.
   #
     function does_zram_swap_repo_exist
     {
@@ -30,7 +37,9 @@
     }
 
     #
-    # DESC: Install ZRAM Swap
+    # DESC:   Install ZRAM Swap
+    # RETURN: If ZRAM Swap installed successfully, return 0.
+    #         If not, return 1.
     #
       function install_zram_swap
       {
@@ -58,8 +67,10 @@
       }
 
     #
-    # DESC: Get ZRAM Swap fraction size.
-    # $1:   the fraction as a string
+    # DESC:   Get ZRAM Swap fraction size.
+    # $1:     the fraction as a string
+    # RETURN: If ZRAM Swap fraction size is valid, return 0.
+    #         If not, return 1.
     #
       function get_zram_swap_fraction
       {
@@ -107,8 +118,10 @@
       }
 
     #
-    # DESC  : Get ZRAM Swap value by user input.
-    # $1    : the variable pointer
+    # DESC:   Get ZRAM Swap value by user input.
+    # $1:     the variable pointer
+    # RETURN: If ZRAM Swap value is valid, return 0.
+    #         If not, return 1.
     #
       function get_zram_swap_fraction_prompt
       {
@@ -135,8 +148,9 @@
       }
 
     #
-    # DESC    : Get ZRAM Swap size.
-    # RETURN  : '0' if there exists free host memory, '1' if not.
+    # DESC:   Get ZRAM Swap size.
+    # RETURN: If there exists free host memory, return 0.
+    #         If not, return 1.
     #
       function is_host_memory_sufficient_for_zram_swap
       {
@@ -148,7 +162,8 @@
 
     #
     # DESC:   Modify configuration files for ZRAM Swap.
-    # RETURN: '0' if output is valid and file is written, '1' if not.
+    # RETURN: If output is valid and file is written, return 0.
+    #         If not, return 1.
     #
       function modify_zram_swap_configuration
       {
@@ -197,6 +212,11 @@
         fi
       }
 
+  #
+  # DESC:   Checks if git repo exists.
+  # RETURN: If repo exists, return 0.
+  #         If not, return 1.
+  #
       function reset_zram_swap_devices
       {
         if ! "${POST_SETUP_HAS_ARG_ZRAM_SWAP_FORCE}" \
