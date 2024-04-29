@@ -20,8 +20,8 @@
 #
   #
   # DESC:   Get the given enum as a comma-delimited string.
-  # $1:     the pointer of the enum
-  # $2:     the pointer of the delimited string
+  # $1:     the enum as a reference
+  # $2:     the delimited string as a reference
   # RETURN: If true return 0. If false return 1.
   #
     function get_comma_delimited_string_from_enum
@@ -42,7 +42,7 @@
 
   #
   # DESC:   Is input a bool.
-  # $1:     the input
+  # $1:     the input as a bool
   # RETURN: If true return 0. If false return 1.
   #
     function is_bool
@@ -60,7 +60,7 @@
 
   #
   # DESC:   Is reference variable an enum.
-  # $1:     the pointer
+  # $1:     the enum as a reference
   # RETURN: If true return 0. If false return 1.
   #
     function is_enum
@@ -77,7 +77,7 @@
 
   #
   # DESC:   Is reference variable a non-empty enum.
-  # $1:     the pointer
+  # $1:     the enum as a reference
   # RETURN: If true return 0. If false return 1.
   #
     function is_enum_not_empty
@@ -97,7 +97,7 @@
 
   #
   # DESC:   Is input an int.
-  # $1:     the input
+  # $1:     the input as an int
   # RETURN: If true return 0. If false return 1.
   #
     function is_int
@@ -113,7 +113,7 @@
 
   #
   # DESC:   Is input a string.
-  # $1:     the input
+  # $1:     the input as a string
   # RETURN: If true return 0. If false return 1.
   #
     function is_string
