@@ -8,14 +8,6 @@
 #
 
 #
-# TODO:
-# - [x] rename params.
-# - [x] refactor.
-# - [x] add comments.
-#
-
-
-#
 # sources
 #
   declare -g SRC_STR_SCRIPT_DIR="/usr/local/bin/"
