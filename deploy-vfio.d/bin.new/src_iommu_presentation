@@ -32,7 +32,7 @@
   # RETURN: If more than one device is reserved for the Host machine, return 0.
   #         If none are reserved, return 1.
   #
-    function check_if_host_has_reserved_devices
+    function src_iommu_check_if_host_has_reserved_devices
     {
       if ! is_enum_not_empty "SRC_IOMMU_ARR_IOMMU_GROUPS_FOR_HOST" &> /dev/null \
         && ! is_enum_not_empty "SRC_IOMMU_ARR_IOMMU_GROUPS_WITH_VGA_FOR_HOST" &> /dev/null; then
@@ -49,7 +49,7 @@
   # RETURN: If more than one is reserved for VFIO, return 0.
   #         If none are reserved, return 1.
   #
-    function check_if_vfio_has_reserved_devices
+    function src_iommu_check_if_vfio_has_reserved_devices
     {
       if ! is_enum_not_empty "SRC_IOMMU_ARR_IOMMU_GROUPS_FOR_VFIO" &> /dev/null \
         && ! is_enum_not_empty "SRC_IOMMU_ARR_IOMMU_GROUPS_WITH_VGA_FOR_VFIO" &> /dev/null; then
@@ -67,7 +67,7 @@
   # RETURN: If IOMMU group ID is valid, return 0.
   #         If not valid, return 1.
   #
-    function do_reserve_iommu_group_for_host
+    function src_iommu_do_reserve_iommu_group_for_host
     {
       if ! is_valid_iommu_group_id "${1}"; then
         return 1
@@ -97,7 +97,7 @@
   # RETURN: If IOMMU group ID is valid, return 0.
   #         If not valid, return 1.
   #
-    function do_reserve_iommu_group_for_vfio
+    function src_iommu_do_reserve_iommu_group_for_vfio
     {
       if ! is_valid_iommu_group_id "${1}"; then
         return 1
@@ -120,7 +120,7 @@
   # DESC:   Prompt to select a given IOMMU group from list.
   # RETURN: Always return 0.
   #
-    function do_select_iommu_group_collection
+    function src_iommu_do_select_iommu_group_collection
     {
       if check_if_host_has_reserved_devices \
         && check_if_vfio_has_reserved_devices; then
@@ -143,7 +143,7 @@
   # RETURN: If IOMMU group ID is valid, return 0.
   #         If not valid, return 1.
   #
-    function do_select_iommu_group_prompt
+    function src_iommu_do_select_iommu_group_prompt
     {
       if ! is_valid_iommu_group_id "${1}"; then
         return 1
@@ -180,7 +180,7 @@
   # RETURN: If the IOMMU group ID is an int and between 0 and the max value, return 0.
   #         If else, return 1.
   #
-  function is_valid_iommu_group_id
+  function src_iommu_is_valid_iommu_group_id
   {
     if ! is_int "${1}" &> /dev/null \
       || [[ "${1}" -lt 0 ]] \
@@ -200,7 +200,7 @@
   # RETURN: If IOMMU group ID is valid, return 0.
   #         If not valid, return 1.
   #
-    function print_iommu_group
+    function src_iommu_print_iommu_group
     {
       if ! is_valid_iommu_group_id "${1}"; then
         return 1
@@ -222,7 +222,7 @@
   # $1:     the device info as a string
   # RETURN: If device info is not null, return 0. If null, return 1.
   #
-    function print_iommu_group_device
+    function src_iommu_print_iommu_group_device
     {
       local -r str_device="${1}"
 
