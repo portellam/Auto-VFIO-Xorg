@@ -22,7 +22,7 @@
 #
   #
   # DESC:   Does array contain value.
-  # $1:     the array as a reference
+  # $1:     the array as a reference.
   # $2:     the value as a string.
   # RETURN: If successful, return 0.
   #         If not, return 1.
@@ -47,7 +47,7 @@
 
   #
   # DESC:   Add value to array.
-  # $1:     the array as a reference
+  # $1:     the array as a reference.
   # $2:     the value as a string.
   # RETURN: If successful, return 0.
   #         If not, return 1.
@@ -68,7 +68,7 @@
 
   #
   # DESC:   Add key-value pair to dictionary.
-  # $1:     the dictionary as a reference
+  # $1:     the dictionary as a reference.
   # $2:     the key as a string.
   # $3:     the value as a string.
   # RETURN: If successful, return 0.
@@ -100,7 +100,7 @@
 
   #
   # DESC:   Does dictionary contain key-value pair.
-  # $1:     the dictionary as a reference
+  # $1:     the dictionary as a reference.
   # $2:     the key as a string.
   # $3:     the value as a string.
   # RETURN: If key-value pair exists in dictionary, return 0.
@@ -145,7 +145,7 @@
 
   #
   # DESC:   Get the given enum as a comma-delimited string.
-  # $1:     the enum as a reference
+  # $1:     the enum as a reference.
   # $2:     the delimited string as a reference
   # RETURN: If successful, return 0.
   #         If not, return 1.
@@ -168,7 +168,7 @@
 
   #
   # DESC:   Is reference variable an array.
-  # $1:     the array as a reference
+  # $1:     the array as a reference.
   # RETURN: If true, return 0.
   #         If false, return 1.
   #
@@ -188,7 +188,7 @@
 
   #
   # DESC:   Is input a bool.
-  # $1:     the input as a bool
+  # $1:     the input as a bool.
   # RETURN: If true, return 0.
   #         If false, return 1.
   #
@@ -207,7 +207,7 @@
 
   #
   # DESC:   Is reference variable an dictionary.
-  # $1:     the dict as a reference
+  # $1:     the dict as a reference.
   # RETURN: If true, return 0.
   #         If false, return 1.
   #
@@ -227,7 +227,7 @@
 
   #
   # DESC:   Is reference variable an enum.
-  # $1:     the enum as a reference
+  # $1:     the enum as a reference.
   # RETURN: If true, return 0.
   #         If false, return 1.
   #
@@ -249,7 +249,7 @@
 
   #
   # DESC:   Is reference variable a non-empty enum.
-  # $1:     the enum as a reference
+  # $1:     the enum as a reference.
   # RETURN: If true, return 0.
   #         If false, return 1.
   #
@@ -273,7 +273,7 @@
 
   #
   # DESC:   Is input an int.
-  # $1:     the input as an int
+  # $1:     the input as an int.
   # RETURN: If true, return 0.
   #         If false, return 1.
   #
@@ -290,7 +290,7 @@
 
   #
   # DESC:   Is input a string.
-  # $1:     the input as a string
+  # $1:     the input as a string.
   # RETURN: If true, return 0.
   #         If false, return 1.
   #
@@ -306,7 +306,7 @@
 
   #
   # DESC:   Remove value from array.
-  # $1:     the array as a reference
+  # $1:     the array as a reference.
   # $2:     the value as a string.
   # RETURN: If successful, return 0.
   #         If not, return 1.
@@ -327,7 +327,7 @@
 
   #
   # DESC:   Remove key-value pair from dict.
-  # $1:     the dictionary as a reference
+  # $1:     the dictionary as a reference.
   # $2:     the key as a string.
   # RETURN: If true, return 0.
   #         If false, return 1.
