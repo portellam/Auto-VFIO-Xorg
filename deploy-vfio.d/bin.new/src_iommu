@@ -417,6 +417,7 @@
       return 1
     }
 
+#
 # main logic
 #
   set_globals
