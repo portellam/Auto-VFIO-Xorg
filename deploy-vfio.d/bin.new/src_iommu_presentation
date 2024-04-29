@@ -28,151 +28,230 @@
 # logic
 #
   #
-  # DESC:   lorem ipsum
-  # $1:     lorem ipsum
-  # RETURN: lorem ipsum
+  # DESC:   Determine if any devices are reserved for Host machine.
+  # RETURN: If more than one device is reserved for the Host machine, return 0.
+  #         If none are reserved, return 1.
   #
-    function do_select_iommu_group
+    function check_if_host_has_reserved_devices
     {
-      local -ir iommu_group_id="${1}"
-      IOMMU_GROUPS_FOR_VFIO_ENUM+=( "${iommu_group_id}" )
-
-      if does_iommu_group_have_vga_device "${iommu_group_id}" &> /dev/null; then
-        IOMMU_GROUPS_WITH_VGA_FOR_VFIO_ENUM+=( "${iommu_group_id}" )
+      if ! is_enum_not_empty "SRC_IOMMU_ARR_IOMMU_GROUPS_FOR_HOST" &> /dev/null \
+        && ! is_enum_not_empty "SRC_IOMMU_ARR_IOMMU_GROUPS_WITH_VGA_FOR_HOST" &> /dev/null; then
+        print_error_to_log "No devices reserved for Host machine."
+        return 1
       fi
+
+      print_output_to_log "One or more devices reserved for Host machine."
+      return 0
     }
 
   #
-  # DESC:   lorem ipsum
-  # $1:     lorem ipsum
-  # RETURN: lorem ipsum
+  # DESC:   Determine if any devices are reserved for VFIO.
+  # RETURN: If more than one is reserved for VFIO, return 0.
+  #         If none are reserved, return 1.
   #
-    function do_not_select_iommu_group
+    function check_if_vfio_has_reserved_devices
     {
-      local -ir iommu_group_id="${1}"
+      if ! is_enum_not_empty "SRC_IOMMU_ARR_IOMMU_GROUPS_FOR_VFIO" &> /dev/null \
+        && ! is_enum_not_empty "SRC_IOMMU_ARR_IOMMU_GROUPS_WITH_VGA_FOR_VFIO" &> /dev/null; then
+        print_error_to_log "No devices reserved for VFIO."
+        return 1
+      fi
 
-      if does_iommu_group_have_vga_device "${iommu_group_id}" &> /dev/null; then
-        IOMMU_GROUPS_WITH_VGA_FOR_HOST_ENUM+=( "${iommu_group_id}" )
+      print_output_to_log "One or more devices reserved for VFIO."
+      return 0
+    }
+
+  #
+  # DESC:   Reserve the given IOMMU group for the Host machine.
+  # $1:     the IOMMU group ID as an int.
+  # RETURN: If IOMMU group ID is valid, return 0.
+  #         If not valid, return 1.
+  #
+    function do_reserve_iommu_group_for_host
+    {
+      if ! is_valid_iommu_group_id "${1}"; then
+        return 1
+      fi
+
+      local -ir int_iommu_group_id="${1}"
+
+      if does_iommu_group_have_external_devices "${int_iommu_group_id}"; then
+        return 1
+      fi
+
+      if ! does_iommu_group_have_vga_device "${int_iommu_group_id}" &> /dev/null; then
+        SRC_IOMMU_ARR_IOMMU_GROUPS_FOR_HOST+=( "${int_iommu_group_id}" )
       else
-        IOMMU_GROUPS_FOR_HOST_ENUM+=( "${iommu_group_id}" )
+        SRC_IOMMU_ARR_IOMMU_GROUPS_WITH_VGA_FOR_HOST+=( "${int_iommu_group_id}" )
       fi
+
+      print_output_to_log "Reserved IOMMU group '${int_iommu_group_id}' "\
+          "for Host machine."
+
+      return 0
     }
 
   #
-  # DESC:   lorem ipsum
-  # $1:     lorem ipsum
-  # RETURN: lorem ipsum
+  # DESC:   Reserve the given IOMMU group for VFIO.
+  # $1:     the IOMMU group ID as an int.
+  # RETURN: If IOMMU group ID is valid, return 0.
+  #         If not valid, return 1.
+  #
+    function do_reserve_iommu_group_for_vfio
+    {
+      if ! is_valid_iommu_group_id "${1}"; then
+        return 1
+      fi
+
+      local -ir int_iommu_group_id="${1}"
+      SRC_IOMMU_ARR_IOMMU_GROUPS_FOR_VFIO+=( "${int_iommu_group_id}" )
+
+      if does_iommu_group_have_vga_device "${int_iommu_group_id}" &> /dev/null; then
+        SRC_IOMMU_ARR_IOMMU_GROUPS_WITH_VGA_FOR_VFIO+=( "${int_iommu_group_id}" )
+      fi
+
+      print_output_to_log "Reserved IOMMU group '${int_iommu_group_id}' "\
+          "for VFIO."
+
+      return 0
+    }
+
+  #
+  # DESC:   Prompt to select a given IOMMU group from list.
+  # RETURN: Always return 0.
+  #
+    function do_select_iommu_group_collection
+    {
+      if check_if_host_has_reserved_devices \
+        && check_if_vfio_has_reserved_devices; then
+        return 0
+      fi
+
+      echo
+
+      for int_iommu_group_id in ${SRC_IOMMU_ARR_IOMMU_GROUP_ID[@]}; do
+        do_select_iommu_group_prompt "${int_iommu_group_id}"
+      done
+
+      return 0
+    }
+
+  #
+  # DESC:   Select or not select a given IOMMU group.
+  # $1:     the IOMMU group ID as an int.
+  # $2:     do select the IOMMU group.
+  # RETURN: If IOMMU group ID is valid, return 0.
+  #         If not valid, return 1.
+  #
+    function do_select_iommu_group_prompt
+    {
+      if ! is_valid_iommu_group_id "${1}"; then
+        return 1
+      fi
+
+      local -ir int_iommu_group_id="${1}"
+      local bool_do_select=false
+
+      if ! is_bool "${2}" &> /dev/null; then
+        if ! ask_yes_or_no "Select IOMMU group "\
+          "${SRC_PRINT_STR_SET_COLOR_YELLOW}${int_iommu_group_id}"\
+          "${SRC_PRINT_STR_RESET_COLOR}?"; then
+          bool_do_select=false
+        else
+          bool_do_select=true
+        fi
+      else
+        bool_do_select="${2}"
+      fi
+
+      if "${bool_do_select}"; then
+        do_reserve_iommu_group_for_vfio "${int_iommu_group_id}"
+      else
+        do_reserve_iommu_group_for_host "${int_iommu_group_id}"
+      fi
+
+      echo
+      return 0
+    }
+
+  #
+  # DESC:   Is IOMMU group ID valid.
+  # $1:     the IOMMU group ID as an int.
+  # RETURN: If the IOMMU group ID is an int and between 0 and the max value, return 0.
+  #         If else, return 1.
+  #
+  function is_valid_iommu_group_id
+  {
+    if ! is_int "${1}" &> /dev/null \
+      || [[ "${1}" -lt 0 ]] \
+      || [[ "${1}" -gt "${SRC_IOMMU_ARR_IOMMU_GROUP_ID[-1]}" ]]; then
+      print_error_to_log "Not a valid IOMMU group ID. Values must be between '0' "\
+        "and '${SRC_IOMMU_ARR_IOMMU_GROUP_ID[-1]}'."
+
+      return 1
+    fi
+
+    return 0
+  }
+
+  #
+  # DESC:   Print all devices within an IOMMU group.
+  # $1:     the IOMMU group ID as an int.
+  # RETURN: If IOMMU group ID is valid, return 0.
+  #         If not valid, return 1.
   #
     function print_iommu_group
     {
-      local -r device="${1}"
-      local class driver hwid name vendor
-
-      get_device_class "${device}" "class"
-      get_device_driver "${device}" "driver"
-      get_device_hardware_id "${device}" "hwid"
-      get_device_name "${device}" "name"
-      get_device_vendor "${device}" "vendor"
-
-      echo -e "\tSlot ID:\t${device}"
-      echo -e "\tVendor name:\t${vendor}"
-      echo -e "\tDevice name:\t${name}"
-      echo -e "\tClass/Type:\t${class}"
-      echo -e "\tHardware ID:\t${hwid}"
-      local driver_output="\tDriver:\t\t"
-
-      if is_string "${driver}" &> /dev/null; then
-        driver_output+="${driver}"
-      else
-        driver_output+="N/A"
+      if ! is_valid_iommu_group_id "${1}"; then
+        return 1
       fi
 
-      echo -e "${driver_output}"
-      echo
-    }
+      local -ir int_iommu_group_id="${1}"
+      local -ar arr_devices="$( eval "${SRC_IOMMU_STR_GET_DEVICES_FOR_IOMMU_GROUP}" )"
 
-  #
-  # DESC:   lorem ipsum
-  # $1:     lorem ipsum
-  # RETURN: lorem ipsum
-  #
-    function print_iommu_group_enum
-    {
-      local -ir iommu_group_id="${1}"
-      local -ar device_enum="$( eval "${GET_DEVICES_FOR_IOMMU_GROUP}" )"
-
-      for device in ${device_enum[@]}; do
-        is_device_external "${device}" && print_iommu_group "${device}"
+      for str_device in ${arr_devices[@]}; do
+        is_device_external "${str_device}" && \
+          print_iommu_group_device "${str_device}"
       done
+
+      return 0
     }
 
   #
-  # DESC:   lorem ipsum
-  # RETURN: lorem ipsum
+  # DESC:   Print all relevant info about a device.
+  # $1:     the device info as a string
+  # RETURN: If device info is not null, return 0. If null, return 1.
   #
-    function has_prespecified_iommu_group_enum
+    function print_iommu_group_device
     {
-      if ! is_enum "IOMMU_GROUPS_FOR_HOST_ENUM" \
-        && ! is_enum "IOMMU_GROUPS_WITH_VGA_FOR_HOST_ENUM"; then
+      local -r str_device="${1}"
+
+      if ! is_string "${str_device}" &> /dev/null; then
         return 1
       fi
 
-      if ! is_enum "IOMMU_GROUPS_FOR_VFIO_ENUM" \
-        && ! is_enum "IOMMU_GROUPS_WITH_VGA_FOR_VFIO_ENUM"; then
-        return 1
-      fi
-    }
+      local str_class \
+        str_driver \
+        str_hwid \
+        str_name \
+        str_vendor
 
-  #
-  # DESC:   lorem ipsum
-  # $1:     lorem ipsum
-  # RETURN: lorem ipsum
-  #
-    function specify_iommu_group
-    {
-      local -ir iommu_group_id="${1}"
+      get_device_class        "${str_device}" "str_class"
+      get_device_driver       "${str_device}" "str_driver"
+      get_device_hardware_id  "${str_device}" "str_hwid"
+      get_device_name         "${str_device}" "str_name"
+      get_device_vendor       "${str_device}" "str_vendor"
 
-      if ! does_iommu_group_have_external_devices "${iommu_group_id}"; then
-        IOMMU_GROUPS_FOR_HOST_ENUM+=( "${iommu_group_id}" )
-        return 1
+      if ! is_string "${str_driver}" &> /dev/null; then
+        str_driver="N/A"
       fi
 
-      if ! print_iommu_group_enum "${iommu_group_id}" \
-        || ! specify_iommu_group_prompt "${iommu_group_id}"; then
-        return 1
-      fi
-    }
+      echo -e "\tSlot ID:\t${str_device}\n"\
+              "\tVendor name:\t${str_vendor}\n"\
+              "\tDevice name:\t${str_name}\n"\
+              "\tClass/Type:\t${str_class}\n"\
+              "\tHardware ID:\t${str_hwid}\n"\
+              "\tDriver:\t\t${str_driver}\n"
 
-  #
-  # DESC:   lorem ipsum
-  # RETURN: lorem ipsum
-  #
-    function specify_iommu_group_enum
-    {
-      has_prespecified_iommu_group_enum && return 0
-
-      local -n reference="IOMMU_GROUP_ID_ENUM"
-      echo
-
-      for iommu_group_id in ${reference[@]}; do
-        specify_iommu_group "${iommu_group_id}"
-      done
-    }
-
-  #
-  # DESC:   lorem ipsum
-  # $1:     lorem ipsum
-  # RETURN: lorem ipsum
-  #
-    function specify_iommu_group_prompt
-    {
-      local -ir iommu_group_id="${1}"
-
-      if execute_or_skip_prompt "Select IOMMU group ${SET_COLOR_YELLOW}${iommu_group_id}${RESET_COLOR}?"; then
-        do_select_iommu_group "${iommu_group_id}"
-      else
-        do_not_select_iommu_group "${iommu_group_id}"
-      fi
-
-      echo
+      return 0
     }
