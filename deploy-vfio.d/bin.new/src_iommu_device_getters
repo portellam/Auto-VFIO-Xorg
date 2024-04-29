@@ -257,34 +257,6 @@
       ref_str_device_name="${str_name}"
     }
 
-  #
-  # DESC:   Is IOMMU group ID valid.
-  # $1:     the IOMMU group ID as an int.
-  # RETURN: If the IOMMU group ID is an int and between 0 and the max value, return 0.
-  #         If else, return 1.
-  #
-  function is_valid_iommu_group_id
-  {
-    local -ar arr_device_list="$( \
-      eval "${SRC_IOMMU_PARSE_STR_GET_DEVICES_FOR_IOMMU_GROUP}" \
-    )"
-
-    local -i int_last_iommu_group_id="$( \
-      ls "/sys/kernel/iommu_groups/" | sort --numeric-sort --reverse | head --lines 1
-    )"
-
-    if ! is_int "${1}" &> /dev/null \
-      || [[ "${1}" -lt 0 ]] \
-      || [[ "${1}" -gt "${int_last_iommu_group_id}" ]]; then
-      print_error_to_log "Not a valid IOMMU group ID. Values must be between '0' "\
-        "and '${int_last_iommu_group_id}'."
-
-      return 1
-    fi
-
-    return 0
-  }
-
 #
 # main logic
 #
