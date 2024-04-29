@@ -32,8 +32,7 @@
       declare -g SRC_IOMMU_XML_BOOL_DO_PARSE_IOMMU_GROUPS_FROM_XML_FILE=false
       declare -g SRC_IOMMU_XML_BOOL_XML_FILE_IS_SPECIFIED=false
 
-      declare -gr SRC_IOMMU_XML_STR_GET_DEVICES_FOR_IOMMU_GROUP=''\
-        'ls /sys/kernel/iommu_groups/"${str_iommu_group_id}"/devices/'
+
 
       declare -gA SRC_IOMMU_XML_DICT_DEVICE_DRIVERS_FROM_XML_FILE
 
@@ -147,18 +146,18 @@
       local -a arr_xml_output=( )
       local -a arr_devices_output=( )
 
-      for str_iommu_group_id in $( \
+      for int_iommu_group_id in $( \
           ls -1v /sys/kernel/iommu_groups/ | \
           sort --human-numeric-sort
         ); do
 
         local -a arr_this_device_output=( )
 
-        local str_line_iommu_id="<${str_iommu_id_tag}>${str_iommu_group_id}"\
+        local str_line_iommu_id="<${str_iommu_id_tag}>${int_iommu_group_id}"\
           "</${str_iommu_id_tag}>"
 
         for str_device in $( \
-            eval "${SRC_IOMMU_XML_STR_GET_DEVICES_FOR_IOMMU_GROUP}" \
+            eval "${SRC_IOMMU_XML_STR_SRC_IOMMU_STR_GET_DEVICES_FOR_IOMMU_GROUP}" \
           ); do
           local str_device_driver="$( \
             lspci -ks ${str_device} | \grep --ignore-case "driver" | \
@@ -321,7 +320,7 @@
         return 0
       fi
 
-      if ! execute_or_skip_prompt "Cross-reference database with XML file?"; then
+      if ! ask_yes_or_no "Cross-reference database with XML file?"; then
         SRC_IOMMU_XML_BOOL_DO_PARSE_IOMMU_GROUPS_FROM_XML_FILE=false
         return 1
       fi
