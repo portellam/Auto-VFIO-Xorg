@@ -8,6 +8,13 @@
 #
 
 #
+# TODO:
+# - [ ] develop.
+# - [ ] test.
+#
+
+
+#
 # sources
 #
   declare -g SRC_STR_SCRIPT_DIR="/usr/local/bin/"

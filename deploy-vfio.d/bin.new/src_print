@@ -8,6 +8,11 @@
 #
 
 #
+# TODO:
+# - [ ] test.
+#
+
+#
 # traps
 #
   trap 'catch_error' SIGINT SIGTERM ERR
