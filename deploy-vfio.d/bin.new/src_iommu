@@ -49,7 +49,8 @@
   #
   # DESC:   Do parse the IOMMU database.
   # $1:     boolean; if true, skip parse.
-  # RETURN: If parse is successful or skipped, return 0. If failed, return 1.
+  # RETURN: If parse is successful or skipped, return 0.
+  #         If failed, return 1.
   #
     function parse_iommu_database
     {
@@ -74,7 +75,8 @@
 
   #
   # DESC:   Try to parse the IOMMU database.
-  # RETURN: If parse is successful, return 0. If false, return 1.
+  # RETURN: If parse is successful, return 0.
+  #         If false, return 1.
   #
     function try_to_parse_iommu_database
     {
@@ -103,7 +105,8 @@
   #
   # DESC:   Prompt to parse IOMMU database.
   # RETURN: If flag is specified, skip and return 0.
-  #         If prompt is answered yes, return 0. If false, return 1.
+  #         If prompt is answered yes, return 0.
+  #         If false, return 1.
   #
     function parse_iommu_database_prompt
     {
