@@ -1,0 +1,180 @@
+#!/bin/false
+
+#
+# Filename:       src_iommu_device_validation
+# Description:    Logic for device validation.
+# Author(s):      Alex Portell <github.com/portellam>
+# Maintainer(s):  Alex Portell <github.com/portellam>
+#
+
+#
+# sources
+#
+  declare -g SRC_STR_SCRIPT_DIR="/usr/local/bin/"
+  declare -g SRC_STR_SCRIPT_BIN_DIR="${SRC_STR_SCRIPT_DIR}deploy-vfio.d/"
+
+  source "${SRC_STR_SCRIPT_BIN_DIR}src_print"
+
+#
+# logic
+#
+  #
+  # DESC:   
+  # $1:     
+  # $2:     
+  # RETURN: 
+  #
+    function is_device_driver_not_excluded
+    {
+      local -r driver="${1}"
+      local -r excluded_driver="snd_hda_intel"
+
+      case "${driver}" in
+        *"${excluded_driver}"* )
+          return 1 ;;
+      esac
+
+      return 0
+    }
+
+  #
+  # DESC:   
+  # $1:     
+  # $2:     
+  # RETURN: 
+  #
+    function is_device_driver_not_vfio
+    {
+      local -r driver="${1}"
+      local -r matched_driver="vfio-pci"
+
+      case "${driver}" in
+        *"${matched_driver}"* )
+          return 1 ;;
+      esac
+
+      return 0
+    }
+
+  #
+  # DESC:   
+  # $1:     
+  # $2:     
+  # RETURN: 
+  #
+    function is_device_external
+    {
+      local -r device="${1}"
+      local -r regex_get_domain_id='^[0-9A-F][1-9A-F]$'
+      local -ru domain_id=$( echo "${device}" | cut --delimiter ':' --fields 2 )
+      echo "${domain_id}" | grep --extended-regexp --quiet "${regex_get_domain_id}"
+
+      return 0
+    }
+
+  #
+  # DESC:   
+  # $1:     
+  # $2:     
+  # RETURN: 
+  #
+    function is_device_for_pci_stub
+    {
+      local -r device="${1}"
+      local -lr class="$( lspci -ms ${device} | cut --delimiter '"' --fields 2 )"
+
+      case "${class}" in
+        *"usb"* )
+          return 0 ;;
+      esac
+
+      return 1
+    }
+
+  #
+  # DESC:   
+  # $1:     
+  # $2:     
+  # RETURN: 
+  #
+    function is_device_id_valid
+    {
+      local -r device="${1}"
+      local -r output="$( lspci -s "${device}" )"
+
+      if ! is_string "${output}" &> /dev/null; then
+        print_error_to_log "Device id is not valid."
+        return 1
+      fi
+
+      return 0
+    }
+
+  #
+  # DESC:   
+  # $1:     
+  # $2:     
+  # RETURN: 
+  #
+    function is_device_not_binded_to_vfio
+    {
+      if [[ -z "${1}" ]]; then
+        return 0
+      fi
+
+      local -r device="${1}"
+      local driver=""
+      get_device_driver "${device}" "driver"
+      is_device_driver_not_vfio "${driver}"
+
+      return 0
+    }
+
+  #
+  # DESC:   
+  # $1:     
+  # $2:     
+  # RETURN: 
+  #
+    function is_device_not_excluded
+    {
+      local -r device="${1}"
+      local driver=""
+      get_device_driver "${device}" "driver"
+      is_device_driver_not_excluded "${driver}"
+    }
+
+  #
+  # DESC:   
+  # $1:     
+  # $2:     
+  # RETURN: 
+  #
+    function is_device_not_external
+    {
+      local -r device="${1}"
+      local driver=""
+      get_device_driver "${device}" "driver"
+      is_device_external "${device}"
+
+      return 0
+    }
+
+  #
+  # DESC:   
+  # $1:     
+  # $2:     
+  # RETURN: 
+  #
+    function is_device_vga
+    {
+      local -r device="${1}"
+      local -lr class="$( lspci -ms ${device} | cut --delimiter '"' --fields 2 )"
+
+      case "${class}" in
+        *"vga"* | *"graphic"* | *"display"* )
+          return 0 ;;
+      esac
+
+      return 1
+    }
