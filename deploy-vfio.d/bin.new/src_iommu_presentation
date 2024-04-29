@@ -111,25 +111,57 @@
       fi
 
       print_output_to_log "Reserved IOMMU group '${int_iommu_group_id}' "\
-          "for VFIO."
+        "for VFIO."
 
       return 0
     }
 
   #
   # DESC:   Prompt to select a given IOMMU group from list.
+  # $1:     the array of IOMMU group IDs as a reference.
+  # $2:     the array of reserved IOMMU groups for Host as a reference.
+  # $3:     the array of reserved IOMMU groups with VGA for Host as a reference.
+  # $4:     the array of reserved IOMMU groups for VFIO as a reference.
+  # $5:     the array of reserved IOMMU groups with VGA for VFIO as a reference.
   # RETURN: Always return 0.
   #
     function src_iommu_do_select_iommu_group_collection
     {
-      if check_if_host_has_reserved_devices \
-        && check_if_vfio_has_reserved_devices; then
+      if ! is_array "${1}"; then
+        print_error_to_log "Missing array reference for IOMMU group IDs."
+        return 1
+      fi
+
+      if ! is_array "${2}"; then
+        print_error_to_log "Missing array reference for Host IOMMU groups."
+        return 1
+      fi
+
+      if ! is_array "${3}"; then
+        print_error_to_log "Missing array reference for Host IOMMU groups with VGA."
+        return 1
+      fi
+
+      if ! is_array "${4}"; then
+        print_error_to_log "Missing array reference for VFIO IOMMU groups."
+        return 1
+      fi
+
+      if ! is_array "${5}"; then
+        print_error_to_log "Missing array reference for VFIO IOMMU groups with VGA."
+        return 1
+      fi
+
+      local -n arr_iommu_group_id="${1}"
+
+      if check_if_host_has_reserved_devices "${2}" "${3}" \
+        && check_if_vfio_has_reserved_devices "${4}" "${5}"; then
         return 0
       fi
 
       echo
 
-      for int_iommu_group_id in ${SRC_IOMMU_ARR_IOMMU_GROUP_ID[@]}; do
+      for int_iommu_group_id in ${arr_iommu_group_id[@]}; do
         do_select_iommu_group_prompt "${int_iommu_group_id}"
       done
 
