@@ -9,11 +9,11 @@
 
 #
 # TODO:
-# - [ ] determine if this class needs globals.
-# - [ ] rename params.
-# - [ ] double-check external class params are named properly.
-# - [ ] refactor.
-# - [ ] add comments.
+# - [x] determine if this class needs globals.
+# - [x] rename params.
+# - [x] double-check external class params are named properly.
+# - [x] refactor.
+# - [x] add comments.
 #
 
 #
