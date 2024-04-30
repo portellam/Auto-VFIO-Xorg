@@ -38,227 +38,262 @@
       cd "${str_last_dir}"
     }
 
-    #
-    # DESC:   Install ZRAM Swap
-    # RETURN: If ZRAM Swap installed successfully, return 0.
-    #         If not, return 1.
-    #
-      function install_zram_swap
-      {
+  #
+  # DESC:   Install ZRAM Swap
+  # RETURN: If ZRAM Swap installed successfully, return 0.
+  #         If not, return 1.
+  #         If an exception occurs, return 2.
+  #
+    function install_zram_swap
+    {
       log_stdout "${0}: ${FUNCNAME}"
 
-        does_zram_swap_repo_exist || return 1
+      if ! does_zram_swap_repo_exist; then
+        print_output_to_log "Install skipped."
+        return 2
+      fi
 
-        local -r str_project_path="${STR_GIT_STR_REPO_PARENT_PATH}/zram-swap"
+      local -r str_project_path="${STR_GIT_STR_REPO_PARENT_PATH}/zram-swap"
 
-        cd "${str_project_path}"
-        print "Installing ZRAM Swap...\n"
-        sudo bash install.sh --install
+      cd "${str_project_path}"
+      print "Installing ZRAM Swap...\n"
+      sudo bash install.sh --install
 
-        local -i int_code="${?}"
+      local -i int_code="${?}"
 
-        print
+      echo
 
-        if [[ "${int_code}" -ne 0 ]] \
-          || ! modify_zram_swap_configuration \
-          || ! reset_zram_swap_devices; then
-          print "Install failed."
-          return "${int_code}"
-        fi
+      if [[ "${int_code}" -ne 0 ]] \
+        || ! modify_zram_swap_configuration \
+        || ! enable_zram_swap_device; then
+        print_error_to_log "Install failed."
+        return "${int_code}"
+      fi
 
-        print "Install successful."
-        return 0
-      }
-
-    #
-    # DESC:   Get ZRAM Swap fraction size.
-    # $1:     the fraction as a string
-    # RETURN: If ZRAM Swap fraction size is valid, return 0.
-    #         If not, return 1.
-    #
-      function get_zram_swap_fraction
-      {
-      log_stdout "${0}: ${FUNCNAME}"
-
-        is_host_memory_sufficient_for_hugepages || return 1
-
-        case "${1}" in
-          *"/"* )
-            local -i int_numerator=$( echo ${1} | cut --delimiter '/' --fields 1 )
-            local -i int_denominator=$( echo ${1} | cut --delimiter '/' --fields 2 ) ;;
-
-          "default" )
-            POST_SETUP_HAS_ARG_ZRAM_SWAP_DEFAULTS=true
-            return 0 ;;
-
-          * )
-            print_error_to_log "Not a fraction."
-            return 1 ;;
-        esac
-
-        if ! is_int "${int_numerator}" &> /dev/null \
-          || ! is_int "${int_denominator}" &> /dev/null; then
-          print_error_to_log "Numerator and/or denominator are not numbers."
-          return 1
-        fi
-
-        if [[ "${int_numerator}" -le 0 ]]; then
-          print_error_to_log "Numerator is less than or equal to zero."
-          return 1
-        fi
-
-        if [[ "${int_denominator}" -le 0 ]]; then
-          print_error_to_log "Denominator is less than or equal to zero."
-          return 1
-        fi
-
-        if [[ "${int_numerator}" -ge "${int_denominator}" ]] \
-          || [[ "${int_denominator}" -le 1 ]]; then
-          print_error_to_log "Invalid fraction."
-          return 1
-        fi
-
-        declare -g POST_SETUP_ARGS_FOR_ZRAM_SWAP_FRACTION="${1}"
-        POST_SETUP_HAS_ARG_ZRAM_SWAP_SET_FRACTION=true
-        return 0
-      }
-
-    #
-    # DESC:   Get ZRAM Swap value by user input.
-    # $1:     the variable pointer
-    # RETURN: If ZRAM Swap value is valid, return 0.
-    #         If not, return 1.
-    #
-      function get_zram_swap_fraction_prompt
-      {
-      log_stdout "${0}: ${FUNCNAME}"
-
-        if "${POST_SETUP_HAS_ARG_ZRAM_SWAP_DEFAULTS}" \
-          || "${POST_SETUP_HAS_ARG_ZRAM_SWAP_SET_FRACTION}"; then
-          return 0
-        fi
-
-        local -n reference="${1}"
-
-        for counter in $( seq 0 2 ); do
-          read -r -p "Set fraction of total memory for zram-swap to use " \
-            "(to calculate default, enter 'default'): " \
-            answer
-
-          if get_zram_swap_fraction "${answer}"; then
-            reference="${answer}"
-            return 0
-          fi
-        done
-
-        print_error_to_log "Not a fraction or invalid input."
-        return 1
-      }
-
-    #
-    # DESC:   Get ZRAM Swap size.
-    # RETURN: If there exists free host memory, return 0.
-    #         If not, return 1.
-    #
-      function is_host_memory_sufficient_for_zram_swap
-      {
-      log_stdout "${0}: ${FUNCNAME}"
-
-        if ! get_free_memory; then
-          print_error_to_log "Insufficient Host memory for ZRAM Swap."
-          return 1
-        fi
-      }
-
-    #
-    # DESC:   Modify configuration files for ZRAM Swap.
-    # RETURN: If output is valid and file is written, return 0.
-    #         If not, return 1.
-    #
-      function modify_zram_swap_configuration
-      {
-      log_stdout "${0}: ${FUNCNAME}"
-
-        # TODO: test code. Remove when globals are added.
-
-        POST_SETUP_ARGS_FOR_ZRAM_SWAP_FRACTION="1/8"
-        POST_SETUP_HAS_ARG_ZRAM_SWAP_DEFAULTS=""
-        POST_SETUP_HAS_ARG_ZRAM_SWAP_SET_FRACTION=""
-        AVAILABLE_MEMORY=""
-        MAX_MEMORY=""
-        POST_SETUP_HAS_ARG_ZRAM_SWAP_FORCE="false"
-
-        local -r file="/etc/default/zram-swap"
-        local line_to_match="_zram_fraction="
-        local fraction="${POST_SETUP_ARGS_FOR_ZRAM_SWAP_FRACTION}"
-
-        get_zram_swap_fraction_prompt "fraction" || return 1
-
-        if "${POST_SETUP_HAS_ARG_ZRAM_SWAP_DEFAULTS}" \
-          && ! "${POST_SETUP_HAS_ARG_ZRAM_SWAP_SET_FRACTION}"; then
-          local -ir zram_swap_available_memory=$(( AVAILABLE_MEMORY / 2 ))
-
-          # note: First evaluate the ratio of max system memory to the zram-swap
-          # available memory, as a decimal to the hundredths place.
-          # Then truncate the decimal and return an integer.
-          local -i denominator=$( printf "%.0f" \
-            $( echo "scale=2;${MAX_MEMORY}/${zram_swap_available_memory}" | bc )
-          )
-
-          # note: If denominator is odd, subtract one.
-          if [[ $( expr ${denominator} % 2 ) -eq 1 ]]; then
-            (( denominator-- ))
-          fi
-
-          if [[ "${denominator}" -le 0 ]]; then
-            print "Denominator is negative or zero."
-          fi
-
-          fraction="1/${denominator}"
-        fi
-
-        if ! sed -i '/'${line_to_match}'"*"/c\'${line_to_match}'"'${fraction}'"' \
-          "${file}"; then
-          print "Could not write output to ZRAM Swap file."
-          return 1
-        fi
-      }
+      print_output_to_log "Install successful."
+      return 0
+    }
 
   #
-  # DESC:   Checks if git repo exists.
-  # RETURN: If repo exists, return 0.
+  # DESC:   Get ZRAM Swap fraction size.
+  # $1:     the fraction as a string
+  # RETURN: If ZRAM Swap fraction size is valid, return 0.
+  #         If not, return 1.
+  #         If an exception occurs, return 2.
+  #
+    function get_zram_swap_fraction
+    {
+      log_stdout "${0}: ${FUNCNAME}"
+
+      if ! is_host_memory_sufficient_for_zram_swap; then
+        return 2
+      fi
+
+      case "${1}" in
+        *"/"* )
+          local -i int_numerator=$( echo ${1} | cut --delimiter '/' --fields 1 )
+          local -i int_denominator=$( echo ${1} | cut --delimiter '/' --fields 2 ) ;;
+
+        "default" )
+          POST_SETUP_HAS_ARG_ZRAM_SWAP_DEFAULTS=true
+          return 0 ;;
+
+        * )
+          print_error_to_log "Not a fraction."
+          return 2 ;;
+      esac
+
+      if ! is_int "${int_numerator}" &> /dev/null \
+        || ! is_int "${int_denominator}" &> /dev/null; then
+        print_error_to_log "Numerator and/or denominator are not numbers."
+        return 2
+      fi
+
+      if [[ "${int_numerator}" -le 0 ]]; then
+        print_error_to_log "Numerator is less than or equal to zero."
+        return 2
+      fi
+
+      if [[ "${int_denominator}" -le 0 ]]; then
+        print_error_to_log "Denominator is less than or equal to zero."
+        return 2
+      fi
+
+      if [[ "${int_numerator}" -ge "${int_denominator}" ]] \
+        || [[ "${int_denominator}" -le 1 ]]; then
+        print_error_to_log "Invalid fraction."
+        return 1
+      fi
+
+      declare -g POST_SETUP_ARGS_FOR_ZRAM_SWAP_FRACTION="${1}"
+      POST_SETUP_HAS_ARG_ZRAM_SWAP_SET_FRACTION=true
+      log_stdout "Fraction: ${POST_SETUP_ARGS_FOR_ZRAM_SWAP_FRACTION}"
+      return 0
+    }
+
+  #
+  # DESC:   Get ZRAM Swap value by user input.
+  # $1:     the reference of variable.
+  # RETURN: If ZRAM Swap value is valid, return 0.
   #         If not, return 1.
   #
-      function reset_zram_swap_devices
-      {
+    function get_zram_swap_fraction_prompt
+    {
       log_stdout "${0}: ${FUNCNAME}"
 
-        if ! "${POST_SETUP_HAS_ARG_ZRAM_SWAP_FORCE}" \
-          && sudo swapon --verbose | grep zram &> /dev/null \
-          && sudo swapon --verbose | grep zram &> /dev/null \
-          && ! sudo swapon --verbose | grep zram | grep 0B &> /dev/null; then
-          print "zram-swap device(s) already in use. Restart system to save changes."
+      if "${POST_SETUP_HAS_ARG_ZRAM_SWAP_DEFAULTS}" \
+        || "${POST_SETUP_HAS_ARG_ZRAM_SWAP_SET_FRACTION}"; then
+        return 0
+      fi
+
+      local -n ref="${1}"
+
+      for counter in $( seq 0 2 ); do
+        read -r -p "Set fraction of total memory for zram-swap to use " \
+          "(to calculate default, enter 'default'): " \
+          answer
+
+        if get_zram_swap_fraction "${answer}"; then
+          ref="${answer}"
+          log_stdout "Fraction: ${answer}"
           return 0
         fi
+      done
 
-        if sudo swapon --verbose | grep zram &> /dev/null \
-          && ! sudo swapoff /dev/zram* &> /dev/null; then
-          print_error_to_log "Could not disable zram-swap device(s)."
-          return 1
+      print_error_to_log "Not a fraction or invalid input."
+      return 1
+    }
+
+  #
+  # DESC:   Get ZRAM Swap size.
+  # RETURN: If there exists free host memory, return 0.
+  #         If not, return 1.
+  #
+    function is_host_memory_sufficient_for_zram_swap
+    {
+      log_stdout "${0}: ${FUNCNAME}"
+
+      if ! get_free_memory; then
+        print_error_to_log "Insufficient Host memory for ZRAM Swap."
+        return 1
+      fi
+
+      print_output_to_log "Sufficient Host memory for ZRAM Swap."
+    }
+
+  #
+  # DESC:   Modify configuration files for ZRAM Swap.
+  # RETURN: If output is valid and file is written, return 0.
+  #         If not, return 1.
+  #         If an exception occurs, return 2.
+  #
+    function modify_zram_swap_configuration
+    {
+      log_stdout "${0}: ${FUNCNAME}"
+
+      return 2
+
+      # TODO: replace globals?
+      POST_SETUP_ARGS_FOR_ZRAM_SWAP_FRACTION="1/8"
+      POST_SETUP_HAS_ARG_ZRAM_SWAP_DEFAULTS=""
+      POST_SETUP_HAS_ARG_ZRAM_SWAP_SET_FRACTION=""
+      AVAILABLE_MEMORY=""
+      MAX_MEMORY=""
+      POST_SETUP_HAS_ARG_ZRAM_SWAP_FORCE="false"
+
+      local -r str_file="/etc/default/zram-swap"
+      local str_line_to_match="_zram_fraction="
+      local str_fraction="${POST_SETUP_ARGS_FOR_ZRAM_SWAP_FRACTION}"
+
+      if ! get_zram_swap_fraction_prompt "str_fraction"; then
+        print_error_to_log "Could not write output to ZRAM Swap configuration file."
+        return 2
+      fi
+
+      if "${POST_SETUP_HAS_ARG_ZRAM_SWAP_DEFAULTS}" \
+        && ! "${POST_SETUP_HAS_ARG_ZRAM_SWAP_SET_FRACTION}"; then
+        local -ir int_zram_swap_available_memory=$(( AVAILABLE_MEMORY / 2 ))
+
+        # note: First evaluate the ratio of max system memory to the zram-swap
+        # available memory, as a decimal to the hundredths place.
+        # Then truncate the decimal and return an integer.
+        local -i denominator=$( printf "%.0f" \
+          $( echo "scale=2;${MAX_MEMORY}/${int_zram_swap_available_memory}" | bc )
+        )
+
+        # note: If denominator is odd, subtract one.
+        if [[ $( expr ${denominator} % 2 ) -eq 1 ]]; then
+          (( denominator-- ))
         fi
 
-        if ! sudo systemctl daemon-reload &> /dev/null; then
-          print_error_to_log "Could not update systemd."
-          return 1
+        log_stdout "Denominator: ${denominator}"
+
+        if [[ "${denominator}" -le 0 ]]; then
+          print_error_to_log "Denominator is negative or zero."
+          return 2
         fi
 
-        if ! sudo systemctl restart zram-swap &> /dev/null; then
-          print_error_to_log "Could not restart zram-swap service."
-          return 1
-        fi
+        str_fraction="1/${denominator}"
+      fi
 
-        if ! sudo swapon --verbose | grep zram &> /dev/null; then
-          print_error_to_log "Could not enable zram-swap device."
-          return 1
-        fi
-      }
+      if ! sed -i \
+        '/'${str_line_to_match}'"*"/c\'${str_line_to_match}'"'${str_fraction}'"' \
+        "${str_file}"; then
+        print_error_to_log "Could not write output to ZRAM Swap configuration file."
+        return 1
+      fi
+
+      print_output_to_log "Wrote output to ZRAM Swap configuration file."
+      return 0
+    }
+
+  #
+  # DESC:   Enable ZRAM Swap device.
+  # RETURN: If ZRAM Swap device is enabled, return 0.
+  #         If not, return 1.
+  #         If an exception occurs, return 2.
+  #
+    function enable_zram_swap_device
+    {
+      log_stdout "${0}: ${FUNCNAME}"
+
+      if ! "${POST_SETUP_HAS_ARG_ZRAM_SWAP_FORCE}" \
+        && sudo swapon --verbose | grep zram &> /dev/null \
+        && sudo swapon --verbose | grep zram &> /dev/null \
+        && ! sudo swapon --verbose | grep zram | grep 0B &> /dev/null; then
+        print_output_to_log "ZRAM Swap device(s) already in use. "\
+          "Restart system to save changes."
+
+        return 0
+      fi
+
+      if sudo swapon --verbose | grep zram &> /dev/null \
+        && ! sudo swapoff /dev/zram* &> /dev/null; then
+        print_error_to_log "Could not disable ZRAM Swap device(s)."
+        return 2
+      fi
+
+      log_stdout "Disabled ZRAM Swap device(s)."
+
+      if ! sudo systemctl daemon-reload &> /dev/null; then
+        print_error_to_log "Could not update Systemd."
+        return 2
+      fi
+
+      log_stdout "Updated Systemd."
+
+      if ! sudo systemctl restart zram-swap &> /dev/null; then
+        print_error_to_log "Could not restart ZRAM Swap service."
+        return 2
+      fi
+
+      log_stdout "Restarted ZRAM Swap service."
+
+      if ! sudo swapon --verbose | grep zram &> /dev/null; then
+        print_error_to_log "Could not enable ZRAM Swap device(s)."
+        return 1
+      fi
+
+      log_stdout "Enabled ZRAM Swap device(s)."
+      return 0
+    }
