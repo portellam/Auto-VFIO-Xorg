@@ -378,19 +378,27 @@
   }
 
   #
-  # DESC:   
-  # $1:     
-  # $2:     
-  # RETURN: 
+  # DESC:   Is valid array of IOMMU groups.
+  # $1:     the reference of the array of IOMMU groups.
+  # RETURN: If the array is valid, return 0.
+  #         If not, return 1.
   #
     function is_valid_array_of_iommu_groups
     {
-      is_enum "${1}" &> /dev/null || return 1
-      local -n ref="${1}"
+      if ! is_array "${1}" &> /dev/null; then
+        print_error_to_log "Missing array for IOMMU group IDs."
+        return 1
+      fi
 
-      for int_value in ${ref[@]}; do
-        is_int "${int_value}" &> /dev/null || return 1
+      local -n ref_array="${1}"
+
+      for int_value in ${ref_array[@]}; do
+        if ! is_valid_iommu_group_id "${int_value}" &> /dev/null; then
+          return 1
+        fi
       done
+
+      return 0
     }
 
 #
