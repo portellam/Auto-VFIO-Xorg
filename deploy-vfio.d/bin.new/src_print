@@ -41,6 +41,11 @@
         declare -gr SRC_PRINT_STR_SCRIPT_NAME="deploy-vfio"
 
       #
+      # DESC:   logger
+      #
+        declare -gr SRC_PRINT_STR_LOG_FILE="/var/log/${SRC_PRINT_STR_SCRIPT_NAME}.log"
+
+      #
       # DESC:   color coding
       #
         declare -gr SRC_PRINT_STR_SET_COLOR_GREEN='\033[0;32m'
@@ -82,7 +87,8 @@
   # DESC:   Trap error code and run logic before exit.
   # RETURN: Always return 1.
   #
-    function catch_error {
+    function catch_error
+    {
       echo
       exit 1
     }
@@ -91,9 +97,28 @@
   # DESC:   Trap exit code and run logic before exit.
   # RETURN: Always return 1.
   #
-    function catch_exit {
+    function catch_exit
+    {
       print_pass_or_fail_to_log
       reset_ifs
+    }
+
+  #
+  # DESC:   Log output to STDERR.
+  # RETURN: Always return 0.
+  #
+    function log_stderr
+    {
+      logger --stderr "${1}" 2>> "${SRC_PRINT_STR_LOG_FILE}"
+    }
+
+  #
+  # DESC:   Log output to STDOUT.
+  # RETURN: Always return 0.
+  #
+    function log_stdout
+    {
+      logger "${1}" 2>> "${SRC_PRINT_STR_LOG_FILE}"
     }
 
   #
@@ -103,7 +128,8 @@
   #
     function print_error_to_log
     {
-       echo -e "${SRC_PRINT_STR_PREFIX_ERROR}${1}" >&2
+      log_stderr "${SRC_PRINT_STR_PREFIX_ERROR}${1}"
+      echo -e "${SRC_PRINT_STR_PREFIX_ERROR}${1}" >&2
     }
 
   #
@@ -113,6 +139,7 @@
   #
     function print_fail_to_log
     {
+      log_stdout "${SRC_PRINT_STR_PREFIX_FAIL}${1}"
       echo -e "${SRC_PRINT_STR_PREFIX_FAIL}${1}" >&2
     }
 
@@ -123,6 +150,7 @@
   #
     function print_output_to_log
     {
+      log_stdout "${SRC_PRINT_STR_PREFIX_PROMPT}${1}"
       echo -e "${SRC_PRINT_STR_PREFIX_PROMPT}${1}" >&1
     }
 
@@ -133,14 +161,16 @@
   #
     function print_note
     {
+      log_stdout "${SRC_PRINT_STR_PREFIX_NOTE}${1}"
       echo -e "${SRC_PRINT_STR_PREFIX_NOTE}${1}"
     }
 
   #
   # DESC:   Print and log error.
   # $1:     line of text as a string
-  # RETURN: Return incoming return code. If 0, output success. If 255, output
-  # skipped. If else, output failure.
+  # RETURN: Return incoming return code.
+  #         If 0, output success.
+  #         If 255, output skipped. If else, output failure.
   #
     function print_pass_or_fail_to_log
     {
@@ -166,6 +196,7 @@
   #
     function print_pass_to_log
     {
+      log_stdout "${SRC_PRINT_STR_PREFIX_PASS}${1}"
       echo -e "${SRC_PRINT_STR_PREFIX_PASS}${1}" >&1
     }
 
