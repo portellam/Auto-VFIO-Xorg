@@ -76,7 +76,7 @@
 
       local bool_do_parse_from_xml_file=false
 
-      if ! is_dict "${3}"; then
+      if ! is_dict "${3}" &> /dev/null; then
         bool_do_parse_from_xml_file=false
 
         print_output_to_log "Missing dictionary of device drivers from XML file."\
@@ -99,12 +99,12 @@
 
       local -r str_device="${1}"
       local -n ref="${2}"
-      local -n ref_dict_device_drivers_from_xml_file="${3}"
+      local -n ref_array_device_drivers_from_xml_file="${3}"
 
       if "${bool_do_parse_from_xml_file}"; then
-        ref="${ref_dict_device_drivers_from_xml_file["${str_device}"]}"
+        ref="${ref_array_device_drivers_from_xml_file["${str_device}"]}"
 
-        if ! dict_contains_key "ref_dict_device_drivers_from_xml_file" \
+        if ! dict_contains_key "ref_array_device_drivers_from_xml_file" \
           "${str_device}" &> /dev/null; then
           print_error_to_log "Could not find device driver from XML file."
           return 1
@@ -172,11 +172,11 @@
     }
 
   #
-  # DESC:   Get device info as dictionaries given selection.
+  # DESC:   Get device info as arrays given selection.
   # $1:     the reference of IOMMU group IDs array.
-  # $2:     the reference of the device driver dictionary.
-  # $3:     the reference of the device pci-stub hardware ID dictionary.
-  # $4:     the reference of the device vfio-pci hardware ID dictionary.
+  # $2:     the reference of the device driver array.
+  # $3:     the reference of the device pci-stub hardware ID array.
+  # $4:     the reference of the device vfio-pci hardware ID array.
   # RETURN: If drivers and/or hardware IDs are found, return 0.
   #         If not, return 1.
   #
@@ -184,10 +184,30 @@
     {
       log_stdout "${0}: ${FUNCNAME}"
 
+      if ! is_array "${4}" &> /dev/null; then
+        print_error_to_log "Missing reference of device 'vfio-pci' HWID array."
+        return 1
+      fi
+
+      if ! is_array "${3}" &> /dev/null; then
+        print_error_to_log "Missing reference of device 'pci-stub' HWID array."
+        return 1
+      fi
+
+      if ! is_array "${2}" &> /dev/null; then
+        print_error_to_log "Missing reference of device driver array."
+        return 1
+      fi
+
+      if ! is_array "${1}" &> /dev/null; then
+        print_error_to_log "Missing reference of IOMMU group ID array."
+        return 1
+      fi
+
       local -n ref="${1}"
-      local -n ref_dict_driver="${2}"
-      local -n ref_dict_stub_hwid="${3}"
-      local -n ref_dict_vfio_hwid="${4}"
+      local -n ref_array_driver="${2}"
+      local -n ref_array_stub_hwid="${3}"
+      local -n ref_array_vfio_hwid="${4}"
 
       for int_iommu_group_id in ${ref[@]}; do
         local -a arr_device_list="$( \
@@ -203,29 +223,29 @@
 
           if [[ ! -z "${str_driver}" ]] \
             && is_device_not_excluded "${str_device}"; then
-            ref_dict_driver+=( "${str_driver}" )
+            ref_array_driver+=( "${str_driver}" )
           fi
 
           if [[ ! -z "${str_hwid}" ]]; then
             if is_device_for_pci_stub "${str_device}"; then
-              ref_dict_stub_hwid+=( "${str_hwid}" )
+              ref_array_stub_hwid+=( "${str_hwid}" )
             else
-              ref_dict_vfio_hwid+=( "${str_hwid}" )
+              ref_array_vfio_hwid+=( "${str_hwid}" )
             fi
           fi
         done
       done
 
-      ref_dict_driver=( $( sort --unique <<<"${ref_dict_driver[*]}" ) )
-      ref_dict_stub_hwid=( $( sort --unique <<<"${ref_dict_stub_hwid[*]}" ) )
-      ref_dict_vfio_hwid=( $( sort --unique <<<"${ref_dict_vfio_hwid[*]}" ) )
+      ref_array_driver=( $( sort --unique <<<"${ref_array_driver[*]}" ) )
+      ref_array_stub_hwid=( $( sort --unique <<<"${ref_array_stub_hwid[*]}" ) )
+      ref_array_vfio_hwid=( $( sort --unique <<<"${ref_array_vfio_hwid[*]}" ) )
 
-      if is_enum_not_empty "ref_dict_driver"; then
+      if is_enum_not_empty "ref_array_driver"; then
         return 0
       fi
 
-      if is_enum_not_empty "ref_dict_stub_hwid" \
-        || is_enum_not_empty "ref_dict_vfio_hwid"; then
+      if is_enum_not_empty "ref_array_stub_hwid" \
+        || is_enum_not_empty "ref_array_vfio_hwid"; then
         print_error_to_log "No drivers or hardware IDs found for selection."
         return 1
       fi
