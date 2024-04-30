@@ -178,7 +178,7 @@
       echo
 
       for int_iommu_group_id in ${arr_iommu_group_id[@]}; do
-        if ! is_valid_iommu_group_id "${1}"; then
+        if ! is_iommu_group_id_valid "${1}"; then
           continue
         fi
 
@@ -204,7 +204,7 @@
     {
       log_stdout "${0}: ${FUNCNAME}"
 
-      if ! is_valid_iommu_group_id "${1}"; then
+      if ! is_iommu_group_id_valid "${1}"; then
         return 1
       fi
 
@@ -243,7 +243,7 @@
     {
       log_stdout "${0}: ${FUNCNAME}"
 
-      if ! is_valid_iommu_group_id "${1}"; then
+      if ! is_iommu_group_id_valid "${1}"; then
         return 1
       fi
 

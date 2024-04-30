@@ -309,7 +309,7 @@
       done
     }
 
-    function add_some_iommu_groups_to_parsed_enum
+    function add_some_iommu_groups_to_array
     {
       local regex_for_range_of_nums='^[0-9]+[-][0-9]+$'
       local -ar iommu_groups_temp_enum

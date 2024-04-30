@@ -120,7 +120,7 @@
 
           * )
             DATABASE_HAS_ARG_PARSE_IOMMU_SELECT_SOME=true
-            add_some_iommu_groups_to_parsed_enum "${argument}" || print_invalid_argument "${argument}" ;;
+            add_some_iommu_groups_to_array "${argument}" || print_invalid_argument "${argument}" ;;
         esac
       }
 

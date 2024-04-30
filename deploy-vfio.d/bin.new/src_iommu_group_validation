@@ -55,176 +55,6 @@
 # logic
 #
   #
-  # DESC:   Does Host machine not have an existing VFIO setup.
-  # RETURN: If true, return 0.
-  #         If false, return 1.
-  #
-    function does_host_not_have_existing_vfio_setup
-    {
-      log_stdout "${0}: ${FUNCNAME}"
-
-      for int_iommu_group_id in \
-        ${SRC_IOMMU_GROUP_VALIDATION_ARR_IOMMU_GROUP_ID[@]}; do
-        if ! is_iommu_group_not_binded_to_vfio "${int_iommu_group_id}"; then
-          print_error_to_log "Detected existing VFIO setup."
-          return 1
-        fi
-      done
-    }
-
-  # TODO: add ref to enum here!
-
-  #
-  # DESC:   Add IOMMU group ID to array(s).
-  # $1:     the IOMMU group ID as an int.
-  # $2:     the reference of the array of IOMMU groups.
-  # $2:     the reference of the array of IOMMU groups with VGA.
-  # RETURN: If IOMMU group ID is valid, return 0.
-  #         If not, return 1.
-  #
-    function add_iommu_group_to_related_array                                         # add_iommu_group_to_enum
-    {
-      log_stdout "${0}: ${FUNCNAME}"
-
-      if ! is_array "${3}" &> /dev/null; then
-        print_error_to_log "Missing reference of IOMMU groups with VGA array."
-      fi
-
-      if ! is_array "${2}" &> /dev/null; then
-        print_error_to_log "Missing reference of IOMMU groups array."
-      fi
-
-      if ! is_valid_iommu_group_id "${1}"; then
-        return 1
-      fi
-
-      local -ir int_iommu_group_id="${1}"
-      local -n ref_arr_iommu_groups="${2}"
-      local -n ref_arr_iommu_groups_with_vga="${3}"
-
-      if does_iommu_group_have_vga_device "${int_iommu_group_id}" &> /dev/null; then
-        ref_arr_iommu_groups_with_vga+=( "${int_iommu_group_id}" )
-      fi
-
-      ref_arr_iommu_groups+=( "${int_iommu_group_id}" )
-      return 0
-    }
-
-  #
-  # DESC:   
-  # $1:     
-  # $2:     
-  # RETURN: 
-  #
-    function add_some_iommu_groups_to_parsed_enum                                     # add_iommu_group_to_host_enum
-                                                                                      # add_iommu_group_to_vfio_enum
-    {
-      log_stdout "${0}: ${FUNCNAME}"
-
-      if ! is_array "${5}" &> /dev/null; then
-        print_error_to_log "Missing reference of array of IOMMU groups for with VGA"\
-          "for VFIO."
-
-        return 1
-      fi
-
-      if ! is_array "${4}" &> /dev/null; then
-        print_error_to_log "Missing reference of array of IOMMU groups for VFIO."
-        return 1
-      fi
-
-      if ! is_array "${3}" &> /dev/null; then
-        print_error_to_log "Missing reference of array of IOMMU groups with VGA for "\
-          "Host machine."
-
-        return 1
-      fi
-
-      if ! is_array "${2}" &> /dev/null; then
-        print_error_to_log "Missing reference of array of IOMMU groups for Host "\
-          "machine."
-
-        return 1
-      fi
-
-      if ! is_valid_iommu_group_id "${1}"; then
-        return 1
-      fi
-
-      local -ar ref_arr_iommu_groups_temp
-
-      if ! is_iommu_group_id_parsable "${1}" "ref_arr_iommu_groups_temp"; then
-        return 1
-      fi
-
-      ref_arr_iommu_groups_temp=( \
-        $( sort --human-numeric-sort --unique <<<"${ref_arr_iommu_groups_temp[*]}" ) \
-      )
-
-      for iommu_group_id in ${ref_arr_iommu_groups_temp[@]}; do
-        add_iommu_group_to_enum_if_not_specified "${int_iommu_group_id}"
-      done
-    }
-
-  #
-  # DESC:   Add IOMMU group to either Host or VFIO array if specified or not.
-  # $1:     the reference of the array of IOMMU groups.
-  # $2:     the reference of the array of IOMMU groups with VGA.
-  # $3:     the reference of the array of IOMMU groups.
-  # $4:     the reference of the array of IOMMU groups with VGA.
-  # RETURN: If IOMMU group ID is valid, referenced arrays are valid, and IOMMU group
-  #         is added, return 0.
-  #         If else, return 1.
-  #
-    function add_iommu_group_to_either_host_or_vfio_array_if_specifed                 # add_iommu_group_to_enum_if_not_specified
-    {
-      log_stdout "${0}: ${FUNCNAME}"
-
-      if ! is_array "${5}" &> /dev/null; then
-        print_error_to_log "Missing reference of array of IOMMU groups for with VGA"\
-          "for VFIO."
-
-        return 1
-      fi
-
-      if ! is_array "${4}" &> /dev/null; then
-        print_error_to_log "Missing reference of array of IOMMU groups for VFIO."
-        return 1
-      fi
-
-      if ! is_array "${3}" &> /dev/null; then
-        print_error_to_log "Missing reference of array of IOMMU groups with VGA for "\
-          "Host machine."
-
-        return 1
-      fi
-
-      if ! is_array "${2}" &> /dev/null; then
-        print_error_to_log "Missing reference of array of IOMMU groups for Host "\
-          "machine."
-
-        return 1
-      fi
-
-      if ! is_valid_iommu_group_id "${1}"; then
-        return 1
-      fi
-
-      for this_iommu_group_id in \
-        ${SRC_IOMMU_GROUP_VALIDATION_ARR_IOMMU_GROUP_ID[@]}; do
-        if [[ "${this_iommu_group_id}" -ne "${iommu_group_id}" ]]; then
-          if ! add_iommu_group_to_related_array "${1}" "${2}" "${3}"; then
-            return 1
-          fi
-        else
-          if ! add_iommu_group_to_related_array "${1}" "${4}" "${5}"; then
-            return 1
-          fi
-        fi
-      done
-    }
-
-  #
   # DESC:   Add all IOMMU groups to parsed array.
   # $1:     the reference of the array of IOMMU groups.
   # $2:     the reference of the array of IOMMU groups with VGA.
@@ -236,7 +66,7 @@
   #
 
   # TODO: develop!
-    function add_all_iommu_groups_to_parsed_array                                     # function add_all_valid_iommu_groups_to_parsed_enum
+    function add_all_iommu_groups_to_array
     {
       log_stdout "${0}: ${FUNCNAME}"
 
@@ -246,7 +76,7 @@
     }
 
   #
-  # DESC:   Add all valid IOMMU groups without VGA to related arrays.
+  # DESC:   Add all valid IOMMU groups to either Host or VFIO arrays.
   # $1:     the reference of the array of IOMMU groups.
   # $2:     the reference of the array of IOMMU groups with VGA.
   # $3:     the reference of the array of IOMMU groups.
@@ -255,7 +85,7 @@
   #         is added, return 0.
   #         If else, return 1.
   #
-    function add_all_iommu_groups_without_vga_to_arrays                               # add_some_iommu_groups_to_parsed_enum
+    function add_all_iommu_groups_to_either_host_or_vfio_arrays
     {
       log_stdout "${0}: ${FUNCNAME}"
 
@@ -307,7 +137,7 @@
   #         is added, return 0.
   #         If else, return 1.
   #
-    function add_iommu_group_to_either_host_or_vfio_array                             # add_all_valid_iommu_groups_without_vga_to_parsed_enum
+    function add_iommu_group_to_either_host_or_vfio_array
     {
       log_stdout "${0}: ${FUNCNAME}"
 
@@ -337,21 +167,201 @@
         return 1
       fi
 
-      if ! is_valid_iommu_group_id "${1}"; then
+      if ! is_iommu_group_id_valid "${1}"; then
         return 1
       fi
 
       if does_iommu_group_have_vga_device "${1}" &> /dev/null; then
-        if ! add_iommu_group_to_related_array "${1}" "${2}" "${3}"; then
+        if ! add_iommu_group_to_either_with_or_without_vga_array "${1}" "${2}" \
+          "${3}"; then
           return 1
         fi
       else
-        if ! add_iommu_group_to_related_array "${1}" "${4}" "${5}"; then
+        if ! add_iommu_group_to_either_with_or_without_vga_array "${1}" "${4}" \
+          "${5}"; then
           return 1
         fi
       fi
 
       return 0
+    }
+
+  #
+  # DESC:   Add IOMMU group ID to array(s) with or without VGA.
+  # $1:     the IOMMU group ID as an int.
+  # $2:     the reference of the array of IOMMU groups.
+  # $2:     the reference of the array of IOMMU groups with VGA.
+  # RETURN: If IOMMU group ID is valid, return 0.
+  #         If not, return 1.
+  #
+    function add_iommu_group_to_either_with_or_without_vga_array
+    {
+      log_stdout "${0}: ${FUNCNAME}"
+
+      if ! is_array "${3}" &> /dev/null; then
+        print_error_to_log "Missing reference of IOMMU groups with VGA array."
+      fi
+
+      if ! is_array "${2}" &> /dev/null; then
+        print_error_to_log "Missing reference of IOMMU groups array."
+      fi
+
+      if ! is_iommu_group_id_valid "${1}"; then
+        return 1
+      fi
+
+      local -ir int_iommu_group_id="${1}"
+      local -n ref_arr_iommu_groups="${2}"
+      local -n ref_arr_iommu_groups_with_vga="${3}"
+
+      if does_iommu_group_have_vga_device "${int_iommu_group_id}" &> /dev/null; then
+        ref_arr_iommu_groups_with_vga+=( "${int_iommu_group_id}" )
+      fi
+
+      ref_arr_iommu_groups+=( "${int_iommu_group_id}" )
+      return 0
+    }
+
+  #
+  # DESC:   Add IOMMU group to either Host or VFIO array.
+  # $1:     the IOMMU group ID as an int.
+  # $2:     the reference of the array of IOMMU groups.
+  # $3:     the reference of the array of IOMMU groups with VGA.
+  # $4:     the reference of the array of IOMMU groups.
+  # $5:     the reference of the array of IOMMU groups with VGA.
+  # RETURN: If IOMMU group ID is valid, referenced arrays are valid, and IOMMU group
+  #         is added, return 0.
+  #         If else, return 1.
+  #
+    function add_some_iommu_groups_to_array
+    {
+      log_stdout "${0}: ${FUNCNAME}"
+
+      if ! is_array "${5}" &> /dev/null; then
+        print_error_to_log "Missing reference of array of IOMMU groups for with VGA"\
+          "for VFIO."
+
+        return 1
+      fi
+
+      if ! is_array "${4}" &> /dev/null; then
+        print_error_to_log "Missing reference of array of IOMMU groups for VFIO."
+        return 1
+      fi
+
+      if ! is_array "${3}" &> /dev/null; then
+        print_error_to_log "Missing reference of array of IOMMU groups with VGA for "\
+          "Host machine."
+
+        return 1
+      fi
+
+      if ! is_array "${2}" &> /dev/null; then
+        print_error_to_log "Missing reference of array of IOMMU groups for Host "\
+          "machine."
+
+        return 1
+      fi
+
+      if ! is_iommu_group_id_valid "${1}"; then
+        return 1
+      fi
+
+      local -a ref_arr_iommu_groups_temp
+
+      if ! is_iommu_group_id_parsable "${1}" "ref_arr_iommu_groups_temp"; then
+        return 1
+      fi
+
+      ref_arr_iommu_groups_temp=( \
+        $( sort --human-numeric-sort --unique <<<"${ref_arr_iommu_groups_temp[*]}" ) \
+      )
+
+      for int_iommu_group_id in ${ref_arr_iommu_groups_temp[@]}; do
+        if ! add_unspecified_iommu_group_to_either_host_or_vfio_array \
+          "${int_iommu_group_id}" "${2}" "${3}" "${4}" "${5}"; then
+          return 1
+        fi
+      done
+
+      return 0
+    }
+
+  #
+  # DESC:   Add IOMMU group to either Host or VFIO array if not specified.
+  # $1:     the IOMMU group ID as an int.
+  # $2:     the reference of the array of IOMMU groups.
+  # $3:     the reference of the array of IOMMU groups with VGA.
+  # $4:     the reference of the array of IOMMU groups.
+  # $5:     the reference of the array of IOMMU groups with VGA.
+  # RETURN: If IOMMU group ID is valid, referenced arrays are valid, and IOMMU group
+  #         is added, return 0.
+  #         If else, return 1.
+  #
+    function add_unspecified_iommu_group_to_either_host_or_vfio_array
+    {
+      log_stdout "${0}: ${FUNCNAME}"
+
+      if ! is_array "${5}" &> /dev/null; then
+        print_error_to_log "Missing reference of array of IOMMU groups for with VGA"\
+          "for VFIO."
+
+        return 1
+      fi
+
+      if ! is_array "${4}" &> /dev/null; then
+        print_error_to_log "Missing reference of array of IOMMU groups for VFIO."
+        return 1
+      fi
+
+      if ! is_array "${3}" &> /dev/null; then
+        print_error_to_log "Missing reference of array of IOMMU groups with VGA for "\
+          "Host machine."
+
+        return 1
+      fi
+
+      if ! is_array "${2}" &> /dev/null; then
+        print_error_to_log "Missing reference of array of IOMMU groups for Host "\
+          "machine."
+
+        return 1
+      fi
+
+      if ! is_iommu_group_id_valid "${1}"; then
+        return 1
+      fi
+
+      for this_iommu_group_id in \
+        ${SRC_IOMMU_GROUP_VALIDATION_ARR_IOMMU_GROUP_ID[@]}; do
+        if [[ "${this_iommu_group_id}" -ne "${iommu_group_id}" ]]; then
+          if ! add_iommu_group_to_either_with_or_without_vga_array "${1}" "${2}" "${3}"; then
+            return 1
+          fi
+        else
+          if ! add_iommu_group_to_either_with_or_without_vga_array "${1}" "${4}" "${5}"; then
+            return 1
+          fi
+        fi
+      done
+    }
+
+  #
+  # DESC:   Does Host machine not have an existing VFIO setup.
+  # RETURN: If true, return 0.
+  #         If false, return 1.
+  #
+    function does_host_not_have_existing_vfio_setup
+    {
+      log_stdout "${0}: ${FUNCNAME}"
+
+      for int_iommu_group_id in \
+        ${SRC_IOMMU_GROUP_VALIDATION_ARR_IOMMU_GROUP_ID[@]}; do
+        if ! is_iommu_group_not_binded_to_vfio "${int_iommu_group_id}"; then
+          print_error_to_log "Detected existing VFIO setup."
+          return 1
+        fi
+      done
     }
 
   #
@@ -364,7 +374,7 @@
     {
       log_stdout "${0}: ${FUNCNAME}"
 
-      if ! is_valid_iommu_group_id "${1}"; then
+      if ! is_iommu_group_id_valid "${1}"; then
         return 1
       fi
 
@@ -393,7 +403,7 @@
     {
       log_stdout "${0}: ${FUNCNAME}"
 
-      if ! is_valid_iommu_group_id "${1}"; then
+      if ! is_iommu_group_id_valid "${1}"; then
         return 1
       fi
 
@@ -435,7 +445,7 @@
       local -i int_iommu_group_id=0
       local str_iommu_group_id_range=""
 
-      if is_valid_iommu_group_id "${1}" &> /dev/null; then
+      if is_iommu_group_id_valid "${1}" &> /dev/null; then
         int_iommu_group_id="${1}"
       else
         str_iommu_group_id_range="${1}"
@@ -453,8 +463,8 @@
           echo "${str_iommu_group_id_range}" | cut --delimiter '-' --fields 2 \
         )
 
-        if ! is_valid_iommu_group_id "${int_range_start}" \
-          || ! is_valid_iommu_group_id "${int_range_stop}"; then
+        if ! is_iommu_group_id_valid "${int_range_start}" \
+          || ! is_iommu_group_id_valid "${int_range_stop}"; then
           print_error_to_log "Invalid IOMMU group ID range."
           return 1
         fi
@@ -462,7 +472,7 @@
         ref_arr_iommu_groups+=( $( seq "${range_start}" "${range_stop}" ) )
 
       elif is_int "${int_iommu_group_id}" &> /dev/null; then
-        if ! is_valid_iommu_group_id "${int_iommu_group_id}"; then
+        if ! is_iommu_group_id_valid "${int_iommu_group_id}"; then
           print_error_to_log "Cannot parse IOMMU group ID '${int_iommu_group_id}'."
           return 1
         fi
@@ -485,7 +495,7 @@
     {
       log_stdout "${0}: ${FUNCNAME}"
 
-      if ! is_valid_iommu_group_id "${1}"; then
+      if ! is_iommu_group_id_valid "${1}"; then
         return 1
       fi
 
@@ -510,7 +520,7 @@
   # RETURN: If the IOMMU group ID is an int and between 0 and the max value, return 0.
   #         If else, return 1.
   #
-  function is_valid_iommu_group_id
+  function is_iommu_group_id_valid
   {
     log_stdout "${0}: ${FUNCNAME}"
 
@@ -536,7 +546,7 @@
   # RETURN: If the array is valid, return 0.
   #         If not, return 1.
   #
-    function is_valid_array_of_iommu_groups
+    function is_iommu_groups_array_valid
     {
       log_stdout "${0}: ${FUNCNAME}"
 
@@ -548,7 +558,7 @@
       local -n ref_array="${1}"
 
       for int_value in ${ref_array[@]}; do
-        if ! is_valid_iommu_group_id "${int_value}"; then
+        if ! is_iommu_group_id_valid "${int_value}"; then
           return 1
         fi
       done
