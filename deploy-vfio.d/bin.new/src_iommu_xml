@@ -28,6 +28,8 @@
   #
     function set_globals
     {
+      log_stdout "${0}: ${FUNCNAME}"
+
       if [[ "${SRC_IOMMU_XML_BOOL_SET_GLOBALS}" == true ]]; then
         return 0
       fi
@@ -52,6 +54,8 @@
   #
     function set_iommu_groups_xml_file
     {
+      log_stdout "${0}: ${FUNCNAME}"
+
       SRC_IOMMU_XML_STR_XML_FILE="${1}"
 
       if ! is_string "${SRC_IOMMU_XML_STR_XML_FILE}"; then
@@ -72,6 +76,8 @@
   #
     function set_iommu_groups_xml_file_to_default
     {
+      log_stdout "${0}: ${FUNCNAME}"
+
       set_iommu_groups_xml_file "${SRC_IOMMU_XML_STR_DEFAULT_XML_FILE}"
     }
 
@@ -85,6 +91,8 @@
   #
     function cleanup_iommu_groups_xml_file
     {
+      log_stdout "${0}: ${FUNCNAME}"
+
       if ! restore_temp_files_for_iommu_groups_xml_file \
         || ! delete_temp_files_for_iommu_groups_xml_file; then
         print_error_to_log "Clean-up of XML file failed."
@@ -102,6 +110,8 @@
   #
     function create_temp_files_for_iommu_groups_xml_file
     {
+      log_stdout "${0}: ${FUNCNAME}"
+
       if ! create_temp_file_of_file "${SRC_IOMMU_XML_STR_XML_FILE}" &> /dev/null; then
         print_error_to_log "Could not create temp file for IOMMU groups XML file "\
           "'${SRC_IOMMU_XML_STR_XML_FILE}'".
@@ -120,6 +130,8 @@
   #
     function delete_temp_files_for_iommu_groups_xml_file
     {
+      log_stdout "${0}: ${FUNCNAME}"
+
       if ! delete_temp_file_of_file "${SRC_IOMMU_XML_STR_XML_FILE}" &> /dev/null; then
         print_error_to_log "Could not delete temp files for IOMMU groups XML file "\
           "'${SRC_IOMMU_XML_STR_XML_FILE}'".
@@ -139,6 +151,8 @@
   #
     function export_iommu_groups_to_xml_file
     {
+      log_stdout "${0}: ${FUNCNAME}"
+
       local -r str_xml_file_name="${1}"
 
       local -r str_device_tag="device"
@@ -211,6 +225,8 @@
   #
     function import_iommu_groups_from_xml_file
     {
+      log_stdout "${0}: ${FUNCNAME}"
+
       local -r str_xml_file_name="${1}"
 
       if ! is_file "${str_xml_file_name}" &> /dev/null; then
@@ -267,6 +283,8 @@
   #
     function is_iommu_groups_xml_file_created
     {
+      log_stdout "${0}: ${FUNCNAME}"
+
       if ! is_file "${SRC_IOMMU_XML_STR_XML_FILE}" &> /dev/null \
         && ! sudo touch "${SRC_IOMMU_XML_STR_XML_FILE}"; then
         print_error_to_log "Could not create IOMMU groups XML file "\
@@ -289,6 +307,8 @@
   #
     function is_iommu_groups_xml_file_valid
     {
+      log_stdout "${0}: ${FUNCNAME}"
+
       local -r str_xml_file_name="${1}"
 
       if ! is_file "${str_xml_file_name}" &> /dev/null; then
@@ -318,6 +338,8 @@
   #
     function parse_iommu_groups_from_xml_file
     {
+      log_stdout "${0}: ${FUNCNAME}"
+
       if is_bool "${1}" &> /dev/null \
         && "${1}"; then
         SRC_IOMMU_XML_BOOL_DO_PARSE_IOMMU_GROUPS_FROM_XML_FILE=false
@@ -342,6 +364,8 @@
   #
     function specify_existing_iommu_groups_xml_file_prompt
     {
+      log_stdout "${0}: ${FUNCNAME}"
+
       local -r str_output="Enter XML file name (leave blank for default): "
 
       for int_counter in $( seq 0 2 ); do
@@ -374,6 +398,8 @@
   #
     function specify_iommu_groups_xml_file
     {
+      log_stdout "${0}: ${FUNCNAME}"
+
       local bool_does_xml_file_exist \
         bool_do_parse_from_xml_file
 
@@ -419,6 +445,8 @@
   #
     function restore_temp_files_for_iommu_groups_xml_file
     {
+      log_stdout "${0}: ${FUNCNAME}"
+
       if ! copy_temp_file_to_file "${SRC_IOMMU_XML_STR_XML_FILE}"; then
         print_error_to_log "Could not restore IOMMU groups XML file "\
           "'${SRC_IOMMU_XML_STR_XML_FILE}' from temp file".

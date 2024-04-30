@@ -35,6 +35,8 @@
   #
     function check_if_host_has_reserved_devices
     {
+      log_stdout "${0}: ${FUNCNAME}"
+
       if ! is_enum_not_empty "${1}" &> /dev/null \
         && ! is_enum_not_empty "${2}" &> /dev/null; then
         print_error_to_log "No devices reserved for Host machine."
@@ -54,6 +56,8 @@
   #
     function check_if_vfio_has_reserved_devices
     {
+      log_stdout "${0}: ${FUNCNAME}"
+
       if ! is_enum_not_empty "${1}" &> /dev/null \
         && ! is_enum_not_empty "${2}" &> /dev/null; then
         print_error_to_log "No devices reserved for VFIO."
@@ -75,6 +79,8 @@
   #
     function do_reserve_iommu_group_for_host
     {
+      log_stdout "${0}: ${FUNCNAME}"
+
       local -n arr_iommu_groups_for_host="${1}"
       local -n arr_iommu_groups_with_vga_for_host="${2}"
       local -ir int_iommu_group_id="${3}"
@@ -106,6 +112,8 @@
   #
     function do_reserve_iommu_group_for_vfio
     {
+      log_stdout "${0}: ${FUNCNAME}"
+
       local -n arr_iommu_groups_for_vfio="${1}"
       local -n arr_iommu_groups_with_vga_for_vfio="${2}"
       local -ir int_iommu_group_id="${3}"
@@ -131,6 +139,8 @@
   #
     function do_select_iommu_group_collection
     {
+      log_stdout "${0}: ${FUNCNAME}"
+
       if ! is_array "${1}"; then
         print_error_to_log "Missing array reference for IOMMU group IDs."
         return 1
@@ -192,6 +202,8 @@
   #
     function do_select_iommu_group_prompt
     {
+      log_stdout "${0}: ${FUNCNAME}"
+
       if ! is_valid_iommu_group_id "${1}"; then
         return 1
       fi
@@ -229,6 +241,8 @@
   #
     function print_iommu_group
     {
+      log_stdout "${0}: ${FUNCNAME}"
+
       if ! is_valid_iommu_group_id "${1}"; then
         return 1
       fi
@@ -254,6 +268,8 @@
   #
     function print_iommu_group_device
     {
+      log_stdout "${0}: ${FUNCNAME}"
+
       local -r str_device="${1}"
 
       if ! is_string "${str_device}" &> /dev/null; then

@@ -30,6 +30,8 @@
   #
     function does_auto_xorg_repo_exist
     {
+      log_stdout "${0}: ${FUNCNAME}"
+
       local -r str_last_dir="$( pwd )"
       does_this_git_repo_exist "Auto X.Org" "github.com/portellam/auto-xorg"
       cd "${str_last_dir}"
@@ -42,6 +44,8 @@
   #
     function execute_auto_xorg
     {
+      log_stdout "${0}: ${FUNCNAME}"
+
       does_auto_xorg_repo_exist || return 1
 
       local -r str_arguments="${*}"
@@ -69,6 +73,8 @@
   #
     function execute_auto_xorg_installer
     {
+      log_stdout "${0}: ${FUNCNAME}"
+
       does_auto_xorg_repo_exist || return 1
 
       local -r str_arguments="${*}"
@@ -97,6 +103,8 @@
   #
     function basic_install_auto_xorg
     {
+      log_stdout "${0}: ${FUNCNAME}"
+
       execute_auto_xorg_installer "--install"
       return "${?}"
     }
@@ -107,6 +115,8 @@
   #
     function uninstall_auto_xorg
     {
+      log_stdout "${0}: ${FUNCNAME}"
+
       execute_auto_xorg_installer "--uninstall"
       return "${?}"
     }

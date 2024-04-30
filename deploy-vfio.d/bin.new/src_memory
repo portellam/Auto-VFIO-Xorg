@@ -31,6 +31,8 @@
   #
     function set_globals
     {
+      log_stdout "${0}: ${FUNCNAME}"
+
       if [[ "${SRC_MEMORY_BOOL_SET_GLOBALS}" == true ]]; then
         return 0
       fi
@@ -70,6 +72,8 @@
   #
     function set_free_memory
     {
+      log_stdout "${0}: ${FUNCNAME}"
+
       if ! is_int "SRC_MEMORY_INT_MAX_FREE_MEMORY_BYTES" \
         || ! is_int "SRC_MEMORY_INT_MIN_FREE_MEMORY_BYTES"; then
         print_error_to_log "Failed to get current free memory."
@@ -87,6 +91,8 @@
   #
     function set_huge_memory_page_size
     {
+      log_stdout "${0}: ${FUNCNAME}"
+
       if "${SRC_MEMORY_BOOL_DO_USE_FOUR_KIB_HUGEPAGES}"; then
         print_output_to_log "Set huge memory page size: 4 KiB"
         return 0
@@ -136,6 +142,8 @@
   #
     function find_lowest_common_factor_memory_channel_size
     {
+      log_stdout "${0}: ${FUNCNAME}"
+
       local -a arr_memory_channel_bytes=( )
 
       for str_line in $( sudo dmidecode --type memory | \
@@ -184,6 +192,8 @@
   #
     function set_minimum_memory
     {
+      log_stdout "${0}: ${FUNCNAME}"
+
       if ! "${BOOL_DO_USE_TWO_MIB_HUGEPAGES}"; then
         declare -gi SRC_MEMORY_INT_MIN_FREE_MEMORY_BYTES=$(( \
           8 * ${SRC_MEMORY_INT_ONE_GIB_IN_KIB} \
@@ -200,6 +210,8 @@
   #
     function is_any_host_memory_available
     {
+      log_stdout "${0}: ${FUNCNAME}"
+
       if [[ "${SRC_MEMORY_INT_CURRENT_FREE_MEMORY_BYTES}" -le 0 ]]; then
         print_error_to_log "Insufficient Host memory available."
         return 1
@@ -218,6 +230,8 @@
   #
     function set_memory_channel_size_in_bytes
     {
+      log_stdout "${0}: ${FUNCNAME}"
+
       local -u str_memory_channel_size="${1}"
       local -i int_memory_channel_unit="${2}"
       local -r int_memory_channel_bytes="${3}"

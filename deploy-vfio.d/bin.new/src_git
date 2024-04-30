@@ -29,6 +29,8 @@
   #
     function set_globals
     {
+      log_stdout "${0}: ${FUNCNAME}"
+
       if [[ "${SRC_GIT_BOOL_SET_GLOBALS}" == true ]]; then
         return 0
       fi
@@ -47,6 +49,8 @@
   #
     function does_git_parent_path_exist
     {
+      log_stdout "${0}: ${FUNCNAME}"
+
       local -r str_last_dir="$( pwd )"
 
       if ! is_dir "${STR_GIT_STR_REPO_PARENT_PATH}"; then
@@ -69,6 +73,8 @@
   #
     function does_this_git_repo_exist
     {
+      log_stdout "${0}: ${FUNCNAME}"
+
       local str_git_repo_name="${1}"
       local str_git_repo_address="${2}"
 
@@ -126,6 +132,8 @@
   #
     function is_git_installed
     {
+      log_stdout "${0}: ${FUNCNAME}"
+
       local -lr str_command="git"
 
       if command -v "${str_command}" &> /dev/null; then

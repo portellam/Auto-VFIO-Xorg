@@ -30,6 +30,8 @@
   #
     function do_ping_internet
     {
+      log_stdout "${0}: ${FUNCNAME}"
+
       print_output_to_log "Checking connection to Internet..."
 
       if ! do_ping_server "8.8.8.8" \
@@ -51,6 +53,8 @@
   #
     function do_ping_server
     {
+      log_stdout "${0}: ${FUNCNAME}"
+
       ping "${1}" -c 1 &> /dev/null
     }
 
@@ -62,6 +66,8 @@
   #
     function is_connected_to_internet
     {
+      log_stdout "${0}: ${FUNCNAME}"
+
       local bool_do_ignore=false
 
       if is_bool "${1}" &> /dev/null; then

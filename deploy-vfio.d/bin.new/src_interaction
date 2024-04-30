@@ -22,6 +22,8 @@
   #
     function ask_yes_or_no
     {
+      log_stdout "${0}: ${FUNCNAME}"
+
       local str_output=""
 
       if [[ ! -z "${1}" ]]; then

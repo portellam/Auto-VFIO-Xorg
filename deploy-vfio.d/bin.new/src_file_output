@@ -28,6 +28,8 @@
   #
     function set_globals
     {
+      log_stdout "${0}: ${FUNCNAME}"
+
       if [[ "${SRC_FILE_BOOL_OUTPUT_SET_GLOBALS}" == true ]]; then
         return 0
       fi

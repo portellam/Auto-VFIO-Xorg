@@ -31,6 +31,8 @@
   #
     function does_libvirt_hooks_repo_exist
     {
+      log_stdout "${0}: ${FUNCNAME}"
+
       local -r str_last_dir="$( pwd )"
       does_this_git_repo_exist "Libvirt Hooks" "github.com/portellam/libvirt-hooks"
       cd "${str_last_dir}"
@@ -43,6 +45,8 @@
   #
     function execute_libvirt_hooks_installer
     {
+      log_stdout "${0}: ${FUNCNAME}"
+
       does_libvirt_hooks_repo_exist || return 1
 
       local -r str_arguments="${*}"
@@ -72,6 +76,8 @@
   #
     function install_libvirt_hooks
     {
+      log_stdout "${0}: ${FUNCNAME}"
+
       execute_libvirt_hooks_installer "--install"
       return "${?}"
     }
@@ -83,6 +89,8 @@
   #
     function uninstall_libvirt_hooks
     {
+      log_stdout "${0}: ${FUNCNAME}"
+
       execute_libvirt_hooks_installer "--uninstall"
       return "${?}"
     }

@@ -31,6 +31,8 @@
   #
     function does_zram_swap_repo_exist
     {
+      log_stdout "${0}: ${FUNCNAME}"
+
       local -r str_last_dir="$( pwd )"
       does_this_git_repo_exist "ZRAM Swap" "github.com/foundObjects/zram-swap"
       cd "${str_last_dir}"
@@ -43,6 +45,8 @@
     #
       function install_zram_swap
       {
+      log_stdout "${0}: ${FUNCNAME}"
+
         does_zram_swap_repo_exist || return 1
 
         local -r str_project_path="${STR_GIT_STR_REPO_PARENT_PATH}/zram-swap"
@@ -74,6 +78,8 @@
     #
       function get_zram_swap_fraction
       {
+      log_stdout "${0}: ${FUNCNAME}"
+
         is_host_memory_sufficient_for_hugepages || return 1
 
         case "${1}" in
@@ -125,6 +131,8 @@
     #
       function get_zram_swap_fraction_prompt
       {
+      log_stdout "${0}: ${FUNCNAME}"
+
         if "${POST_SETUP_HAS_ARG_ZRAM_SWAP_DEFAULTS}" \
           || "${POST_SETUP_HAS_ARG_ZRAM_SWAP_SET_FRACTION}"; then
           return 0
@@ -154,6 +162,8 @@
     #
       function is_host_memory_sufficient_for_zram_swap
       {
+      log_stdout "${0}: ${FUNCNAME}"
+
         if ! get_free_memory; then
           print_error_to_log "Insufficient Host memory for ZRAM Swap."
           return 1
@@ -167,6 +177,8 @@
     #
       function modify_zram_swap_configuration
       {
+      log_stdout "${0}: ${FUNCNAME}"
+
         # TODO: test code. Remove when globals are added.
 
         POST_SETUP_ARGS_FOR_ZRAM_SWAP_FRACTION="1/8"
@@ -219,6 +231,8 @@
   #
       function reset_zram_swap_devices
       {
+      log_stdout "${0}: ${FUNCNAME}"
+
         if ! "${POST_SETUP_HAS_ARG_ZRAM_SWAP_FORCE}" \
           && sudo swapon --verbose | grep zram &> /dev/null \
           && sudo swapon --verbose | grep zram &> /dev/null \

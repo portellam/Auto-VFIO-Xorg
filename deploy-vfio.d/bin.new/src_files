@@ -30,6 +30,8 @@
   #
     function create_temp_file_of_file
     {
+      log_stdout "${0}: ${FUNCNAME}"
+
       if is_file "${1}" &> /dev/null; then
         print_output_to_log "File exists."
         return 0
@@ -53,6 +55,8 @@
   #
     function copy_temp_file_to_file
     {
+      log_stdout "${0}: ${FUNCNAME}"
+
       if is_file "${1}" &> /dev/null; then
         print_output_to_log "Skipped overwrite of file."
         return 0
@@ -82,6 +86,8 @@
   #
     function copy_this_file_to_other_file
     {
+      log_stdout "${0}: ${FUNCNAME}"
+
       if [[ "${2}" == "" ]]; then
         return 1
       fi
@@ -101,6 +107,8 @@
   #
     function delete_temp_file_of_file
     {
+      log_stdout "${0}: ${FUNCNAME}"
+
       if is_file "${1}" &> /dev/null; then
         return 0
       fi
@@ -129,6 +137,8 @@
   #
     function is_dir
     {
+      log_stdout "${0}: ${FUNCNAME}"
+
       if [[ -z "${1}" ]] \
         || [[ ! -d "${1}" ]]; then
         print_error_to_log "Folder does not exist."
@@ -146,6 +156,8 @@
   #
     function is_dir_not_empty
     {
+      log_stdout "${0}: ${FUNCNAME}"
+
       if ! is_dir "${1}"; then
         return 1
       fi
@@ -166,6 +178,8 @@
   #
     function is_file
     {
+      log_stdout "${0}: ${FUNCNAME}"
+
       if [[ -z "${1}" ]] \
         || [[ ! -e "${1}" ]]; then
         print_error_to_log "File does not exist."
@@ -183,6 +197,8 @@
   #
     function is_file_not_empty
     {
+      log_stdout "${0}: ${FUNCNAME}"
+
       if [[ -z "${1}" ]] \
         || [[ ! -s "${1}" ]]; then
         print_error_to_log "File is empty."
@@ -201,6 +217,8 @@
   #
     function overwrite_file
     {
+      log_stdout "${0}: ${FUNCNAME}"
+
       local -n ref_enum_output="${1}"
       local -n str_file_name="${2}"
 
@@ -222,6 +240,8 @@
   #
     function write_file
     {
+      log_stdout "${0}: ${FUNCNAME}"
+
       if ! is_file "${2}" \
         || [[ -z "${1}" ]]; then
         return 1

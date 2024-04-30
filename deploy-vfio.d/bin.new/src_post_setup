@@ -33,6 +33,8 @@
   #
     function set_globals
     {
+      log_stdout "${0}: ${FUNCNAME}"
+
       if [[ "${SRC_POST_SETUP_BOOL_SET_GLOBALS}" == true ]]; then
         return 0
       fi

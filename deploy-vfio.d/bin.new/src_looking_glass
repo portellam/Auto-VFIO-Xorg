@@ -33,6 +33,8 @@
   #
     function are_looking_glass_dependencies_installed
     {
+      log_stdout "${0}: ${FUNCNAME}"
+
       local -a arr_dependencies=( \
         "cmake" \
         "gcc" "g++" "clang" \
@@ -85,6 +87,8 @@
   #
     function execute_cmake
     {
+      log_stdout "${0}: ${FUNCNAME}"
+
       local str_arguments="${1}"
 
       if cmake "${str_arguments}" &> /dev/null; then
@@ -156,6 +160,8 @@
   #
     function does_looking_glass_repo_exist
     {
+      log_stdout "${0}: ${FUNCNAME}"
+
       local -r str_last_dir="$( pwd )"
       does_this_git_repo_exist "Looking Glass" "github.com/gnif/LookingGlass"
       cd "${str_last_dir}"
@@ -167,6 +173,8 @@
   #
     function install_looking_glass
     {
+      log_stdout "${0}: ${FUNCNAME}"
+
       does_looking_glass_repo_exist || return 1
 
       local -r str_project_path="${STR_GIT_STR_REPO_PARENT_PATH}/LookingGlass"

@@ -36,6 +36,8 @@
   #
     function set_globals
     {
+      log_stdout "${0}: ${FUNCNAME}"
+
       if [[ "${SRC_IOMMU_BOOL_SET_GLOBALS}" == true ]]; then
         return 0
       fi
@@ -55,6 +57,8 @@
   #
     function parse_iommu_database
     {
+      log_stdout "${0}: ${FUNCNAME}"
+
       if is_bool "${1}" &> /dev/null \
         && "${1}"; then
         print_output_to_log "Skipped parse of IOMMU groups."
@@ -81,6 +85,8 @@
   #
     function try_to_parse_iommu_database
     {
+      log_stdout "${0}: ${FUNCNAME}"
+
       is_unparsed_enum_valid || return 1
       parse_iommu_database_from_xml_file
       specify_xml_file || return 1
@@ -111,6 +117,8 @@
   #
     function parse_iommu_database_prompt
     {
+      log_stdout "${0}: ${FUNCNAME}"
+
       if "${SRC_IOMMU_BOOL_DO_PARSE_DATABASE}"; then
         return 0
       fi
