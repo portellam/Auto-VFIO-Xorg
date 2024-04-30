@@ -90,6 +90,7 @@
     function catch_error
     {
       echo
+      error_disclaimer
       exit 1
     }
 
@@ -104,12 +105,23 @@
     }
 
   #
+  # DESC:   Warn user of any errors at exit.
+  # RETURN: Always return 0.
+  #
+    function error_disclaimer
+    {
+      echo -e "${SRC_PRINT_STR_PREFIX_PROMPT}One or more errors have occurred."\
+        "Please view the logfile to troubleshoot ('${SRC_PRINT_STR_LOG_FILE}')." >&2
+    }
+
+  #
   # DESC:   Log output to STDERR.
   # RETURN: Always return 0.
   #
     function log_stderr
     {
       logger --stderr "${1}" 2>> "${SRC_PRINT_STR_LOG_FILE}"
+      echo -e "" >&2
     }
 
   #
@@ -129,7 +141,6 @@
     function print_error_to_log
     {
       log_stderr "${SRC_PRINT_STR_PREFIX_ERROR}${1}"
-      echo -e "${SRC_PRINT_STR_PREFIX_ERROR}${1}" >&2
     }
 
   #
