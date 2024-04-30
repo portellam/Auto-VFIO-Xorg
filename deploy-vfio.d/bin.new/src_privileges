@@ -31,5 +31,6 @@
         return 1
       fi
 
+      log_stdout "User is sudo or root."
       return 0
     }
