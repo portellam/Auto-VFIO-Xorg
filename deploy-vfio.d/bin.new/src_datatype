@@ -34,6 +34,8 @@
   #
     function array_contains_value
     {
+      log_stdout "${0}: ${FUNCNAME}"
+
       if ! is_array "${1}" \
         || ! is_string "${2}"; then
         return 1
@@ -59,6 +61,8 @@
   #
     function add_to_array
     {
+      log_stdout "${0}: ${FUNCNAME}"
+
       if ! is_array "${1}" \
         || ! is_string "${2}"; then
         return 1
@@ -81,6 +85,8 @@
   #
     function add_to_dict
     {
+      log_stdout "${0}: ${FUNCNAME}"
+
       if ! is_dict "${1}"; then
         return 1
       fi
@@ -114,6 +120,8 @@
   #
     function dict_contains_key_value_pair
     {
+      log_stdout "${0}: ${FUNCNAME}"
+
       if ! is_dict "${1}" \
         || ! is_string "${2}"; then
         return 1
@@ -157,6 +165,8 @@
   #
     function get_comma_delimited_string_from_enum
     {
+      log_stdout "${0}: ${FUNCNAME}"
+
       local -n ref_enum="${1}"
       local -n ref_str_delimited="${2}"
 
@@ -179,6 +189,8 @@
   #
     function is_array
     {
+      log_stdout "${0}: ${FUNCNAME}"
+
       if ! is_enum "${1}"; then
         return 1
       fi
@@ -199,6 +211,8 @@
   #
     function is_bool
     {
+      log_stdout "${0}: ${FUNCNAME}"
+
       local str_result="${1}"
 
       if [[ "${str_result}" != "true" ]] \
@@ -218,6 +232,8 @@
   #
     function is_dict
     {
+      log_stdout "${0}: ${FUNCNAME}"
+
       if ! is_enum "${1}"; then
         return 1
       fi
@@ -238,6 +254,8 @@
   #
     function is_enum
     {
+      log_stdout "${0}: ${FUNCNAME}"
+
       if ! is_string "${1}"; then
         return 1
       fi
@@ -260,6 +278,8 @@
   #
     function is_enum_not_empty
     {
+      log_stdout "${0}: ${FUNCNAME}"
+
       if ! is_enum "${1}"; then
         return 1
       fi
@@ -284,6 +304,8 @@
   #
     function is_int
     {
+      log_stdout "${0}: ${FUNCNAME}"
+
       if ! [[ "${1}" =~ ^[0-9]+$ ]] \
         && ! [[ "${1}" =~ ^[-][0-9]+$ ]]; then
         print_error_to_log "Invalid integer."
@@ -301,6 +323,8 @@
   #
     function is_string
     {
+      log_stdout "${0}: ${FUNCNAME}"
+
       if [[ "${1}" == "" ]]; then
         print_error_to_log "Empty string."
         return 1
@@ -318,6 +342,8 @@
   #
     function remove_from_array
     {
+      log_stdout "${0}: ${FUNCNAME}"
+
       if ! is_array "${1}" \
         || ! is_string "${2}"; then
         return 1
@@ -339,6 +365,8 @@
   #
     function remove_from_dict
     {
+      log_stdout "${0}: ${FUNCNAME}"
+
       if ! is_dict "${1}"; then
         return 1
       fi
