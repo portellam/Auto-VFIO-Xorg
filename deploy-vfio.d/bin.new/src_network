@@ -12,7 +12,6 @@
 # - [ ] test.
 #
 
-
 #
 # sources
 #
@@ -25,8 +24,9 @@
 # logic
 #
   #
-  # DESC: Pings Internet IP addresses and domain names.
-  # RETURN: If pings are successful return 0. If false, return 1.
+  # DESC:   Pings Internet IP addresses and domain names.
+  # RETURN: If pings are successful return 0.
+  #         If false, return 1.
   #
     function do_ping_internet
     {
@@ -44,25 +44,38 @@
           print_error_to_log "Failed to resolve domain names."
         return 1
       fi
+
+      print_output_to_log "Connected to Internet."
     }
 
   #
   # DESC:   Pings given address.
   # $1:     the server address
-  # RETURN: If ping is successful, return 0. If false, return 1.
+  # RETURN: If ping is successful, return 0.
+  #         If false, return 1.
   #
     function do_ping_server
     {
       log_stdout "${0}: ${FUNCNAME}"
 
-      ping "${1}" -c 1 &> /dev/null
+      local -ir int_number_of_tries=3
+
+      log_stdout "Pinging. Please wait..."
+
+      if ! ping "${1}" -c "${int_number_of_tries}" &> /dev/null; then
+        log_stderr "Failure."
+        return 1
+      fi
+
+      log_stdout "Success."
+      return 0
     }
 
   #
-  # DESC:   Check if the Host machine is connected to the Internet.
-  # $1:     true/false ignore the outcome and return 0.
-  # RETURN: If the Host machine is connected to the Internet, return 0.
-  # If false, return 1.
+  # DESC:     Check if the Host machine is connected to the Internet.
+  # $1:       do ignore the outcome.
+  # RETURN:   If the Host machine is connected to the Internet, return 0.
+  #           If false, return 1.
   #
     function is_connected_to_internet
     {
