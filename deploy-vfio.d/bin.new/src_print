@@ -66,17 +66,17 @@
       #
         declare -gr SRC_PRINT_STR_PREFIX_PROMPT="${SRC_PRINT_STR_SCRIPT_NAME}: "
 
-        declare -gr STR_PREFIX_NOTE="${STR_PREFIX_PROMPT}" + \
+        declare -gr SRC_PRINT_STR_PREFIX_NOTE="${SRC_PRINT_STR_PREFIX_PROMPT}" + \
           "${SRC_PRINT_STR_SET_COLOR_YELLOW}Note:${SRC_PRINT_STR_RESET_COLOR} "
 
-        declare -gr SRC_PRINT_STR_PREFIX_ERROR="${STR_PREFIX_PROMPT}" + \
+        declare -gr SRC_PRINT_STR_PREFIX_ERROR="${SRC_PRINT_STR_PREFIX_PROMPT}" + \
           "${SRC_PRINT_STR_SET_COLOR_YELLOW}An error occurred:" + \
           "${SRC_PRINT_STR_RESET_COLOR} "
 
-        declare -gr SRC_PRINT_STR_PREFIX_FAIL="${STR_PREFIX_PROMPT}" + \
+        declare -gr SRC_PRINT_STR_PREFIX_FAIL="${SRC_PRINT_STR_PREFIX_PROMPT}" + \
           "${SRC_PRINT_STR_SET_COLOR_RED}Failure:${SRC_PRINT_STR_RESET_COLOR} "
 
-        declare -gr SRC_PRINT_STR_PREFIX_PASS="${STR_PREFIX_PROMPT}" + \
+        declare -gr SRC_PRINT_STR_PREFIX_PASS="${SRC_PRINT_STR_PREFIX_PROMPT}" + \
           "${SRC_PRINT_STR_SET_COLOR_GREEN}Success:${SRC_PRINT_STR_RESET_COLOR} "
     }
 
@@ -217,6 +217,7 @@
   #
     function reset_ifs
     {
+      log_stdout "${0}: ${FUNCNAME}"
       IFS="${SRC_PRINT_SAVEIFS}"
     }
 
@@ -226,6 +227,7 @@
   #
     function set_ifs_to_newline
     {
+      log_stdout "${0}: ${FUNCNAME}"
       IFS=$'\n'
     }
 
