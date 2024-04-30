@@ -29,8 +29,9 @@
   # DESC:   Does array contain value.
   # $1:     the array as a reference.
   # $2:     the value as a string.
-  # RETURN: If successful, return 0.
-  #         If not, return 1.
+  # RETURN: If true, return 0.
+  #         If false, return 1.
+  #         If an exception occurs, return 2.
   #
     function array_contains_value
     {
@@ -38,17 +39,18 @@
 
       if ! is_array "${1}" \
         || ! is_string "${2}"; then
-        return 1
+        return 2
       fi
 
       local -n ref_arr="${1}"
       local str_val="${2}"
 
       if ! [[ ${ref_arr[@]} =~ "${str_val}" ]]; then
-        print_error_to_log "Array does not contain value '${str_val}'."
+        log_stderr "Array does not contain value."
         return 1
       fi
 
+      log_stdout "Array does contain value."
       return 0
     }
 
@@ -56,8 +58,9 @@
   # DESC:   Add value to array.
   # $1:     the array as a reference.
   # $2:     the value as a string.
-  # RETURN: If successful, return 0.
-  #         If not, return 1.
+  # RETURN: If true, return 0.
+  #         If false, return 1.
+  #         If an exception occurs, return 2.
   #
     function add_to_array
     {
@@ -65,13 +68,19 @@
 
       if ! is_array "${1}" \
         || ! is_string "${2}"; then
-        return 1
+        return 2
       fi
 
       local -n ref_arr="${1}"
       local str_val="${2}"
-
       ref_arr+=( "${str_val}" )
+
+      if [[ "${?}" -ne 0 ]]; then
+        log_stderr "Could not add value to array."
+        return 1
+      fi
+
+      log_stdout "Add value to array."
       return 0
     }
 
@@ -80,32 +89,40 @@
   # $1:     the dictionary as a reference.
   # $2:     the key as a string.
   # $3:     the value as a string.
-  # RETURN: If successful, return 0.
-  #         If not, return 1.
+  # RETURN: If true, return 0.
+  #         If false, return 1.
+  #         If an exception occurs, return 2.
   #
     function add_to_dict
     {
       log_stdout "${0}: ${FUNCNAME}"
 
-      if ! is_dict "${1}"; then
-        return 1
+      if ! is_string "${3}" &> /dev/null; then
+        print_error_to_log "Invalid value."
+        return 2
       fi
 
       if ! is_string "${2}" &> /dev/null; then
         print_error_to_log "Invalid key."
-        return 1
+        return 2
       fi
 
-      if ! is_string "${3}" &> /dev/null; then
-        print_error_to_log "Invalid value."
-        return 1
+      if ! is_not_readonly "${1}" \
+        || ! is_dict "${1}"; then
+        return 2
       fi
 
       local -n ref_dict="${1}"
       local -r str_key="${2}"
       local -r str_value="${3}"
-
       ref_dict+=( ["${str_key}"]="${str_element}" )
+
+      if [[ "${?}" -ne 0 ]]; then
+        log_stderr "Could not remove value from array."
+        return 1
+      fi
+
+      log_stdout "Removed value from array."
       return 0
     }
 
@@ -114,27 +131,26 @@
   # $1:     the dictionary as a reference.
   # $2:     the key as a string.
   # $3:     the value as a string.
-  # RETURN: If key-value pair exists in dictionary, return 0.
-  #         If key doesn't exist in dictionary, return 2.
-  #         If value doesn't exist in dictionary, return 1.
+  # RETURN: If true, return 0.
+  #         If false, return 1.
+  #         If an exception occurs, return 2.
   #
     function dict_contains_key_value_pair
     {
       log_stdout "${0}: ${FUNCNAME}"
 
-      if ! is_dict "${1}" \
-        || ! is_string "${2}"; then
-        return 1
+      if ! is_string "${3}" &> /dev/null; then
+        log_stderr "Invalid value."
+        return 2
       fi
 
       if ! is_string "${2}" &> /dev/null; then
-        print_error_to_log "Invalid key."
-        return 1
+        log_stderr "Invalid key."
+        return 2
       fi
 
-      if ! is_string "${3}" &> /dev/null; then
-        print_error_to_log "Invalid value."
-        return 1
+      if ! is_dict "${1}"; then
+        return 2
       fi
 
       local -n ref_dict="${1}"
@@ -142,17 +158,16 @@
       local -r str_value="${3}"
 
       if ! $( -v "${ref_arr["${str_key}"]}" &> /dev/null ); then
-        print_error_to_log "Dictionary does not contain key '${str_key}'."
-        return 2
-      fi
-
-      if [[ ${ref_arr["${str_key}"]} != "${str_value}" ]]; then
-        print_error_to_log "Dictionary key '${str_key}' does not contain value "\
-          "'${str_value}'."
-
+        log_stderr "Dictionary does not contain key."
         return 1
       fi
 
+      if [[ ${ref_arr["${str_key}"]} != "${str_value}" ]]; then
+        log_stderr "Dictionary key does not contain value."
+        return 1
+      fi
+
+      log_stdout "Dictionary key does contain value."
       return 0
     }
 
@@ -160,12 +175,22 @@
   # DESC:   Get the given enum as a comma-delimited string.
   # $1:     the enum as a reference.
   # $2:     the delimited string as a reference
-  # RETURN: If successful, return 0.
-  #         If not, return 1.
+  # RETURN: If true, return 0.
+  #         If false, return 1.
+  #         If an exception occurs, return 2.
   #
     function get_comma_delimited_string_from_enum
     {
       log_stdout "${0}: ${FUNCNAME}"
+
+      if ! is_not_readonly "${2}" \
+        || ! is_string "${2}"; then
+        return 2
+      fi
+
+      if ! is_enum "${1}"; then
+        return 2
+      fi
 
       local -n ref_enum="${1}"
       local -n ref_str_delimited="${2}"
@@ -178,6 +203,7 @@
         ref_str_delimited="${ref_str_delimited::-1}"
       fi
 
+      log_stdout "Got delimited string from enum."
       return 0
     }
 
@@ -186,20 +212,22 @@
   # $1:     the array as a reference.
   # RETURN: If true, return 0.
   #         If false, return 1.
+  #         If an exception occurs, return 2.
   #
     function is_array
     {
       log_stdout "${0}: ${FUNCNAME}"
 
       if ! is_enum "${1}"; then
+        return 2
+      fi
+
+      if [[ $( declare -p ${1} 2>/dev/null ) == "declare -a"* ]]; then
+        log_stderr "Enum is not an array."
         return 1
       fi
 
-      if ! [[ "$( declare -p "${1}" 2>/dev/null )" == "declare -a"* ]]; then
-        print_error_to_log "Enum is not an array."
-        return 1
-      fi
-
+      log_stdout "Enum is an array."
       return 0
     }
 
@@ -208,6 +236,7 @@
   # $1:     the input as a bool.
   # RETURN: If true, return 0.
   #         If false, return 1.
+  #         If an exception occurs, return 2.
   #
     function is_bool
     {
@@ -217,32 +246,35 @@
 
       if [[ "${str_result}" != "true" ]] \
         && [[ "${str_result}" != "false" ]]; then
-        print_error_to_log "Invalid bool."
+        log_stderr "Invalid bool."
         return 1
       fi
 
+      log_stdout "Valid bool."
       return 0
     }
 
   #
   # DESC:   Is reference variable an dictionary.
-  # $1:     the dict as a reference.
+  # $1:     the dictionary as a reference.
   # RETURN: If true, return 0.
   #         If false, return 1.
+  #         If an exception occurs, return 2.
   #
     function is_dict
     {
       log_stdout "${0}: ${FUNCNAME}"
 
       if ! is_enum "${1}"; then
+        return 2
+      fi
+
+      if ! [[ $( declare -p ${1} 2>/dev/null ) == "declare -A"* ]]; then
+        log_stderr "Enum is not a dictionary."
         return 1
       fi
 
-      if ! [[ "$( declare -p "${1}" 2>/dev/null )" == "declare -A"* ]]; then
-        print_error_to_log "Enum is not a dictionary."
-        return 1
-      fi
-
+      log_stdout "Enum is a dictionary."
       return 0
     }
 
@@ -251,22 +283,24 @@
   # $1:     the enum as a reference.
   # RETURN: If true, return 0.
   #         If false, return 1.
+  #         If an exception occurs, return 2.
   #
     function is_enum
     {
       log_stdout "${0}: ${FUNCNAME}"
 
       if ! is_string "${1}"; then
-        return 1
+        return 2
       fi
 
       local -n ref_enum="${1}"
 
       if ! [[ "${#ref_enum[@]}" -gt 0 ]]; then
-        print_error_to_log "Invalid enum."
+        log_stderr "Invalid enum."
         return 1
       fi
 
+      log_stdout "Valid enum."
       return 0
     }
 
@@ -275,24 +309,26 @@
   # $1:     the enum as a reference.
   # RETURN: If true, return 0.
   #         If false, return 1.
+  #         If an exception occurs, return 2.
   #
     function is_enum_not_empty
     {
       log_stdout "${0}: ${FUNCNAME}"
 
       if ! is_enum "${1}"; then
-        return 1
+        return 2
       fi
 
       local -n ref_enum="${1}"
 
       for var_value in "${ref_enum[@]}"; do
         if is_string "${var_value}" &> /dev/null; then
+          log_stdout "Not empty enum."
           return 0
         fi
       done
 
-      print_error_to_log "Empty enum."
+      log_stderr "Empty enum."
       return 1
     }
 
@@ -301,6 +337,7 @@
   # $1:     the input as an int.
   # RETURN: If true, return 0.
   #         If false, return 1.
+  #         If an exception occurs, return 2.
   #
     function is_int
     {
@@ -308,10 +345,33 @@
 
       if ! [[ "${1}" =~ ^[0-9]+$ ]] \
         && ! [[ "${1}" =~ ^[-][0-9]+$ ]]; then
-        print_error_to_log "Invalid integer."
+        log_stderr "Invalid integer."
         return 1
       fi
 
+      log_stdout "Valid integer."
+      return 0
+    }
+
+  #
+  # DESC:   Is not read-only.
+  # $1:     the variable as a reference.
+  # RETURN: If true, return 0.
+  #         If false, return 1.
+  #         If an exception occurs, return 2.
+  #
+    function is_not_readonly
+    {
+      if ! is_string "${1}"; then
+        return 2
+      fi
+
+      if ! [[ $( declare -p ${1} 2>/dev/null ) == "declare -r"* ]]; then
+        log_stderr "Variable is read-only."
+        return 1
+      fi
+
+      log_stdout "Variable is not read-only."
       return 0
     }
 
@@ -326,10 +386,11 @@
       log_stdout "${0}: ${FUNCNAME}"
 
       if [[ "${1}" == "" ]]; then
-        print_error_to_log "Empty string."
+        log_stderr "Empty string."
         return 1
       fi
 
+      log_stdout "Non-empty string."
       return 0
     }
 
@@ -344,45 +405,63 @@
     {
       log_stdout "${0}: ${FUNCNAME}"
 
-      if ! is_array "${1}" \
-        || ! is_string "${2}"; then
-        return 1
+      if ! is_string "${2}" \
+        || ! is_not_readonly "${1}" \
+        || ! is_array "${1}"; then
+        return 2
       fi
 
       local -n ref_arr="${1}"
       local str_val="${2}"
+      local -i int_return_code=1
 
-      ref_arr+=( "${str_val}" )
+      for int_key in "${!ref_arr[@]}"; do
+        if [[ "${ref_arr["${int_key}"]}" == "${str_val}" ]]; then
+          unset ref_arr[$int_key]
+          int_return_code="${?}"
+          break
+        fi
+      done
+
+      if [[ "${int_return_code}" -ne 0 ]]; then
+        log_stderr "Could not remove value from array."
+        return 1
+      fi
+
+      log_stdout "Removed value from array."
       return 0
     }
 
   #
-  # DESC:   Remove key-value pair from dict.
+  # DESC:   Remove key-value pair from dictionary.
   # $1:     the dictionary as a reference.
   # $2:     the key as a string.
   # RETURN: If true, return 0.
   #         If false, return 1.
+  #         If an exception occurs, return 2.
   #
     function remove_from_dict
     {
       log_stdout "${0}: ${FUNCNAME}"
 
-      if ! is_dict "${1}"; then
-        return 1
-      fi
-
       if ! is_string "${2}" &> /dev/null; then
-        print_error_to_log "Invalid key."
-        return 1
+        log_stderr "Invalid key."
+        return 2
       fi
 
-      local -n red_dict="${1}"
+      if ! is_not_readonly "${1}" \
+        || ! is_dict "${1}"; then
+        return 2
+      fi
+
+      local -n ref_dict="${1}"
       local -r str_key="${2}"
 
-      if ! unset red_dict["${str_key}"]; then
-        print_error_to_log "Could not remove key '${str_key}' from dictionary."
+      if ! unset ref_dict["${str_key}"]; then
+        log_stderr "Could not remove key from dictionary."
         return 1
       fi
 
+      log_stdout "Removed key-value from array."
       return 0
     }
