@@ -53,7 +53,7 @@
       local -r str_project_path="${STR_GIT_STR_REPO_PARENT_PATH}/libvirt-hooks"
 
       cd "${str_project_path}"
-      print_output_to_log "Executing Libvirt Hooks installer...\n"
+      log_stdout "Executing Libvirt Hooks installer...\n"
       sudo bash installer.bash "${str_arguments}"
 
       local -i int_code="${?}"
@@ -61,36 +61,50 @@
       echo
 
       if [[ "${int_code}" -ne 0 ]]; then
-        print_output_to_log "Execution failed."
+        log_stderr "Execution failed."
         return "${int_code}"
       fi
 
-      print_output_to_log "Execution successful."
+      log_stdout "Execution successful."
       return 0
     }
 
   #
   # DESC:   Install Libvirt Hooks.
   # $1:     the command line arguments
-  # RETURN: If install is successful, return 0. If false, return 1.
+  # RETURN: If install is successful, return 0.
+  #         If false, return 1.
   #
     function install_libvirt_hooks
     {
       log_stdout "${0}: ${FUNCNAME}"
 
-      execute_libvirt_hooks_installer "--install"
-      return "${?}"
+      print_output_to_log "Installing Libvirt Hooks..."
+      if ! execute_libvirt_hooks_installer "--install"; then
+        print_output_to_log "Failed."
+        return 1
+      fi
+
+      print_output_to_log "Successful."
     }
 
   #
   # DESC:   Uninstall Libvirt Hooks.
   # $1:     the command line arguments
-  # RETURN: If uninstall is successful, return 0. If false, return 1.
+  # RETURN: If uninstall is successful, return 0.
+  #         If false, return 1.
   #
     function uninstall_libvirt_hooks
     {
       log_stdout "${0}: ${FUNCNAME}"
 
-      execute_libvirt_hooks_installer "--uninstall"
-      return "${?}"
+      print_output_to_log "Uninstalling Libvirt Hooks..."
+
+      if ! execute_libvirt_hooks_installer "--uninstall"; then
+        print_output_to_log "Failed."
+        return 1
+      fi
+
+      print_output_to_log "Successful."
+      return 0
     }
