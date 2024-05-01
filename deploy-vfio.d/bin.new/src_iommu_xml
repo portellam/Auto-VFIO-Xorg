@@ -119,7 +119,7 @@
         return 1
       fi
 
-      print_output_to_log "Created temp file for IOMMU groups XML file "\
+      log_stdout "Created temp file for IOMMU groups XML file "\
         "'${SRC_IOMMU_XML_STR_XML_FILE}'".
     }
 
@@ -139,7 +139,7 @@
         return 1
       fi
 
-      print_output_to_log "Deleted temp files for IOMMU groups XML file "\
+      log_stdout "Deleted temp files for IOMMU groups XML file "\
         "'${SRC_IOMMU_XML_STR_XML_FILE}'".
     }
 
@@ -212,7 +212,7 @@
         return 1
       fi
 
-      print_output_to_log "Wrote to file '${str_xml_file_name}'."
+      log_stdout "Wrote to file '${str_xml_file_name}'."
       return 0
     }
 
@@ -263,16 +263,20 @@
           break
         fi
 
-        SRC_IOMMU_XML_DICT_DEVICE_DRIVERS_FROM_XML_FILE+=( ["${str_device_id}"]="${str_driver}" )
+        SRC_IOMMU_XML_DICT_DEVICE_DRIVERS_FROM_XML_FILE+=( \
+          ["${str_device_id}"]="${str_driver}" \
+        )
+
         (( int_counter++ ))
       done
 
-      if ! is_enum_not_empty "SRC_IOMMU_XML_DICT_DEVICE_DRIVERS_FROM_XML_FILE" &> /dev/null; then
+      if ! is_enum_not_empty "SRC_IOMMU_XML_DICT_DEVICE_DRIVERS_FROM_XML_FILE" \
+        &> /dev/null; then
         print_error_to_log "XML file is empty."
         return 1
       fi
 
-      print_output_to_log "Parsed XML file."
+      log_stdout "Parsed XML file."
       return 0
     }
 
@@ -293,9 +297,7 @@
         return 1
       fi
 
-      print_output_to_log "IOMMU groups XML file "\
-        "'${SRC_IOMMU_XML_STR_XML_FILE}' exists".
-
+      log_stdout "IOMMU groups XML file '${SRC_IOMMU_XML_STR_XML_FILE}' exists".
       return 0
     }
 
@@ -326,24 +328,29 @@
         return 1
       fi
 
-      print_output_to_log "XML file is valid."
+      log_stdout "XML file is valid."
       return 0
     }
 
   #
-  # DESC:   Parse the IOMMU database from XML file.
+  # DESC:   Set flag to cross-reference the IOMMU groups from XML file.
   # $1:     do parse the XML file.
-  # RETURN: If parse is successful or skipped, return 0.
+  # RETURN: If flag is set already, return 0.
   #         If failed, return 1.
   #
-    function parse_iommu_groups_from_xml_file
+    function set_flag_to_parse_iommu_groups_from_xml_file
     {
       log_stdout "${0}: ${FUNCNAME}"
 
-      if is_bool "${1}" &> /dev/null \
-        && "${1}"; then
-        SRC_IOMMU_XML_BOOL_DO_PARSE_IOMMU_GROUPS_FROM_XML_FILE=false
-        print_output_to_log "Skipped parse of IOMMU groups by XML file."
+      if is_bool "${1}" &> /dev/null; then
+        SRC_IOMMU_XML_BOOL_DO_PARSE_IOMMU_GROUPS_FROM_XML_FILE="${1}"
+
+        if "${SRC_IOMMU_XML_BOOL_DO_PARSE_IOMMU_GROUPS_FROM_XML_FILE}"; then
+          print_output_to_log "IOMMU groups will be cross-referenced by XML file."
+        else
+          print_output_to_log "IOMMU groups will be not cross-referenced by XML file."
+        fi
+
         return 0
       fi
 
@@ -448,16 +455,17 @@
       log_stdout "${0}: ${FUNCNAME}"
 
       if ! copy_temp_file_to_file "${SRC_IOMMU_XML_STR_XML_FILE}"; then
-        print_error_to_log "Could not restore IOMMU groups XML file "\
+        print_error_to_log "Could not restore XML file "\
           "'${SRC_IOMMU_XML_STR_XML_FILE}' from temp file".
 
         return 1
       fi
 
-      print_output_to_log "Restored IOMMU groups XML file "\
+      log_stdout "Restored XML file "\
         "'${SRC_IOMMU_XML_STR_XML_FILE}' from temp file".
     }
 
+#
 # main logic
 #
   set_globals
