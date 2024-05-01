@@ -91,54 +91,63 @@
 
       local str_arguments="${1}"
 
+      print_output_to_log "Executing 'cmake'. Please wait..."
+
       if cmake "${str_arguments}" &> /dev/null; then
+        print_pass_to_log "Successful."
         return 0
       fi
 
       local -r str_disable_backtrace="-DENABLE_BACKTRACE=no binutils-dev"
-      print_output_to_log "Executing 'cmake' with disabled backtrace dependencies..."
+
+      log_stdout "Failed. Executing 'cmake' with disabled backtrace dependencies..."
 
       if cmake "${str_disable_backtrace}" "${str_arguments}" &> /dev/null; then
+        print_pass_to_log "Successful."
         return 0
       fi
 
       local -r str_disable_x11="-DENABLE_X11=no libx11-dev libxfixes-dev libxi-dev " \
         "libxinerama-dev libxss-dev libxcursor-dev libxpresent-dev"
 
-      print_output_to_log "Executing 'cmake' with disabled X11 dependencies..."
+      log_stdout "Failed. Executing 'cmake' with disabled X11 dependencies..."
 
       if cmake "${str_disable_x11}" "${str_arguments}" &> /dev/null; then
+        print_pass_to_log "Successful."
         return 0
       fi
 
       local -r str_disable_wayland="-DENABLE_WAYLAND=no libxkbcommon-dev " \
         "libwayland-bin libwayland-dev wayland-protocols"
 
-      print_output_to_log "Executing 'cmake' with disabled Wayland dependencies..."
+      log_stdout "Failed. Executing 'cmake' with disabled Wayland dependencies..."
 
       if cmake cmake "${str_disable_wayland}" "${str_arguments}" &> /dev/null; then
+        print_pass_to_log "Successful."
         return 0
       fi
 
       local -r str_disable_pipewire="-DENABLE_PIPEWIRE=no libpipewire-0.3-dev " \
         "libsamplerate0-dev"
 
-      print_output_to_log "Executing 'cmake' with disabled Pipe Wire dependencies..."
+      log_stdout "Failed. Executing 'cmake' with disabled Pipe Wire dependencies..."
 
       if cmake cmake "${str_disable_pipewire}" "${str_arguments}" &> /dev/null; then
+        print_pass_to_log "Successful."
         return 0
       fi
 
       local -r str_disable_pulseaudio="-DENABLE_PULSEAUDIO=no libpulse-dev " \
         "libsamplerate0-dev"
 
-      print_output_to_log "Executing 'cmake' with disabled Pulse Audio dependencies..."
+      log_stdout "Failed. Executing 'cmake' with disabled Pulse Audio dependencies..."
 
       if cmake cmake "${str_disable_pulseaudio}" "${str_arguments}" &> /dev/null; then
+        print_pass_to_log "Successful."
         return 0
       fi
 
-      print_output_to_log "Executing 'cmake' with all disabled dependencies..."
+      log_stdout "Failed. Executing 'cmake' with all disabled dependencies..."
 
       if ! cmake "${str_disable_backtrace}" \
         "${str_disable_x11}" \
@@ -146,11 +155,11 @@
         "${str_disable_pipewire}" \
         "${str_disable_pulseaudio}" \
         "${str_arguments}" &> /dev/null; then
-        print_error_to_log "'cmake' failed."
+        print_error_to_log "Failed."
         return 1
       fi
 
-      print_pass_to_log "'cmake' successful."
+      print_pass_to_log "Successful."
       return 0
     }
 
