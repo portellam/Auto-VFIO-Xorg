@@ -37,9 +37,11 @@
 
         case "${str_answer}" in
           [Yy]* )
+            log_stdout "Answered: Yes"
             return 0 ;;
 
           [Nn]* )
+            log_stdout "Answered: No"
             return 255 ;;
 
           * )
@@ -47,5 +49,6 @@
         esac
       done
 
+      log_stderr "Invalid answer."
       return 1
     }
