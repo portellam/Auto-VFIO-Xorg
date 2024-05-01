@@ -44,7 +44,8 @@
 #
   #
   # DESC:   Set flag to true if argument is passed.
-  # RETURN: If true, return 0. If false, return 1.
+  # RETURN: If true, return 0.
+  #         If false, return 1.
   #
     function is_option_ignore_distro
     {
@@ -52,24 +53,28 @@
 
       if [[ "${1}" != "--ignore-distro" ]]; then
         SRC_COMPATIBILITY_BOOL_DO_IGNORE_DISTRO=false
-        print_output_to_log "Enabled system distribution check."
+        log_stdout "Enabled system distribution check."
         return 1
       fi
 
-      print_output_to_log "Disabled system distribution check."
+      log_stdout "Disabled system distribution check."
       SRC_COMPATIBILITY_BOOL_DO_IGNORE_DISTRO=true
       return 0
     }
 
   #
   # DESC:   Call option logic.
-  # RETURN: If true, return 0. If false, return 1.
+  # RETURN: If true, return 0.
+  #         If false, return 1.
   #
     function is_option_of_compatibility
     {
       log_stdout "${0}: ${FUNCNAME}"
 
-      is_option_ignore_distro || return 1
+      if ! is_option_ignore_distro; then
+        return 1
+      fi
+
       return 0
     }
 
@@ -78,14 +83,15 @@
 #
   #
   # DESC:   Is Linux distribution supported.
-  # RETURN: If true, return 0. If false, return 1.
+  # RETURN: If true, return 0.
+  #         If false, return 1.
   #
     function is_distribution_supported
     {
       log_stdout "${0}: ${FUNCNAME}"
 
       if "${SRC_COMPATIBILITY_BOOL_DO_IGNORE_DISTRO}"; then
-        print_output_to_log "Skipped system distribution check."
+        log_stdout "Skipped system distribution support check."
         return 0
       fi
 
@@ -99,11 +105,17 @@
 
         return 1
       fi
+
+      log_stdout "System distribution '${str_operating_system_lowercase}' "\
+        "is supported."
+
+      return 0
     }
 
   #
   # DESC:   Is IOMMU support groups supported by the Host machine.
-  # RETURN: If true, return 0. If false, return 1.
+  # RETURN: If true, return 0.
+  #         If false, return 1.
   #
     function is_iommu_enabled
     {
@@ -114,14 +126,15 @@
         return 1
       fi
 
-      print_output_to_log "System does support IOMMU groups."
+      log_stdout "System does support IOMMU groups."
       return 0
     }
 
   #
   # DESC:   Is given package installed as a command or in the APT package manager.
   # $1:     the package name as a string
-  # RETURN: If true, return 0. If false, return 1.
+  # RETURN: If true, return 0.
+  #         If false, return 1.
   #
     function is_package_installed
     {
@@ -130,20 +143,24 @@
       local str_package_name="${1}"
 
       if command -v "${str_package_name}" &> /dev/null; then
+        log_stdout "Package '${str_package_name}' is installed."
         return 0
       fi
 
       if ! sudo apt list --installed "${str_package_name}" | \
         grep "${str_package_name}" &> /dev/null; then
+        log_stdout "Package '${str_package_name}' is not installed."
         return 1
       fi
 
+      log_stdout "Package '${str_package_name}' is installed."
       return 0
     }
 
   #
   # DESC:   Is the Host machine supported in general.
-  # RETURN: If true, return 0. If false, return 1.
+  # RETURN: If true, return 0.
+  #         If false, return 1.
   #
     function is_system_supported
     {
@@ -158,13 +175,14 @@
         exit 1
       fi
 
-      print_pass_to_log "System is supported."
+      log_stdout "System is supported."
       return 0
     }
 
   #
   # DESC:   Is Systemd installed (yuck!).
-  # RETURN: If true, return 0. If false, return 1.
+  # RETURN: If true, return 0.
+  #         If false, return 1.
   #
     function is_systemd_installed
     {
@@ -175,13 +193,14 @@
         return 1
       fi
 
-      print_output_to_log "'systemd' is installed."
+      log_stdout "'systemd' is installed."
       return 0
     }
 
   #
   # DESC:   Is Virtualization enabled on the Host machine.
-  # RETURN: If true, return 0. If false, return 1.
+  # RETURN: If true, return 0.
+  #         If false, return 1.
   #
     function is_virtualization_enabled
     {
@@ -196,13 +215,14 @@
         return 1
       fi
 
-      print_output_to_log "System supports hardware virtualization."
+      log_stdout "System supports hardware virtualization."
       return 0
     }
 
   #
   # DESC:   Is the required libraries installed.
-  # RETURN: If true, return 0. If false, return 1.
+  # RETURN: If true, return 0.
+  #         If false, return 1.
   #
     function is_xml_library_installed
     {
@@ -217,7 +237,7 @@
         return 1
       fi
 
-      print_output_to_log "Required XML libraries are installed."
+      log_stdout "Required XML libraries are installed."
       return 0
     }
 
