@@ -43,7 +43,7 @@
         return 1
       fi
 
-      print_output_to_log "One or more devices reserved for Host machine."
+      log_stdout "One or more devices reserved for Host machine."
       return 0
     }
 
@@ -64,7 +64,7 @@
         return 1
       fi
 
-      print_output_to_log "One or more devices reserved for VFIO."
+      log_stdout "One or more devices reserved for VFIO."
       return 0
     }
 
@@ -96,7 +96,7 @@
         arr_iommu_groups_with_vga_for_host+=( "${int_iommu_group_id}" )
       fi
 
-      print_output_to_log "Reserved IOMMU group '${int_iommu_group_id}' for Host "\
+      log_stdout "Reserved IOMMU group '${int_iommu_group_id}' for Host "\
         "machine."
 
       return 0
@@ -142,29 +142,29 @@
       log_stdout "${0}: ${FUNCNAME}"
 
       if ! is_array "${1}"; then
-        print_error_to_log "Missing array reference for IOMMU group IDs."
+        log_stderr "Missing array reference for IOMMU group IDs."
         return 1
       fi
 
       if ! is_array "${2}"; then
-        print_error_to_log "Missing array reference for Host machine IOMMU groups."
+        log_stderr "Missing array reference for Host machine IOMMU groups."
         return 1
       fi
 
       if ! is_array "${3}"; then
-        print_error_to_log "Missing array reference for Host machine IOMMU groups "\
+        log_stderr "Missing array reference for Host machine IOMMU groups "\
           "with VGA."
 
         return 1
       fi
 
       if ! is_array "${4}"; then
-        print_error_to_log "Missing array reference for VFIO IOMMU groups."
+        log_stderr "Missing array reference for VFIO IOMMU groups."
         return 1
       fi
 
       if ! is_array "${5}"; then
-        print_error_to_log "Missing array reference for VFIO IOMMU groups with VGA."
+        log_stderr "Missing array reference for VFIO IOMMU groups with VGA."
         return 1
       fi
 

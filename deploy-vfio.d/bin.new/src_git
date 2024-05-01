@@ -77,11 +77,9 @@
 
       local str_git_repo_name="${1}"
       local str_git_repo_address="${2}"
+      local str_prompt="Download '${str_git_repo_name}'?"
 
       cd "${STR_GIT_STR_REPO_PARENT_PATH}"
-
-      DICT_GIT_REPO_NAME_AND_AVAILABILITY["${str_git_repo_name}"]=false
-      local str_prompt="Download '${str_git_repo_name}'?"
 
       if ! "${BOOL_DO_DOWNLOAD_ALL_REPOS}"; then
         ask_yes_or_no "${str_prompt}"
@@ -90,7 +88,7 @@
       local -i int_code="$?"
 
       if [[ "${int_code}" -ne 0 ]]; then
-        print_output_to_log "Skipped."
+        log_stdout "Skipped."
         return 0
       fi
 
@@ -101,15 +99,14 @@
       int_code="$?"
 
       if [[ "${int_code}" -eq 0 ]]; then
-        print_pass_to_log "Clone successful."
-        DICT_GIT_REPO_NAME_AND_AVAILABILITY["${str_git_repo_name}"]=true
+        log_stdout "Clone successful."
         return 0
       fi
 
       local str_git_repo_path="$( basename ${str_git_repo_address} )"
 
       if [[ "${int_code}" -eq 128 ]]; then
-        print_output_to_log "Repo exists. Updating..."
+        log_stdout "Repo exists. Updating..."
         cd "${str_git_repo_path}" || return 1
 
         if ! git pull &> /dev/null; then
@@ -117,8 +114,7 @@
           return 1
         fi
 
-        print_pass_to_log "Update successful."
-        DICT_GIT_REPO_NAME_AND_AVAILABILITY["${str_git_repo_name}"]=true
+        log_stdout "Update successful."
         return 0
       fi
 
@@ -137,18 +133,18 @@
       local -lr str_command="git"
 
       if command -v "${str_command}" &> /dev/null; then
-        print_output_to_log "'git' is installed."
+        log_stdout "'git' is installed."
         return 0
       fi
 
-      print_output_to_log "'git' is not installed. Attempting to install..."
+      log_stdout "'git' is not installed. Attempting to install..."
 
       if ! sudo apt install -y "${str_command}"; then
         print_error_to_log "'git' is not installed."
         return 1
       fi
 
-      print_output_to_log "'git' is installed."
+      log_stdout "'git' is installed."
       return 0
     }
 

@@ -90,26 +90,26 @@
       log_stdout "${0}: ${FUNCNAME}"
 
       if ! is_array "${4}" &> /dev/null; then
-        print_error_to_log "Missing reference of array of IOMMU groups for with VGA"\
+        log_stderr "Missing reference of array of IOMMU groups for with VGA"\
           "for VFIO."
 
         return 1
       fi
 
       if ! is_array "${3}" &> /dev/null; then
-        print_error_to_log "Missing reference of array of IOMMU groups for VFIO."
+        log_stderr "Missing reference of array of IOMMU groups for VFIO."
         return 1
       fi
 
       if ! is_array "${2}" &> /dev/null; then
-        print_error_to_log "Missing reference of array of IOMMU groups with VGA for "\
+        log_stderr "Missing reference of array of IOMMU groups with VGA for "\
           "Host machine."
 
         return 1
       fi
 
       if ! is_array "${1}" &> /dev/null; then
-        print_error_to_log "Missing reference of array of IOMMU groups for Host "\
+        log_stderr "Missing reference of array of IOMMU groups for Host "\
           "machine."
 
         return 1
@@ -142,26 +142,26 @@
       log_stdout "${0}: ${FUNCNAME}"
 
       if ! is_array "${5}" &> /dev/null; then
-        print_error_to_log "Missing reference of array of IOMMU groups for with VGA"\
+        log_stderr "Missing reference of array of IOMMU groups for with VGA"\
           "for VFIO."
 
         return 1
       fi
 
       if ! is_array "${4}" &> /dev/null; then
-        print_error_to_log "Missing reference of array of IOMMU groups for VFIO."
+        log_stderr "Missing reference of array of IOMMU groups for VFIO."
         return 1
       fi
 
       if ! is_array "${3}" &> /dev/null; then
-        print_error_to_log "Missing reference of array of IOMMU groups with VGA for "\
+        log_stderr "Missing reference of array of IOMMU groups with VGA for "\
           "Host machine."
 
         return 1
       fi
 
       if ! is_array "${2}" &> /dev/null; then
-        print_error_to_log "Missing reference of array of IOMMU groups for Host "\
+        log_stderr "Missing reference of array of IOMMU groups for Host "\
           "machine."
 
         return 1
@@ -199,11 +199,11 @@
       log_stdout "${0}: ${FUNCNAME}"
 
       if ! is_array "${3}" &> /dev/null; then
-        print_error_to_log "Missing reference of IOMMU groups with VGA array."
+        log_stderr "Missing reference of IOMMU groups with VGA array."
       fi
 
       if ! is_array "${2}" &> /dev/null; then
-        print_error_to_log "Missing reference of IOMMU groups array."
+        log_stderr "Missing reference of IOMMU groups array."
       fi
 
       if ! is_iommu_group_id_valid "${1}"; then
@@ -238,26 +238,26 @@
       log_stdout "${0}: ${FUNCNAME}"
 
       if ! is_array "${5}" &> /dev/null; then
-        print_error_to_log "Missing reference of array of IOMMU groups for with VGA"\
+        log_stderr "Missing reference of array of IOMMU groups for with VGA"\
           "for VFIO."
 
         return 1
       fi
 
       if ! is_array "${4}" &> /dev/null; then
-        print_error_to_log "Missing reference of array of IOMMU groups for VFIO."
+        log_stderr "Missing reference of array of IOMMU groups for VFIO."
         return 1
       fi
 
       if ! is_array "${3}" &> /dev/null; then
-        print_error_to_log "Missing reference of array of IOMMU groups with VGA for "\
+        log_stderr "Missing reference of array of IOMMU groups with VGA for "\
           "Host machine."
 
         return 1
       fi
 
       if ! is_array "${2}" &> /dev/null; then
-        print_error_to_log "Missing reference of array of IOMMU groups for Host "\
+        log_stderr "Missing reference of array of IOMMU groups for Host "\
           "machine."
 
         return 1
@@ -303,26 +303,26 @@
       log_stdout "${0}: ${FUNCNAME}"
 
       if ! is_array "${5}" &> /dev/null; then
-        print_error_to_log "Missing reference of array of IOMMU groups for with VGA"\
+        log_stderr "Missing reference of array of IOMMU groups for with VGA"\
           "for VFIO."
 
         return 1
       fi
 
       if ! is_array "${4}" &> /dev/null; then
-        print_error_to_log "Missing reference of array of IOMMU groups for VFIO."
+        log_stderr "Missing reference of array of IOMMU groups for VFIO."
         return 1
       fi
 
       if ! is_array "${3}" &> /dev/null; then
-        print_error_to_log "Missing reference of array of IOMMU groups with VGA for "\
+        log_stderr "Missing reference of array of IOMMU groups with VGA for "\
           "Host machine."
 
         return 1
       fi
 
       if ! is_array "${2}" &> /dev/null; then
-        print_error_to_log "Missing reference of array of IOMMU groups for Host "\
+        log_stderr "Missing reference of array of IOMMU groups for Host "\
           "machine."
 
         return 1
@@ -335,11 +335,13 @@
       for this_iommu_group_id in \
         ${SRC_IOMMU_GROUP_VALIDATION_ARR_IOMMU_GROUP_ID[@]}; do
         if [[ "${this_iommu_group_id}" -ne "${iommu_group_id}" ]]; then
-          if ! add_iommu_group_to_either_with_or_without_vga_array "${1}" "${2}" "${3}"; then
+          if ! add_iommu_group_to_either_with_or_without_vga_array "${1}" "${2}" \
+            "${3}"; then
             return 1
           fi
         else
-          if ! add_iommu_group_to_either_with_or_without_vga_array "${1}" "${4}" "${5}"; then
+          if ! add_iommu_group_to_either_with_or_without_vga_array "${1}" "${4}" \
+            "${5}"; then
             return 1
           fi
         fi
@@ -437,7 +439,7 @@
       log_stdout "${0}: ${FUNCNAME}"
 
       if ! is_enum "${2}" &> /dev/null; then
-        print_error_to_log "Missing reference to array of IOMMU group IDs."
+        log_stderr "Missing reference to array of IOMMU group IDs."
         return 1
       fi
 
@@ -551,7 +553,7 @@
       log_stdout "${0}: ${FUNCNAME}"
 
       if ! is_array "${1}" &> /dev/null; then
-        print_error_to_log "Missing array for IOMMU group IDs."
+        log_stderr "Missing array for IOMMU group IDs."
         return 1
       fi
 

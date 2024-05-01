@@ -35,8 +35,8 @@
       log_stdout "${0}: ${FUNCNAME}"
 
       if ! is_string "${1}" &> /dev/null; then
-        print_error_to_log "Cannot determine if device driver is not blacklisted, "\
-          "given invalid device driver."
+        log_stderr "Cannot determine if device driver is not blacklisted, given "\
+          "invalid device driver."
 
         return 2
       fi
@@ -64,8 +64,8 @@
       log_stdout "${0}: ${FUNCNAME}"
 
       if ! is_string "${1}" &> /dev/null; then
-        print_error_to_log "Cannot determine if device driver is not 'vfio-pci', "\
-          "given invalid device driver."
+        log_stderr "Cannot determine if device driver is not 'vfio-pci', given "\
+          "invalid device driver."
 
         return 2
       fi
@@ -93,8 +93,7 @@
       log_stdout "${0}: ${FUNCNAME}"
 
       if ! is_string "${1}" &> /dev/null; then
-        print_error_to_log "Cannot determine if device is external, given invalid "\
-          "device."
+        log_stderr "Cannot determine if device is external, given invalid device."
 
         return 2
       fi
@@ -122,7 +121,7 @@
       log_stdout "${0}: ${FUNCNAME}"
 
       if ! is_string "${1}" &> /dev/null; then
-        print_error_to_log "Cannot determine if device driver is preferred by "\
+        log_stderr "Cannot determine if device driver is preferred by "\
           "'pci-stub,' given invalid device."
 
         return 2
@@ -154,7 +153,7 @@
       log_stdout "${0}: ${FUNCNAME}"
 
       if ! is_string "${1}" &> /dev/null; then
-        print_error_to_log "Cannot determine if device ID is valid, "\
+        log_stderr "Cannot determine if device ID is valid, "\
           "given invalid device."
 
         return 2
@@ -164,7 +163,7 @@
       local -r str_output="$( lspci -s "${str_device}" )"
 
       if ! is_string "${str_output}" &> /dev/null; then
-        print_error_to_log "Device ID is not valid."
+        log_stderr "Device ID is not valid."
         return 1
       fi
 

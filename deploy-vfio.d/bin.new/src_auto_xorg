@@ -26,7 +26,8 @@
 #
   #
   # DESC:   Checks if git repo exists.
-  # RETURN: If repo exists, return 0. If false, return 1.
+  # RETURN: If repo exists, return 0.
+  #         If false, return 1.
   #
     function does_auto_xorg_repo_exist
     {
@@ -39,18 +40,21 @@
 
   #
   # DESC:   Execute Auto X.Org.
-  # $1:     the command line arguments
-  # RETURN: If execution is successful, return 0. If false, return 1.
+  # $*:     the command line arguments as a string.
+  # RETURN: If execution is successful, return 0.
+  #         If false, return 1.
   #
     function execute_auto_xorg
     {
       log_stdout "${0}: ${FUNCNAME}"
 
-      does_auto_xorg_repo_exist || return 1
+      if ! does_auto_xorg_repo_exist; then
+        return 1
+      fi
 
       local -r str_arguments="${*}"
 
-      print_output_to_log "Executing Auto X.Org...\n"
+      log_stdout "Executing Auto X.Org...\n"
       sudo bash auto-xorg "${str_arguments}"
 
       local -i int_code="${?}"
@@ -58,30 +62,32 @@
       echo
 
       if [[ "${int_code}" -ne 0 ]]; then
-        print_output_to_log "Execution failed."
+        log_stderr "Execution failed."
         return "${int_code}"
       fi
 
-      print_output_to_log "Execution successful."
+      log_stdout "Execution successful."
       return 0
     }
 
   #
   # DESC:   Execute Auto X.Org installer.
-  # $1:     the command line arguments
+  # $*:     the command line arguments as a string.
   # RETURN: If execution is successful, return 0. If false, return 1.
   #
     function execute_auto_xorg_installer
     {
       log_stdout "${0}: ${FUNCNAME}"
 
-      does_auto_xorg_repo_exist || return 1
+      if ! does_auto_xorg_repo_exist; then
+        return 1
+      fi
 
       local -r str_arguments="${*}"
       local -r str_project_path="${STR_GIT_STR_REPO_PARENT_PATH}/auto-xorg"
 
       cd "${str_project_path}"
-      print_output_to_log "Executing Auto X.Org installer...\n"
+      log_stdout "Executing Auto X.Org installer...\n"
       sudo bash installer.bash "${str_arguments}"
 
       local -i int_code="${?}"
@@ -89,34 +95,53 @@
       echo
 
       if [[ "${int_code}" -ne 0 ]]; then
-        print_output_to_log "Execution failed."
+        log_stderr "Execution failed."
         return "${int_code}"
       fi
 
-      print_output_to_log "Execution successful."
+      log_stdout "Execution successful."
       return 0
     }
 
   #
-  # DESC:   Basic install of Auto X.Org, no added arguments.
-  # RETURN: If install is successful, return 0. If false, return 1.
+  # DESC:   Install of Auto X.Org, no added arguments.
+  # $*:     the command line arguments as a string.
+  # RETURN: If install is successful, return 0.
+  #         If false, return 1.
   #
-    function basic_install_auto_xorg
+    function install_auto_xorg
     {
       log_stdout "${0}: ${FUNCNAME}"
 
-      execute_auto_xorg_installer "--install"
-      return "${?}"
+      local -r str_arguments="${*}"
+
+      print_output_to_log "Installing Auto X.Org..."
+
+      if ! execute_auto_xorg_installer "--install ${str_arguments}"; then
+        print_output_to_log "Failed."
+        return 1
+      fi
+
+      print_output_to_log "Successful."
+      return 0
     }
 
   #
   # DESC:   Uninstall Auto X.Org.
-  # RETURN: If uninstall is successful, return 0. If false, return 1.
+  # RETURN: If uninstall is successful, return 0.
+  #         If false, return 1.
   #
     function uninstall_auto_xorg
     {
       log_stdout "${0}: ${FUNCNAME}"
 
-      execute_auto_xorg_installer "--uninstall"
-      return "${?}"
+      print_output_to_log "Uninstalling Auto X.Org..."
+
+      if ! execute_auto_xorg_installer "--uninstall"; then
+        print_output_to_log "Failed."
+        return 1
+      fi
+
+      print_output_to_log "Successful."
+      return 0
     }

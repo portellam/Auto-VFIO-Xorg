@@ -79,7 +79,7 @@
       if ! is_dict "${3}" &> /dev/null; then
         bool_do_parse_from_xml_file=false
 
-        print_output_to_log "Missing dictionary of device drivers from XML file."\
+        log_stderr "Missing dictionary of device drivers from XML file."\
           "Parsing from internal database."
       else
         bool_do_parse_from_xml_file=true
@@ -88,12 +88,12 @@
       fi
 
       if ! is_string "${2}"; then
-        print_error_to_log "Invalid reference."
+        log_stderr "Invalid reference."
         return 1
       fi
 
       if ! is_string "${1}"; then
-        print_error_to_log "Invalid device."
+        log_stderr "Invalid device."
         return 1
       fi
 
@@ -185,22 +185,22 @@
       log_stdout "${0}: ${FUNCNAME}"
 
       if ! is_array "${4}" &> /dev/null; then
-        print_error_to_log "Missing reference of device 'vfio-pci' HWID array."
+        log_stderr "Missing reference of device 'vfio-pci' HWID array."
         return 1
       fi
 
       if ! is_array "${3}" &> /dev/null; then
-        print_error_to_log "Missing reference of device 'pci-stub' HWID array."
+        log_stderr "Missing reference of device 'pci-stub' HWID array."
         return 1
       fi
 
       if ! is_array "${2}" &> /dev/null; then
-        print_error_to_log "Missing reference of device driver array."
+        log_stderr "Missing reference of device driver array."
         return 1
       fi
 
       if ! is_array "${1}" &> /dev/null; then
-        print_error_to_log "Missing reference of IOMMU group ID array."
+        log_stderr "Missing reference of IOMMU group ID array."
         return 1
       fi
 
