@@ -1,0 +1,267 @@
+#!/bin/false
+
+#
+# Filename:       src_hugepages
+# Description:    Install/uninstall huge memory pages.
+# Author(s):      Alex Portell <github.com/portellam>
+# Maintainer(s):  Alex Portell <github.com/portellam>
+#
+
+#
+# TODO:
+# - [ ] add comments.
+# - [ ] migrate code.
+# - [ ] refactor.
+# - [ ] test.
+#
+
+#
+# sources
+#
+  declare -g SRC_STR_SCRIPT_DIR="/usr/local/bin/"
+  declare -g SRC_STR_SCRIPT_BIN_DIR="${SRC_STR_SCRIPT_DIR}deploy-vfio.d/"
+
+  source "${SRC_STR_SCRIPT_BIN_DIR}src_print"
+
+#
+# setter logic
+#
+  #
+  # DESC: globals
+  #
+    function set_globals
+    {
+      log_stdout "${0}: ${FUNCNAME}"
+
+      if [[ "${SRC_HUGEPAGES_BOOL_SET_GLOBALS}" == true ]]; then
+        return 0
+      fi
+
+      declare -g SRC_HUGEPAGES_BOOL_SET_GLOBALS=true
+
+    }
+
+#
+# logic
+#
+  #
+  # DESC:   
+  # RETURN: 
+  #
+    function execute_hugepages_setup
+    {
+      execute_hugepages_setup_prompt || return 0
+      local -r output="Static Hugepages setup"
+
+      if ! execute_hugepages_setup_main; then
+        pprint_fail_to_log "${output}"
+        return 1
+      fi
+
+      print_pass_to_log "${output}"
+    }
+
+  #
+  # DESC:   
+  # RETURN: 
+  #
+    function execute_hugepages_setup_main
+    {
+      if ! "${PRE_SETUP_DO_EXECUTE_HUGEPAGES}"; then
+        return 0
+      fi
+
+      if ! is_int "${MAX_MEMORY}" &> /dev/null; then
+        print_error_to_log "Could not parse system memory."
+        return 1
+      fi
+
+      if ! "${IS_HUGEPAGES_SIZE_SET}"; then
+        get_hugepages_byte_size_prompt || return 1
+      fi
+
+      get_hugepages_min_and_max_sizes || return 1
+
+      if ! "${IS_HUGEPAGES_COUNT_SET}"; then
+        get_hugepages_count_prompt || return 1
+      fi
+
+      get_hugepages_memory_allocated || return 1
+      is_host_memory_sufficient_for_hugepages || return 1
+      GRUB_CMDLINE_HUGEPAGES="default_hugepagesz=${HUGEPAGES_BYTE_SUFFIX} hugepagesz=${HUGEPAGES_BYTE_SUFFIX} hugepages=${HUGEPAGES_COUNT}"
+      PRE_SETUP_DO_EXECUTE_HUGEPAGES=true
+    }
+
+  #
+  # DESC:   
+  # RETURN: 
+  #
+    function execute_hugepages_setup_prompt
+    {
+      if "${PRE_SETUP_DO_EXECUTE_HUGEPAGES}"; then
+        return 0
+      fi
+
+      echo
+
+      if ! "${COMMON_ARGS_IS_EXECUTION_QUIET}"; then
+        echo -e "${SET_COLOR_YELLOW}Hugepages${RESET_COLOR} is a feature which statically allocates system memory to pagefiles.\nGuest(s) can use Hugepages to a peformance benefit.\nThe greater the Hugepage size, the less fragmentation of memory, and the less latency/overhead of system memory-access.\n${SET_COLOR_YELLOW}NOTE:${RESET_COLOR} It is recommended to use a size which is a multiple of an individual memory channel/stick.\n${SET_COLOR_YELLOW}Example:${RESET_COLOR} Four (4) channels of 8 GB each, use 1x, 2x, or 3x (8 GB, 16 GB, or 24 GB).\n${SET_COLOR_YELLOW}NOTE:${RESET_COLOR} If this is skipped, the equivalent Libvirt hook for dynamic allocation will be installed.\n"
+      fi
+
+      execute_or_skip_prompt "Setup ${SET_COLOR_YELLOW}Static Hugepages${RESET_COLOR}?" && PRE_SETUP_DO_EXECUTE_HUGEPAGES=true
+    }
+
+  #
+  # DESC:   
+  # RETURN: 
+  #
+    function get_hugepages_memory_allocated
+    {
+      HUGEPAGES_ALLOCATED_MEMORY=$(( ${HUGEPAGES_COUNT} * ${HUGEPAGES_SIZE_IN_KIB} ))
+    }
+
+  #
+  # DESC:   
+  # $1:     
+  # RETURN: 
+  #
+    function get_hugepages_byte_size
+    {
+      local -u answer="${1}"
+
+      case "${answer}" in
+        "1G" | "2M" )
+          HUGEPAGES_BYTE_SUFFIX="${answer}"
+          IS_HUGEPAGES_SIZE_SET=true ;;
+
+        * )
+          print_error_to_log "Please a enter valid Hugepages size, '2M' or '1G'."
+          return 1 ;;
+      esac
+    }
+
+  #
+  # DESC:   
+  # $1:     
+  # RETURN: 
+  #
+    function get_hugepages_byte_size_prompt
+    {
+      if "${IS_HUGEPAGES_SIZE_SET}"; then
+        return 0
+      fi
+
+      for counter in $( seq 0 2 ); do
+        read -r -p "Enter size of Hugepages [2M/1G]: " HUGEPAGES_BYTE_SUFFIX
+        get_hugepages_byte_size "${HUGEPAGES_BYTE_SUFFIX}" && return 0
+      done
+
+      return 1
+    }
+
+  #
+  # DESC:   
+  # $1:     
+  # RETURN: 
+  #
+    function get_hugepages_count
+    {
+      if [[ -z "${1}" ]]; then
+        print_error_to_log "Hugepages count is empty."
+        return 1
+      fi
+
+      get_hugepages_min_and_max_sizes || return 1
+
+      if ! is_int "${1}" &> /dev/null \
+        || [[ "${1}" -lt "${HUGEPAGES_MIN_COUNT}" ]] \
+        || [[ "${1}" -gt "${HUGEPAGES_MAX_COUNT}" ]]; then
+        print_error_to_log "Please enter a valid Hugepages amount, between ${HUGEPAGES_MIN_COUNT} or ${HUGEPAGES_MAX_COUNT}."
+        return 1
+      fi
+
+      IS_HUGEPAGES_COUNT_SET=true
+      HUGEPAGES_COUNT="${1}"
+    }
+
+  #
+  # DESC:   
+  # RETURN: 
+  #
+    function get_hugepages_count_prompt
+    {
+      if "${IS_HUGEPAGES_COUNT_SET}"; then
+        return 0
+      fi
+
+      for counter in $( seq 0 2 ); do
+        read -r -p "Enter count of Hugepages [${HUGEPAGES_MIN_COUNT}-${HUGEPAGES_MAX_COUNT}]: " HUGEPAGES_COUNT
+        get_hugepages_count "${HUGEPAGES_COUNT}" && return 0
+      done
+
+      return 1
+    }
+
+  #
+  # DESC:   
+  # RETURN: 
+  #
+    function get_hugepages_min_and_max_sizes
+    {
+      case "${HUGEPAGES_BYTE_SUFFIX}" in
+        "2M" )
+          HUGEPAGES_SIZE_IN_KIB="${TWO_MIB_IN_KIB}"
+          HUGEPAGES_MIN_COUNT=2 ;;
+
+        "1G" )
+          HUGEPAGES_SIZE_IN_KIB="${ONE_GIB_IN_KIB}"
+          HUGEPAGES_MIN_COUNT=1 ;;
+
+        * )
+          print_error_to_log "Could not calculate minimum or maximum values for Hugepages."
+          return 1 ;;
+      esac
+
+      HUGEPAGES_MAX_COUNT=$(( "${HUGEPAGES_MAX_SIZE_IN_KIB}" - "${HUGEPAGES_MIN_SIZE_IN_KIB}" ))
+      HUGEPAGES_MAX_COUNT=$(( "${HUGEPAGES_MAX_COUNT}" / "${HUGEPAGES_SIZE_IN_KIB}" ))
+    }
+
+  #
+  # DESC:   
+  # RETURN: 
+  #
+    function is_host_memory_sufficient_for_hugepages
+    {
+      if ! get_free_memory; then
+        print_error_to_log "Insufficient Host memory for Hugepages."
+        return 1
+      fi
+    }
+
+  #
+  # DESC:   
+  # RETURN: 
+  #
+    function is_hugepages_setup
+    {
+      if [[ "${HUGEPAGES_SIZE_IN_KIB}" -ge 1 ]] \
+        && ( [[ "${HUGEPAGES_COUNT}" -eq "${TWO_MIB_IN_KIB}" ]] \
+          || [[ "${HUGEPAGES_COUNT}" -eq "${ONE_GIB_IN_KIB}" ]] ); then
+        PRE_SETUP_DO_EXECUTE_HUGEPAGES=true
+      fi
+    }
+
+  #
+  # DESC:   
+  # $1:     
+  # RETURN: 
+  #
+    function get_kernel_command_hugepages
+    {
+      if [[ -z "${1}" ]]; then
+        return 1
+      fi
+
+      local -n reference="${1}"
+      reference="${GRUB_CMDLINE_HUGEPAGES}"
+    }
