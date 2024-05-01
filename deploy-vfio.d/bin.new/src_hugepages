@@ -22,6 +22,7 @@
   declare -g SRC_STR_SCRIPT_BIN_DIR="${SRC_STR_SCRIPT_DIR}deploy-vfio.d/"
 
   source "${SRC_STR_SCRIPT_BIN_DIR}src_print"
+  source "${SRC_STR_SCRIPT_BIN_DIR}src_memory"
 
 #
 # setter logic
@@ -39,6 +40,35 @@
 
       declare -g SRC_HUGEPAGES_BOOL_SET_GLOBALS=true
 
+      declare -g SRC_HUGEPAGES_DO_SETUP=false
+      declare -g SRC_HUGEPAGES_IS_COUNT_SET=false
+      declare -g SRC_HUGEPAGES_IS_SIZE_SET=false
+
+      declare -gi SRC_HUGEPAGES_ALLOCATED_MEMORY=0
+      declare -gu SRC_HUGEPAGES_BYTE_SUFFIX=""
+
+      declare -gi SRC_HUGEPAGES_COUNT=$( \
+        cat /proc/meminfo | grep --ignore-case hugepagesize | \
+        cut --delimiter ':' --fields 2 | awk 'END {print $1}' \
+      )
+
+      declare -gi SRC_HUGEPAGES_MAX_COUNT=0
+      declare -gi SRC_HUGEPAGES_MIN_COUNT=0
+      declare -g SRC_HUGEPAGES_GRUB_CMDLINE=""
+
+      declare -gi SRC_HUGEPAGES_MAX_SIZE_IN_KIB=$( \
+        cat /proc/meminfo | grep MemTotal | cut --delimiter ":" --fields 2 | \
+        awk 'END {print $1}' \
+      )
+
+      declare -gi SRC_HUGEPAGES_MIN_SIZE_IN_KIB=$(( \
+        4 * ${SRC_MEMORY_INT_ONE_GIB_IN_KIB} \
+      ))
+
+      declare -gi SRC_HUGEPAGES_SIZE_IN_KIB=$( \
+        cat /proc/meminfo | grep --ignore-case hugepages_total | \
+        cut --delimiter ':' --fields 2 | awk 'END {print $1}' \
+      )
     }
 
 #
