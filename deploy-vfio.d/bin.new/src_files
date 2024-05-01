@@ -26,7 +26,8 @@
   #
   # DESC:   Create temp file of given file.
   # $1:     the file name as a string.
-  # RETURN: If temp file creation is successful, return 0. If false, return 1.
+  # RETURN: If temp file creation is successful, return 0.
+  #         If false, return 1.
   #
     function create_temp_file_of_file
     {
@@ -44,21 +45,22 @@
         return 1
       fi
 
-      print_output_to_log "Created temp file of '${str_file_name}'."
+      log_stdout "Created temp file of '${str_file_name}'."
       return 0
     }
 
   #
   # DESC:   Copy the temp file to the given file.
   # $1:     the file name as a string.
-  # RETURN: If file overwrite is successful, return 0. If false, return 1.
+  # RETURN: If file overwrite is successful, return 0.
+  #         If false, return 1.
   #
     function copy_temp_file_to_file
     {
       log_stdout "${0}: ${FUNCNAME}"
 
       if is_file "${1}" &> /dev/null; then
-        print_output_to_log "Skipped overwrite of file."
+        log_stdout "Skipped overwrite of file."
         return 0
       fi
 
@@ -74,7 +76,7 @@
         return 1
       fi
 
-      print_output_to_log "Overwrote file '${str_file_name}'."
+      log_stdout "Overwrote file '${str_file_name}'."
       return 0
     }
 
@@ -82,28 +84,37 @@
   # DESC:   Copy first file to second file.
   # $1:     the file name as a string.
   # $2:     the file name as a string.
-  # RETURN: If file copy is successful, return 0. If false, return 1.
+  # RETURN: If file copy is successful, return 0.
+  #         If false, return 1.
   #
     function copy_this_file_to_other_file
     {
       log_stdout "${0}: ${FUNCNAME}"
 
-      if [[ "${2}" == "" ]]; then
+      if ! is_string "${2}" &> /dev/null; then
+        print_error_to_log "Invalid filename."
+        return 1
+      fi
+
+      if ! is_file "${1}"; then
         return 1
       fi
 
       if ! is_file "${1}" \
         || cp --force "${1}" "${2}"; then
+        print_error_to_log "Failed to copy file '${1}' to file '${2}'."
         return 1
       fi
 
+      log_stdout "Copied file '${1}' to file '${2}'."
       return 0
     }
 
   #
   # DESC:   Delete the temp file of the given file.
   # $1:     the file name as a string.
-  # RETURN: If temp file deletion is successful, return 0. If false, return 1.
+  # RETURN: If temp file deletion is successful, return 0.
+  #         If false, return 1.
   #
     function delete_temp_file_of_file
     {
@@ -125,15 +136,15 @@
         return 1
       fi
 
-      print_output_to_log "Deleted temp file '${str_temp_file_name}'."
+      log_stdout "Deleted temp file '${str_temp_file_name}'."
       return 0
     }
-
 
   #
   # DESC:   Is directory valid.
   # $1:     the directory name as a string.
-  # RETURN: If directory is valid, return 0. If false, return 1.
+  # RETURN: If directory is valid, return 0.
+  #         If false, return 1.
   #
     function is_dir
     {
@@ -145,14 +156,15 @@
         return 1
       fi
 
-      print_output_to_log "Folder does not exist."
+      log_stdout "Folder does not exist."
       return 0
     }
 
   #
   # DESC:   Is directory not empty.
   # $1:     the directory name as a string.
-  # RETURN: If directory is not empty, return 0. If false, return 1.
+  # RETURN: If directory is not empty, return 0.
+  #         If false, return 1.
   #
     function is_dir_not_empty
     {
@@ -167,14 +179,15 @@
         return 1
       fi
 
-      print_output_to_log "Folder is not empty."
+      log_stdout "Folder is not empty."
       return 0
     }
 
   #
   # DESC:   Is file valid.
   # $1:     the file name as a string.
-  # RETURN: If file is valid, return 0. If false, return 1.
+  # RETURN: If file is valid, return 0.
+  #         If false, return 1.
   #
     function is_file
     {
@@ -186,14 +199,15 @@
         return 1
       fi
 
-      print_output_to_log "File does exist."
+      log_stdout "File does exist."
       return 0
     }
 
   #
   # DESC:   If file not empty.
   # $1:     the file name as a string.
-  # RETURN: If file is not empty, return 0. If false, return 1.
+  # RETURN: If file is not empty, return 0.
+  #         If false, return 1.
   #
     function is_file_not_empty
     {
@@ -205,7 +219,7 @@
         return 1
       fi
 
-      print_output_to_log "File is not empty."
+      log_stdout "File is not empty."
       return 0
     }
 
@@ -213,7 +227,8 @@
   # DESC:   Overwrite file with contents of enum.
   # $1:     the reference of the output as an enum.
   # $2:     the file name as a string.
-  # RETURN: If enum is not empty and write is successful, return 0. If else, return 1.
+  # RETURN: If enum is not empty and write is successful, return 0.
+  #         If false, return 1.
   #
     function overwrite_file
     {
@@ -228,7 +243,7 @@
         return 1
       fi
 
-      print_output_to_log "Overwrote file '${str_file_name}'."
+      log_stdout "Overwrote file '${str_file_name}'."
       return 0
     }
 
@@ -236,7 +251,8 @@
   # DESC:   Write to file with contents of enum.
   # $1:     the reference of the output as an enum.
   # $2:     the file name as a string.
-  # RETURN: If enum is not empty and write is successful, return 0. If else, return 1.
+  # RETURN: If enum is not empty and write is successful, return 0.
+  #         If false, return 1.
   #
     function write_file
     {
@@ -257,6 +273,6 @@
         fi
       done
 
-      print_output_to_log "Wrote to file '${str_file_name}'."
+      log_stdout "Wrote to file '${str_file_name}'."
       return 0
     }
