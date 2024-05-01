@@ -83,6 +83,8 @@
       SRC_MEMORY_INT_CURRENT_FREE_MEMORY_BYTES=$(( \
         SRC_MEMORY_INT_MAX_FREE_MEMORY_BYTES - SRC_MEMORY_INT_MIN_FREE_MEMORY_BYTES \
       ))
+
+      log_stdout "Set free memory."
     }
 
   #
@@ -138,7 +140,8 @@
 
   #
   # DESC:   Find the lowest memory channel size.
-  # RETURN: If memory channel size is valid, return 0. If false return 1.
+  # RETURN: If memory channel size is valid, return 0.
+  #         If false, return 1.
   #
     function find_lowest_common_factor_memory_channel_size
     {
@@ -177,28 +180,36 @@
         return 1
       fi
 
-      SRC_MEMORY_INT_MIN_FREE_MEMORY_BYTES=$( declare -p arr_sorted | \
-        head --lines 1)
+      SRC_MEMORY_INT_MIN_FREE_MEMORY_BYTES=$(
+        declare -p arr_sorted | head --lines 1 \
+      )
 
       if ! is_int "SRC_MEMORY_INT_MIN_FREE_MEMORY_BYTES"; then
         print_error_to_log "Could not find lowest memory channel size value."
         return 1
       fi
+
+      log_stdout "Found lowest common factor memory channel size."
+      return 0
     }
 
   #
   # DESC:   Sets the global parameter.
-  # RETURN: True return 0, false return 1.
+  # RETURN: Always return 0.
   #
     function set_minimum_memory
     {
       log_stdout "${0}: ${FUNCNAME}"
 
       if ! "${BOOL_DO_USE_TWO_MIB_HUGEPAGES}"; then
-        declare -gi SRC_MEMORY_INT_MIN_FREE_MEMORY_BYTES=$(( \
+        SRC_MEMORY_INT_MIN_FREE_MEMORY_BYTES=$(( \
           8 * ${SRC_MEMORY_INT_ONE_GIB_IN_KIB} \
         ))
+
+        log_stdout "Set minimum memory."
       fi
+
+      return 0
     }
 
 #
@@ -206,7 +217,8 @@
 #
   #
   # DESC:   Is any Host memory available.
-  # RETURN: True return 0, false return 1.
+  # RETURN: If true, return 0.
+  #         If false, return 1.
   #
     function is_any_host_memory_available
     {
@@ -226,7 +238,8 @@
   # $1:     the memory channel size (unitless)
   # $2:     the memory channel unit (KB, MB, GB, TB)
   # $3:     the pointer
-  # RETURN: If the memory channel size is valid, return 0. If false return 1.
+  # RETURN: If the memory channel size is valid, return 0.
+  #         If the memory channel size is not valid, return 1.
   #
     function set_memory_channel_size_in_bytes
     {
@@ -239,18 +252,22 @@
       case "${str_memory_channel_size}" in
           "K" | "KB" | "KIB" )
             int_memory_channel_bytes=$(( ${SRC_MEMORY_INT_TWO_TO_POWER_OF_TEN} ** 1 ))
+            log_stdout "Selected KIB."
             ;;
 
           "M" | "MB" | "MIB" )
             int_memory_channel_bytes=$(( ${SRC_MEMORY_INT_TWO_TO_POWER_OF_TEN} ** 2 ))
+            log_stdout "Selected MIB."
             ;;
 
           "G" | "GB" | "GIB" )
             int_memory_channel_bytes=$(( ${SRC_MEMORY_INT_TWO_TO_POWER_OF_TEN} ** 3 ))
+            log_stdout "Selected GIB."
             ;;
 
           "T" | "TB" | "TIB" )
             int_memory_channel_bytes=$(( ${SRC_MEMORY_INT_TWO_TO_POWER_OF_TEN} ** 4 ))
+            log_stdout "Selected TIB."
             ;;
 
           * )
