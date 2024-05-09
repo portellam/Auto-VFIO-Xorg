@@ -12,9 +12,6 @@
 #
 # TODO:
 # - [ ] test.
-# - [x] use declare as validator for datatypes.
-# - [x] validate last input params first.
-# - [x] replace print with log
 #
 
 #
