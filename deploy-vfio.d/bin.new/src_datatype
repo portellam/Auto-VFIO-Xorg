@@ -437,7 +437,7 @@
     }
 
   #
-  # DESC:   Is input a variable?
+  # DESC:   Is input a variable.
   # $1:     the name of the variable.
   # RETURN: If variable is declared, return 0.
   #         If variable not declared, return 1.
