@@ -12,6 +12,9 @@
 #
 # TODO:
 # - [ ] test.
+# - [x] use declare as validator for datatypes.
+# - [x] validate last input params first.
+# - [x] replace print with log
 #
 
 #
@@ -37,12 +40,12 @@
     {
       log_stdout "${0}: ${FUNCNAME}"
 
-      if ! is_array "${1}" \
-        || ! is_string "${2}"; then
+      if ! is_string "${2}" \
+        || ! is_array "${1}"; then
         return 2
       fi
 
-      local -n ref_arr="${1}"
+      local -I ref_arr="${1}"
       local str_val="${2}"
 
       if ! [[ ${ref_arr[@]} =~ "${str_val}" ]]; then
@@ -98,12 +101,12 @@
       log_stdout "${0}: ${FUNCNAME}"
 
       if ! is_string "${3}" &> /dev/null; then
-        print_error_to_log "Invalid value."
+        log_stderr "Invalid value."
         return 2
       fi
 
       if ! is_string "${2}" &> /dev/null; then
-        print_error_to_log "Invalid key."
+        log_stderr "Invalid key."
         return 2
       fi
 
@@ -172,6 +175,8 @@
     }
 
   #
+  # TODO: change this to array reference
+  #
   # DESC:   Get the given enum as a comma-delimited string.
   # $1:     the enum as a reference.
   # $2:     the delimited string as a reference
@@ -208,7 +213,7 @@
     }
 
   #
-  # DESC:   Is reference variable an array.
+  # DESC:   Is input variable an array.
   # $1:     the array as a reference.
   # RETURN: If true, return 0.
   #         If false, return 1.
@@ -218,17 +223,20 @@
     {
       log_stdout "${0}: ${FUNCNAME}"
 
-      if ! is_enum "${1}"; then
+      if ! is_string "${1}"; then
         return 2
       fi
 
-      if [[ $( declare -p ${1} 2>/dev/null ) == "declare -a"* ]]; then
-        log_stderr "Enum is not an array."
-        return 1
-      fi
-
-      log_stdout "Enum is an array."
-      return 0
+      case "$( declare -p ${1} 2>/dev/null )" in
+        *"-a"* )
+          log_stdout "Variable is an array."
+          return 0
+          ;;
+        * )
+          log_stderr "Variable is not an array."
+          return 1
+          ;;
+      esac
     }
 
   #
@@ -242,10 +250,12 @@
     {
       log_stdout "${0}: ${FUNCNAME}"
 
-      local str_result="${1}"
+      if ! is_string "${1}"; then
+        return 2
+      fi
 
-      if [[ "${str_result}" != "true" ]] \
-        && [[ "${str_result}" != "false" ]]; then
+      if [[ "${1}" != "true" ]] \
+        && [[ "${1}" != "false" ]]; then
         log_stderr "Invalid bool."
         return 1
       fi
@@ -265,21 +275,21 @@
     {
       log_stdout "${0}: ${FUNCNAME}"
 
-      if ! is_enum "${1}"; then
+      if ! is_string "${1}"; then
         return 2
       fi
 
       if ! [[ $( declare -p ${1} 2>/dev/null ) == "declare -A"* ]]; then
-        log_stderr "Enum is not a dictionary."
+        log_stderr "Variable is not a dictionary."
         return 1
       fi
 
-      log_stdout "Enum is a dictionary."
+      log_stdout "Variable is a dictionary."
       return 0
     }
 
   #
-  # DESC:   Is reference variable an enum.
+  # DESC:   Is input variable an enum.
   # $1:     the enum as a reference.
   # RETURN: If true, return 0.
   #         If false, return 1.
@@ -293,19 +303,20 @@
         return 2
       fi
 
-      local -n ref_enum="${1}"
-
-      if ! [[ "${#ref_enum[@]}" -gt 0 ]]; then
-        log_stderr "Invalid enum."
-        return 1
-      fi
-
-      log_stdout "Valid enum."
-      return 0
+      case "$( declare -p ${1} 2>/dev/null )" in
+        *"-a"* | *"-A"* )
+          log_stdout "Variable is an enum."
+          return 0
+          ;;
+        * )
+          log_stderr "Variable is not an enum."
+          return 1
+          ;;
+      esac
     }
 
   #
-  # DESC:   Is reference variable a non-empty enum.
+  # DESC:   Is input variable a non-empty enum.
   # $1:     the enum as a reference.
   # RETURN: If true, return 0.
   #         If false, return 1.
@@ -318,6 +329,12 @@
       if ! is_enum "${1}"; then
         return 2
       fi
+
+      case "$( declare -p ${1} 2>/dev/null )" in
+        *"-a"* | *"-A"* )
+          log_stdout "Variable is an enum."
+          return 0
+      esac
 
       local -n ref_enum="${1}"
 
@@ -333,7 +350,7 @@
     }
 
   #
-  # DESC:   Is input an int.
+  # DESC:   Is input an integer.
   # $1:     the input as an int.
   # RETURN: If true, return 0.
   #         If false, return 1.
@@ -342,6 +359,10 @@
     function is_int
     {
       log_stdout "${0}: ${FUNCNAME}"
+
+      if ! is_string "${1}"; then
+        return 2
+      fi
 
       if ! [[ "${1}" =~ ^[0-9]+$ ]] \
         && ! [[ "${1}" =~ ^[-][0-9]+$ ]]; then
@@ -354,7 +375,7 @@
     }
 
   #
-  # DESC:   Is not read-only.
+  # DESC:   Is input variable not read-only.
   # $1:     the variable as a reference.
   # RETURN: If true, return 0.
   #         If false, return 1.
@@ -376,6 +397,30 @@
     }
 
   #
+  # DESC:   Is input variable a reference.
+  # $1:     the input as a string.
+  # RETURN: If true, return 0.
+  #         If false, return 1.
+  #         If an exception occurs, return 2.
+  #
+    function is_reference
+    {
+      log_stdout "${0}: ${FUNCNAME}"
+
+      if ! is_variable "${1}"; then
+        return 2
+      fi
+
+      if [[ $( declare -p "${1}" 2>/dev/null ) != *"-n"* ]]; then
+        log_stderr "Variable is not a reference."
+        return 1
+      fi
+
+      log_stdout "Variable is a reference."
+      return 0
+    }
+
+  #
   # DESC:   Is input a string.
   # $1:     the input as a string.
   # RETURN: If true, return 0.
@@ -392,6 +437,35 @@
 
       log_stdout "Non-empty string."
       return 0
+    }
+
+  #
+  # DESC:   Is input a variable?
+  # $1:     the name of the variable.
+  # RETURN: If variable is declared, return 0.
+  #         If variable not declared, return 1.
+  #         If an exception occurs, return 2.
+  #
+    function is_variable
+    {
+      log_stdout "${0}: ${FUNCNAME}"
+
+      case "$( declare -p "${1}" 2>/dev/null )" in
+        *"--"* | *"-"* )
+          log_stdout "Variable is declared."
+          return 0
+          ;;
+
+        "" )
+          log_stderr "Variable is not declared or is of unknown datatype."
+          return 2
+          ;;
+
+        *"not found"* )
+          log_stderr "Variable is not declared."
+          return 1
+          ;;
+      esac
     }
 
   #
@@ -463,5 +537,31 @@
       fi
 
       log_stdout "Removed key-value from array."
+      return 0
+    }
+
+  #
+  # DESC:   Does input variable have a value.
+  # $1:     the name of the variable.
+  # RETURN: If variable has a value, return 0.
+  #         If variable has no value, return 1.
+  #         If an exception occurs, return 2.
+  #
+    function var_has_value
+    {
+      log_stdout "${0}: ${FUNCNAME}"
+
+      if ! is_variable "${1}"; then
+        return 2
+      fi
+
+      local -I inh="${1}"
+
+      if ! is_string "${inh}"; then
+        log_stderr "Variable does not have a value."
+        return 1
+      fi
+
+      log_stdout "Variable does have a value."
       return 0
     }
