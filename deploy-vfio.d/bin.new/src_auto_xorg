@@ -52,8 +52,15 @@
         return 1
       fi
 
-      local -r str_arguments="${*}"
+      local -a arr_arguments="$@"
+      local str_arguments
 
+      if ! src_auto_xorg_parse_arguments "$@" \
+        || ! get_delimited_string_from_array "arr_arguments" "str_arguments" " "; then
+        return 1
+      fi
+
+      cd "${str_project_path}"
       log_stdout "Executing Auto X.Org...\n"
       sudo bash auto-xorg "${str_arguments}"
 
@@ -73,7 +80,8 @@
   #
   # DESC:   Execute Auto X.Org installer.
   # $*:     the command line arguments as a string.
-  # RETURN: If execution is successful, return 0. If false, return 1.
+  # RETURN: If execution is successful, return 0.
+  #         If false, return 1.
   #
     function execute_auto_xorg_installer
     {
@@ -83,8 +91,13 @@
         return 1
       fi
 
-      local -r str_arguments="${*}"
-      local -r str_project_path="${STR_GIT_STR_REPO_PARENT_PATH}/auto-xorg"
+      local -a arr_arguments="$@"
+      local str_arguments
+
+      if ! src_auto_xorg_parse_installer_arguments "$@" \
+        || ! get_delimited_string_from_array "arr_arguments" "str_arguments" " "; then
+        return 1
+      fi
 
       cd "${str_project_path}"
       log_stdout "Executing Auto X.Org installer...\n"
@@ -127,6 +140,134 @@
     }
 
   #
+  # DESC:   Parse arguments for executable.
+  # $*:     the arguments as a string.
+  # RETURN: If parse is successful, return 0
+  #         If not, return 1.
+  #
+    function src_auto_xorg_parse_arguments
+    {
+      while [[ ! -z "${1}" ]]; do
+        if ! src_auto_xorg_parse_argument "$@"; then
+          return 1
+        fi
+
+        shift
+      done
+
+      return 0
+    }
+
+  #
+  # DESC:   Parse argument for executable.
+  # $*:     the arguments as a string.
+  # RETURN: If argument is empty or valid, return 0.
+  #         If argument is not valid or there exists conflicting arguments, return 1.
+  #
+    function src_auto_xorg_parse_argument
+    {
+      if ! is_string "${1}"; then
+        return 0
+      fi
+
+      local -ar arr_arguments=$@
+
+      if array_contains_value "arr_arguments" "--first" \
+        && array_contains_value "arr_arguments" "--last"; then
+        print_conflicting_options
+        return 1
+      fi
+
+      if array_contains_value "arr_arguments" "--amd" \
+        && array_contains_value "arr_arguments" "--intel" \
+        && array_contains_value "arr_arguments" "--nvidia" \
+        && array_contains_value "arr_arguments" "--other"; then
+        print_conflicting_options
+        return 1
+      fi
+
+      if is_string "${1}"; then
+        print_invalid_argument "${1}"
+        return 1
+      fi
+
+      return 0
+    }
+
+  #
+  # DESC:   Parse arguments for installer.
+  # $*:     the arguments as a string.
+  # RETURN: If parse is successful, return 0
+  #         If not, return 1.
+  #
+    function src_auto_xorg_parse_installer_arguments
+    {
+      while [[ ! -z "${1}" ]]; do
+        if ! src_auto_xorg_parse_installer_argument "$@"; then
+          return 1
+        fi
+
+        shift
+      done
+
+      return 0
+    }
+
+  #
+  # DESC:   Parse argument for installer.
+  # $*:     the arguments as a string.
+  # RETURN: If argument is empty or valid, return 0.
+  #         If argument is not valid or there exists conflicting arguments, return 1.
+  #
+    function src_auto_xorg_parse_installer_argument
+    {
+      if ! is_string "${1}"; then
+        return 0
+      fi
+
+      local -ar arr_arguments=$@
+
+      if array_contains_value "arr_arguments" "--install" \
+        && array_contains_value "arr_arguments" "--uninstall"; then
+        print_conflicting_options
+        return 1
+      fi
+
+      if ! src_auto_xorg_parse_argument "$@"; then
+        return 1
+      fi
+
+      if is_string "${1}"; then
+        print_invalid_argument "${1}"
+        return 1
+      fi
+
+      return 0
+    }
+
+  #
+  # DESC:   Print usage for this source. Copied from Auto X.Org.
+  # RETURN: Always return 0.
+  #
+    function src_auto_xorg_print_usage
+    {
+      local -ar arr_output=(
+        "\nAuto X.Org:"
+        "\t--install\t\tInstall Auto X.Org."
+        "\t--uninstall\t\t\tUninstall Auto X.Org."
+        "\t--first\t\tFind the first valid VGA device."
+        "\t--last\t\tFind the last valid VGA device."
+        "\t--amd\t\tPrefer AMD or ATI."
+        "\t--intel\t\tPrefer Intel."
+        "\t--nvidia\t\tPrefer NVIDIA."
+        "\t--other\t\tPrefer any other brand."
+      )
+
+      echo -e "${arr_output[*]}"
+      return 0
+    }
+
+
   # DESC:   Uninstall Auto X.Org.
   # RETURN: If uninstall is successful, return 0.
   #         If false, return 1.
