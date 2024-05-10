@@ -39,10 +39,6 @@
 
       declare -g SRC_MEMORY_BOOL_SET_GLOBALS=true
 
-      declare -g SRC_MEMORY_BOOL_DO_USE_FOUR_KIB_HUGEPAGES=false
-      declare -g SRC_MEMORY_BOOL_DO_USE_TWO_MIB_HUGEPAGES=false
-      declare -g SRC_MEMORY_BOOL_DO_USE_ONE_GIB_HUGEPAGES=true
-
       declare -gir SRC_MEMORY_INT_TWO_TO_POWER_OF_TEN=$(( 2 ** 10 ))
       declare -gir SRC_MEMORY_INT_FOUR_KIB_IN_KIB=4
 
@@ -85,57 +81,6 @@
       ))
 
       log_stdout "Set free memory."
-    }
-
-  #
-  # DESC:   Determine whether to use smaller or larger huge memory pages.
-  # RETURN: If set a valid page size return 0, false return 1.
-  #
-    function set_huge_memory_page_size
-    {
-      log_stdout "${0}: ${FUNCNAME}"
-
-      if "${SRC_MEMORY_BOOL_DO_USE_FOUR_KIB_HUGEPAGES}"; then
-        print_output_to_log "Set huge memory page size: 4 KiB"
-        return 0
-      fi
-
-      if "${SRC_MEMORY_BOOL_DO_USE_TWO_MIB_HUGEPAGES}"; then
-        print_output_to_log "Set huge memory page size: 2 MiB"
-        return 0
-      fi
-
-      if "${SRC_MEMORY_BOOL_DO_USE_ONE_GIB_HUGEPAGES}"; then
-        print_output_to_log "Set huge memory page size: 1 GiB"
-        return 0
-      fi
-
-      local -i int_quotient=$(( \
-        ${SRC_MEMORY_INT_MIN_FREE_MEMORY_BYTES} / \
-        ${SRC_MEMORY_INT_TWO_TO_POWER_OF_TEN} \
-      ))
-
-      if [[ ${int_quotient} -ge ${SRC_MEMORY_INT_FOUR_KIB_IN_KIB} ]] \
-        && [[ ${int_quotient} -lt ${SRC_MEMORY_INT_TWO_MIB_IN_KIB} ]]; then
-        SRC_MEMORY_BOOL_DO_USE_FOUR_KIB_HUGEPAGES=true
-        print_output_to_log "Set huge memory page size: 4 KiB"
-        return 0
-
-      elif [[ ${int_quotient} -ge ${SRC_MEMORY_INT_TWO_MIB_IN_KIB} ]] \
-        && [[ ${int_quotient} -lt ${SRC_MEMORY_INT_ONE_GIB_IN_KIB} ]]; then
-        SRC_MEMORY_BOOL_DO_USE_TWO_MIB_HUGEPAGES=true
-        print_output_to_log "Set huge memory page size: 2 MiB"
-        return 0
-
-      elif [[ ${int_quotient} -ge ${SRC_MEMORY_INT_ONE_GIB_IN_KIB} ]]; then
-        SRC_MEMORY_BOOL_DO_USE_ONE_GIB_HUGEPAGES=true
-        print_output_to_log "Set huge memory page size: 1 GiB"
-        return 0
-
-      else
-        print_error_to_log "Failed to set huge memory page size."
-        return 1
-      fi
     }
 
   #
@@ -247,26 +192,26 @@
 
       local -u str_memory_channel_size="${1}"
       local -i int_memory_channel_unit="${2}"
-      local -r int_memory_channel_bytes="${3}"
+      local -n ref_int__memory_channel_bytes="${3}"
 
       case "${str_memory_channel_size}" in
           "K" | "KB" | "KIB" )
-            int_memory_channel_bytes=$(( ${SRC_MEMORY_INT_TWO_TO_POWER_OF_TEN} ** 1 ))
+            ref_int__memory_channel_bytes=$(( ${SRC_MEMORY_INT_TWO_TO_POWER_OF_TEN} ** 1 ))
             log_stdout "Selected KIB."
             ;;
 
           "M" | "MB" | "MIB" )
-            int_memory_channel_bytes=$(( ${SRC_MEMORY_INT_TWO_TO_POWER_OF_TEN} ** 2 ))
+            ref_int__memory_channel_bytes=$(( ${SRC_MEMORY_INT_TWO_TO_POWER_OF_TEN} ** 2 ))
             log_stdout "Selected MIB."
             ;;
 
           "G" | "GB" | "GIB" )
-            int_memory_channel_bytes=$(( ${SRC_MEMORY_INT_TWO_TO_POWER_OF_TEN} ** 3 ))
+            ref_int__memory_channel_bytes=$(( ${SRC_MEMORY_INT_TWO_TO_POWER_OF_TEN} ** 3 ))
             log_stdout "Selected GIB."
             ;;
 
           "T" | "TB" | "TIB" )
-            int_memory_channel_bytes=$(( ${SRC_MEMORY_INT_TWO_TO_POWER_OF_TEN} ** 4 ))
+            ref_int__memory_channel_bytes=$(( ${SRC_MEMORY_INT_TWO_TO_POWER_OF_TEN} ** 4 ))
             log_stdout "Selected TIB."
             ;;
 
@@ -276,7 +221,7 @@
             ;;
         esac
 
-        int_memory_channel_bytes=$(( ${int_memory_channel_bytes} * \
+        ref_int__memory_channel_bytes=$(( ${int_memory_channel_bytes} * \
           ${int_memory_channel_unit} ))
 
         return 0
