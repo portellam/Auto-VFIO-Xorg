@@ -172,40 +172,47 @@
     }
 
   #
-  # TODO: change this to array reference
-  #
-  # DESC:   Get the given enum as a comma-delimited string.
-  # $1:     the enum as a reference.
-  # $2:     the delimited string as a reference
+  # DESC:   Get the given array as a delimited string.
+  # $1:     the array as a reference.
+  # $2:     the delimited string as a reference.
+  # $3:     the delimiter.
   # RETURN: If true, return 0.
   #         If false, return 1.
   #         If an exception occurs, return 2.
   #
-    function get_comma_delimited_string_from_enum
+    function get_delimited_string_from_array
     {
       log_stdout "${0}: ${FUNCNAME}"
+
+      local -r str_delimiter="${3}"
+
+      if ! is_string "${3}" \
+        || [[ "${#str_delimiter}" -gt 1 ]]; then
+        log_stderr "Invalid delimiter."
+        return 2
+      fi
 
       if ! is_not_readonly "${2}" \
         || ! is_string "${2}"; then
         return 2
       fi
 
-      if ! is_enum "${1}"; then
+      if ! is_array "${1}"; then
         return 2
       fi
 
-      local -n ref_enum="${1}"
+      local -n ref_arr="${1}"
       local -n ref_str_delimited="${2}"
 
-      for var_value in ${ref_enum[@]}; do
-        ref_str_delimited+="${var_value},"
+      for var_value in ${ref_arr[@]}; do
+        ref_str_delimited+="${var_value}${str_delimiter}"
       done
 
       if [[ ${ref_str_delimited: -1} == "," ]]; then
         ref_str_delimited="${ref_str_delimited::-1}"
       fi
 
-      log_stdout "Got delimited string from enum."
+      log_stdout "Got delimited string from array."
       return 0
     }
 
