@@ -139,19 +139,20 @@
     }
 
   #
-  # DESC:   Print help.
+  # DESC:   Print conflicting argument output.
   # $1:     the argument as a string.
-  # RETURN: Always return 0.
+  # RETURN: Always exit 1.
   #
-    function print_help
+    function print_conflicting_arguments
     {
-      echo -e "Try 'sudo bash ${SRC_PRINT_STR_SCRIPT_NAME} --help' for usage."
-      return 0
+      print_error_to_log "Conflicting argument(s)."
+      print_help
+      exit 1
     }
 
   #
   # DESC:   Print conflicting options output.
-  # $1:     the argument as a string.
+  # $1:     the options as a string.
   # RETURN: Always exit 1.
   #
     function print_conflicting_options
@@ -193,6 +194,17 @@
 
       print_error_to_log "${str_output}'${1}'."
       return 1
+    }
+
+  #
+  # DESC:   Print help.
+  # $1:     the argument as a string.
+  # RETURN: Always return 0.
+  #
+    function print_help
+    {
+      echo -e "Try 'sudo bash ${SRC_PRINT_STR_SCRIPT_NAME} --help' for usage."
+      return 0
     }
 
   #
