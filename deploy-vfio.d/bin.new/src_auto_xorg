@@ -267,7 +267,6 @@
       return 0
     }
 
-
   # DESC:   Uninstall Auto X.Org.
   # RETURN: If uninstall is successful, return 0.
   #         If false, return 1.
