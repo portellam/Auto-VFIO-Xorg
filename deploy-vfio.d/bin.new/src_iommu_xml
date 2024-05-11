@@ -52,7 +52,8 @@
   #
   # DESC:   Set the XML file name. If valid, set the boolean flag accordingly.
   # $1:     the XML file name as a string.
-  # RETURN: If specified, return 0. If false, return 1.
+  # RETURN: If specified, return 0.
+  #         If false, return 1.
   #
     function set_iommu_groups_xml_file
     {
@@ -74,7 +75,8 @@
   #
   # DESC:   Set the XML file name to default.
   # $1:     the XML file name as a string.
-  # RETURN: If specified, return 0. If false, return 1.
+  # RETURN: If specified, return 0.
+  #         If false, return 1.
   #
     function set_iommu_groups_xml_file_to_default
     {
