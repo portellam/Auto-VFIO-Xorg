@@ -97,12 +97,12 @@
     {
       log_stdout "${0}: ${FUNCNAME}"
 
-      if ! is_string "${3}" &> /dev/null; then
+      if ! is_string "${3}"; then
         log_stderr "Invalid value."
         return 2
       fi
 
-      if ! is_string "${2}" &> /dev/null; then
+      if ! is_string "${2}"; then
         log_stderr "Invalid key."
         return 2
       fi
@@ -139,12 +139,12 @@
     {
       log_stdout "${0}: ${FUNCNAME}"
 
-      if ! is_string "${3}" &> /dev/null; then
+      if ! is_string "${3}"; then
         log_stderr "Invalid value."
         return 2
       fi
 
-      if ! is_string "${2}" &> /dev/null; then
+      if ! is_string "${2}"; then
         log_stderr "Invalid key."
         return 2
       fi
@@ -522,7 +522,7 @@
     {
       log_stdout "${0}: ${FUNCNAME}"
 
-      if ! is_string "${2}" &> /dev/null; then
+      if ! is_string "${2}"; then
         log_stderr "Invalid key."
         return 2
       fi
