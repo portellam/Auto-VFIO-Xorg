@@ -10,11 +10,11 @@
 #
 # TODO:
 # - [x] migrate logic and params into separate source files.
-# - [ ] rename params.
-# - [ ] double-check external class params are named properly.
-# - [ ] refactor.
+# - [!] rename params.
+# - [!] double-check external class params are named properly.
+# - [x] refactor.
 # - [x] add comments.
-# - [ ] add bools?
+# - [!] add bools?
 # - [ ] test.
 #
 
@@ -29,29 +29,16 @@
   source "${SRC_STR_SCRIPT_BIN_DIR}src_iommu_xml"
 
 #
-# setter logic
+# logic
 #
   #
-  # DESC: globals
-  #
-    function set_globals
-    {
-      log_stdout "${0}: ${FUNCNAME}"
-
-      if [[ "${SRC_IOMMU_BOOL_SET_GLOBALS}" == true ]]; then
-        return 0
-      fi
-
-      declare -g SRC_IOMMU_BOOL_SET_GLOBALS=true
-
-      declare -g SRC_IOMMU_BOOL_HAS_ARG_PARSE_IOMMU=false
-      declare -g SRC_IOMMU_BOOL_HAS_ARG_PARSE_IOMMU_SELECT_ALL=false
-      declare -g SRC_IOMMU_BOOL_HAS_ARG_PARSE_IOMMU_SELECT_SOME=false
-    }
-
-  #
   # DESC:   Do parse the IOMMU database.
-  # $1:     boolean; if true, skip parse.
+  # $1:     the array of IOMMU group IDs as a reference.
+  # $2:     the array of reserved IOMMU groups for Host as a reference.
+  # $3:     the array of reserved IOMMU groups with VGA for Host as a reference.
+  # $4:     the array of reserved IOMMU groups for VFIO as a reference.
+  # $5:     the array of reserved IOMMU groups with VGA for VFIO as a reference.
+  # $6:     do parse IOMMU groups.
   # RETURN: If parse is successful or skipped, return 0.
   #         If failed, return 1.
   #
@@ -59,26 +46,75 @@
     {
       log_stdout "${0}: ${FUNCNAME}"
 
-      if is_bool "${1}" &> /dev/null \
-        && "${1}" \
+      local -r str_arr_iommu_group_id_ref_name="${1}"
+      local -r str_arr_iommu_groups_for_host_ref_name="${2}"
+      local -r str_arr_iommu_groups_for_host_with_vga_ref_name="${3}"
+      local -r str_arr_iommu_groups_for_vfio_ref_name="${4}"
+      local -r str_arr_iommu_groups_for_vfio_with_vga_ref_name="${5}"
+      local bool_do_parse_iommu_groups="${6}"
+
+      if ! is_array "${str_arr_iommu_group_id_ref_name}"; then
+        log_stderr "Missing array reference for IOMMU group IDs."
+        return 1
+      fi
+
+      if ! is_array "${str_arr_iommu_groups_for_host_ref_name}"; then
+        log_stderr "Missing array reference for Host machine IOMMU groups."
+        return 1
+      fi
+
+      if ! is_array "${str_arr_iommu_groups_for_host_with_vga_ref_name}"; then
+        log_stderr "Missing array reference for Host machine IOMMU groups "\
+          "with VGA."
+
+        return 1
+      fi
+
+      if ! is_array "${str_arr_iommu_groups_for_vfio_ref_name}"; then
+        log_stderr "Missing array reference for VFIO IOMMU groups."
+        return 1
+      fi
+
+      if ! is_array "${str_arr_iommu_groups_for_vfio_with_vga_ref_name}"; then
+        log_stderr "Missing array reference for VFIO IOMMU groups with VGA."
+        return 1
+      fi
+
+      if is_string "${bool_do_parse_iommu_groups}" \
+        || ! is_bool "${bool_do_parse_iommu_groups}"; then
+        return 1
+      fi
+
+      if ! "${bool_do_parse_iommu_groups}" \
         || ! parse_iommu_database_prompt; then
         print_output_to_log "Parse of IOMMU groups skipped."
         return 0
       fi
 
       if ! create_temp_files_for_database \
-        || ! try_to_parse_iommu_database; then
-        cleanup_iommu_database
+        || ! try_to_parse_iommu_database "${str_arr_iommu_group_id_ref_name}" \
+          "${str_arr_iommu_groups_for_host_ref_name}" \
+          "${str_arr_iommu_groups_for_host_with_vga_ref_name}" \
+          "${str_arr_iommu_groups_for_vfio_ref_name}" \
+          "${str_arr_iommu_groups_for_vfio_with_vga_ref_name}" \
+          "${bool_do_parse_iommu_groups}"; then
+        cleanup_iommu_groups_xml_file
         print_error_to_log "Parse of IOMMU groups failed."
         return 1
       fi
 
-      cleanup_iommu_database
+      cleanup_iommu_groups_xml_file
       log_stdout "Parse of IOMMU groups successful."
     }
 
   #
   # DESC:   Try to parse the IOMMU database.
+  # $1:     the array of IOMMU group IDs as a reference.
+  # $2:     the array of reserved IOMMU groups for Host as a reference.
+  # $3:     the array of reserved IOMMU groups with VGA for Host as a reference.
+  # $4:     the array of reserved IOMMU groups for VFIO as a reference.
+  # $5:     the array of reserved IOMMU groups with VGA for VFIO as a reference.
+  # $6:     do parse IOMMU groups.
   # RETURN: If parse is successful, return 0.
   #         If false, return 1.
   #
@@ -86,14 +122,48 @@
     {
       log_stdout "${0}: ${FUNCNAME}"
 
-      if ! is_unparsed_enum_valid; then
+      local -r str_arr_iommu_group_id_ref_name="${1}"
+      local -r str_arr_iommu_groups_for_host_ref_name="${2}"
+      local -r str_arr_iommu_groups_for_host_with_vga_ref_name="${3}"
+      local -r str_arr_iommu_groups_for_vfio_ref_name="${4}"
+      local -r str_arr_iommu_groups_for_vfio_with_vga_ref_name="${5}"
+      local bool_do_parse_iommu_groups="${6}"
+
+      if ! is_array "${str_arr_iommu_group_id_ref_name}"; then
+        log_stderr "Missing array reference for IOMMU group IDs."
         return 1
       fi
 
-      parse_iommu_database_from_xml_file
+      if ! is_array "${str_arr_iommu_groups_for_host_ref_name}"; then
+        log_stderr "Missing array reference for Host machine IOMMU groups."
+        return 1
+      fi
 
-      if ! specify_xml_file \
-        || ! is_xml_file_created; then
+      if ! is_array "${str_arr_iommu_groups_for_host_with_vga_ref_name}"; then
+        log_stderr "Missing array reference for Host machine IOMMU groups "\
+          "with VGA."
+
+        return 1
+      fi
+
+      if ! is_array "${str_arr_iommu_groups_for_vfio_ref_name}"; then
+        log_stderr "Missing array reference for VFIO IOMMU groups."
+        return 1
+      fi
+
+      if ! is_array "${str_arr_iommu_groups_for_vfio_with_vga_ref_name}"; then
+        log_stderr "Missing array reference for VFIO IOMMU groups with VGA."
+        return 1
+      fi
+
+      if is_string "${bool_do_parse_iommu_groups}" \
+        || ! is_bool "${bool_do_parse_iommu_groups}"; then
+        return 1
+      fi
+
+      # TODO: fix below.
+
+      if ! specify_iommu_groups_xml_file; then
         return 1
       fi
 
@@ -103,19 +173,28 @@
           return 1
         fi
 
-        specify_iommu_group_enum
+      else
+        if ! does_host_not_have_existing_vfio_setup; then
+          return 1
+        fi
+
+        if "${SRC_IOMMU_BOOL_DO_PARSE_DATABASE_FROM_XML}" \
+          || ! import_iommu_groups_from_xml_file; then
+          return 1
+        fi
       fi
 
-      if ! does_host_not_have_existing_vfio_setup; then
+      # TODO: fix above.
+
+      if ! do_select_iommu_group_collection "${str_arr_iommu_group_id_ref_name}" \
+          "${str_arr_iommu_groups_for_host_ref_name}" \
+          "${str_arr_iommu_groups_for_host_with_vga_ref_name}" \
+          "${str_arr_iommu_groups_for_vfio_ref_name}" \
+          "${str_arr_iommu_groups_for_vfio_with_vga_ref_name}"; then
         return 1
       fi
 
-      if "${SRC_IOMMU_BOOL_DO_PARSE_DATABASE_FROM_XML}" \
-        || ! import_iommu_groups_from_xml_file; then
-        return 1
-      fi
-
-      specify_iommu_group_enum
+      return 0
     }
 
   #
@@ -128,16 +207,10 @@
     {
       log_stdout "${0}: ${FUNCNAME}"
 
-      if "${SRC_IOMMU_BOOL_DO_PARSE_DATABASE}"; then
-        return 0
-      fi
-
-      if ! ask_yes_or_no "Parse database for IOMMU groups?"; then
-        SRC_IOMMU_BOOL_DO_PARSE_DATABASE=false
+      if ! ask_yes_or_no "Parse IOMMU groups?"; then
         return 1
       fi
 
-      SRC_IOMMU_BOOL_DO_PARSE_DATABASE=true
       return 0
     }
 
