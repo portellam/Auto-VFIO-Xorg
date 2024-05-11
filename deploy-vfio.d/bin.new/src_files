@@ -91,7 +91,7 @@
     {
       log_stdout "${0}: ${FUNCNAME}"
 
-      if ! is_string "${2}" &> /dev/null; then
+      if ! is_string "${2}"; then
         print_error_to_log "Invalid filename."
         return 1
       fi
