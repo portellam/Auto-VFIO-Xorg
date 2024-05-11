@@ -34,7 +34,7 @@
     {
       log_stdout "${0}: ${FUNCNAME}"
 
-      if ! is_string "${1}" &> /dev/null; then
+      if ! is_string "${1}"; then
         log_stderr "Cannot determine if device driver is not blacklisted, given "\
           "invalid device driver."
 
@@ -63,7 +63,7 @@
     {
       log_stdout "${0}: ${FUNCNAME}"
 
-      if ! is_string "${1}" &> /dev/null; then
+      if ! is_string "${1}"; then
         log_stderr "Cannot determine if device driver is not 'vfio-pci', given "\
           "invalid device driver."
 
@@ -92,7 +92,7 @@
     {
       log_stdout "${0}: ${FUNCNAME}"
 
-      if ! is_string "${1}" &> /dev/null; then
+      if ! is_string "${1}"; then
         log_stderr "Cannot determine if device is external, given invalid device."
 
         return 2
@@ -120,7 +120,7 @@
     {
       log_stdout "${0}: ${FUNCNAME}"
 
-      if ! is_string "${1}" &> /dev/null; then
+      if ! is_string "${1}"; then
         log_stderr "Cannot determine if device driver is preferred by "\
           "'pci-stub,' given invalid device."
 
@@ -152,7 +152,7 @@
     {
       log_stdout "${0}: ${FUNCNAME}"
 
-      if ! is_string "${1}" &> /dev/null; then
+      if ! is_string "${1}"; then
         log_stderr "Cannot determine if device ID is valid, "\
           "given invalid device."
 
@@ -181,7 +181,7 @@
     {
       log_stdout "${0}: ${FUNCNAME}"
 
-      if ! is_string "${1}" &> /dev/null; then
+      if ! is_string "${1}"; then
         print_error_to_log "Cannot determine if device is not binded to 'vfio'pci' "\
           "given invalid device."
 
@@ -206,7 +206,7 @@
     {
       log_stdout "${0}: ${FUNCNAME}"
 
-      if ! is_string "${1}" &> /dev/null; then
+      if ! is_string "${1}"; then
         print_error_to_log "Cannot determine if device is not blacklisted, "\
           "given invalid device."
 
@@ -230,7 +230,7 @@
     {
       log_stdout "${0}: ${FUNCNAME}"
 
-      if ! is_string "${1}" &> /dev/null; then
+      if ! is_string "${1}"; then
         print_error_to_log "Cannot determine if device is not external, "\
           "given invalid device."
 
@@ -254,7 +254,7 @@
     {
       log_stdout "${0}: ${FUNCNAME}"
 
-      if ! is_string "${1}" &> /dev/null; then
+      if ! is_string "${1}"; then
         print_error_to_log "Cannot determine if device is VGA, given invalid device."
         return 2
       fi

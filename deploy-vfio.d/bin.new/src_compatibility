@@ -59,7 +59,7 @@
         return 1
       fi
 
-      if is_string "${1}" &> /dev/null; then
+      if is_string "${1}"; then
         print_error_to_log "Invalid argument. Valid arguments: --ignore-distro"
         return 2
       fi
