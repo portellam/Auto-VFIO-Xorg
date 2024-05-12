@@ -82,7 +82,7 @@
     }
 
   #
-  # DESC:   Is device external.
+  # DESC:   Is device external (example: a PCIE expansion card)?
   # $1:     the device info as a string.
   # RETURN: If device is external, return 0.
   #         If device is not external, return 1.
@@ -142,7 +142,7 @@
     }
 
   #
-  # DESC:   Is device ID is valid.
+  # DESC:   Is device (lspci) ID is valid.
   # $1:     the device info as a string.
   # RETURN: If device ID is valid, return 0.
   #         If device ID is not valid, return 1.
@@ -171,7 +171,7 @@
     }
 
   #
-  # DESC:   Is device not binded to 'vfio-pci'.
+  # DESC:   Is device not binded to 'vfio-pci' (the driver is not binded).
   # $1:     the device info as a string.
   # RETURN: If device is not binded, return 0.
   #         If device is binded, return 1.
@@ -196,7 +196,7 @@
 
 
   #
-  # DESC:   Is device not blacklisted.
+  # DESC:   Is device not blacklisted (the driver is not available)?
   # $1:     the device info as a string.
   # RETURN: If device is not excluded, return 0.
   #         If device is external, return 1.
@@ -220,7 +220,7 @@
     }
 
   #
-  # DESC:   Is device external.
+  # DESC:   Is device not external (example: memory bus, integrated sound chip)?
   # $1:     the device info as a string.
   # RETURN: If device is external, return 0.
   #         If device is not external, return 1.
@@ -244,7 +244,7 @@
     }
 
   #
-  # DESC:   Is device VGA.
+  # DESC:   Is device a video graphics array (VGA)?
   # $1:     the device info as a string.
   # RETURN: If device is VGA, return 0.
   #         If device is not VGA, return 1.

@@ -29,7 +29,8 @@
 #
   #
   # DESC:   Check if all required build dependencies are installed.
-  # RETURN: If dependencies are installed, return 0. If false, return 1.
+  # RETURN: If dependencies are installed, return 0.
+  #         If false, return 1.
   #
     function are_looking_glass_dependencies_installed
     {
@@ -83,7 +84,8 @@
   #
   # DESC:   Execute cmake. If any dependency fails, disable and try again.
   # $1:     the arguments for cmake as a string
-  # RETURN: If cmake execute, return 0. If false, return 1.
+  # RETURN: If cmake execute, return 0.
+  #         If false, return 1.
   #
     function execute_cmake
     {
@@ -165,7 +167,8 @@
 
   #
   # DESC:   Checks if git repo exists.
-  # RETURN: If repo exists, return 0. If false, return 1.
+  # RETURN: If repo exists, return 0.
+  #         If false, return 1.
   #
     function does_looking_glass_repo_exist
     {
@@ -178,7 +181,8 @@
 
   #
   # DESC:   Install Looking Glass.
-  # RETURN: If install is successful, return 0. If false, return 1.
+  # RETURN: If install is successful, return 0.
+  #         If false, return 1.
   #
     function install_looking_glass
     {

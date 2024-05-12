@@ -18,7 +18,9 @@
   #
   # DESC:   Ask yes or no question.
   # $1:     the output as a string
-  # RETURN: If answer is 'Y' return 0. If 'N' return 255. If else return 1.
+  # RETURN: If answer is 'Y' return 0.
+  #         If answer is 'N' return 255.
+  #         If neither, return 1.
   #
     function ask_yes_or_no
     {

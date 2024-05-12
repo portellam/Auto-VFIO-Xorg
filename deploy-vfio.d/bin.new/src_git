@@ -45,7 +45,8 @@
 #
   #
   # DESC:   Checks if the parent path for git repos exists.
-  # RETURN: If user is root return 0. If false, return 1.
+  # RETURN: If user is root return 0.
+  #         If false, return 1.
   #
     function does_git_parent_path_exist
     {
@@ -69,7 +70,8 @@
   # DESC:   Checks if the provided git repo exists.
   # $1:     the git repo name
   # $2:     the git repo address
-  # RETURN: If user is root, return 0. If false, return 1.
+  # RETURN: If user is root, return 0.
+  #         If false, return 1.
   #
     function does_this_git_repo_exist
     {
@@ -124,7 +126,8 @@
 
   #
   # DESC:   Checks if git command is installed. Installs if absent.
-  # RETURN: If user is root return 0. If false, return 1.
+  # RETURN: If user is root return 0.
+  #         If false, return 1.
   #
     function is_git_installed
     {

@@ -56,7 +56,8 @@
 #
   #
   # DESC:   Is Linux distribution supported.
-  # RETURN: If true, return 0. If false, return 1.
+  # RETURN: If true, return 0.
+  #         If false, return 1.
   #
   function execute_post_setup
   {

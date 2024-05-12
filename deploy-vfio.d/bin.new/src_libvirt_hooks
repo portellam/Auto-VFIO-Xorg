@@ -27,7 +27,7 @@
 #
   #
   # DESC:   Checks if git repo exists.
-  # RETURN: If repo exists, return 0. If false, return 1.
+  # RETURN: Return incoming return code.
   #
     function does_libvirt_hooks_repo_exist
     {
@@ -35,14 +35,17 @@
 
       local -r str_last_dir="$( pwd )"
       does_this_git_repo_exist "Libvirt Hooks" "github.com/portellam/libvirt-hooks"
+      local -i int_code="${?}"
+
       cd "${str_last_dir}"
+      return "${int_code}"
     }
 
   #
   # DESC:   Execute Libvirt Hooks installer.
   # $1:     the command line arguments
-  # RETURN: If execution is successful, return 0. If false, return 1.
-  #
+  # RETURN: If execution is successful, return 0.
+  #         If false, return 1.
     function execute_libvirt_hooks_installer
     {
       log_stdout "${0}: ${FUNCNAME}"
@@ -73,7 +76,6 @@
 
   #
   # DESC:   Install Libvirt Hooks.
-  # $1:     the command line arguments
   # RETURN: If install is successful, return 0.
   #         If false, return 1.
   #
@@ -93,7 +95,6 @@
 
   #
   # DESC:   Uninstall Libvirt Hooks.
-  # $1:     the command line arguments
   # RETURN: If uninstall is successful, return 0.
   #         If false, return 1.
   #

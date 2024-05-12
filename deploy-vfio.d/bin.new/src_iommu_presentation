@@ -263,8 +263,9 @@
 
   #
   # DESC:   Print all relevant info about a device.
-  # $1:     the device info as a string
-  # RETURN: If device info is not null, return 0. If null, return 1.
+  # $1:     the device info as a string.
+  # RETURN: If device info is not null, return 0.
+  #         If false, return 1.
   #
     function print_iommu_group_device
     {
