@@ -235,7 +235,7 @@
       log_stdout "${0}: ${FUNCNAME}"
 
       local -n ref_enum_output="${1}"
-      local -n str_file_name="${2}"
+      local -r str_file_name="${2}"
 
       if ! is_enum_not_empty "ref_enum_output" \
         || ! sudo echo -e "${ref_enum_output[*]}" > "${str_file_name}"; then
