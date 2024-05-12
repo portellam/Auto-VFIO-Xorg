@@ -145,8 +145,8 @@
         return 2
       fi
 
-      if ! is_string "${ref_alpha_str_fraction}"; then
-        log_invalid_parameter "ref_alpha_str_fraction"
+      if ! is_string "${1}"; then
+        log_invalid_parameter "1"
         return 2
       fi
 
@@ -195,6 +195,7 @@
 
       if is_string "${str_fraction}" \
         && ! is_fraction "${str_fraction}"; then
+        log_invalid_parameter "str_fraction"
         return 2
       fi
 
@@ -325,8 +326,8 @@
 
       local -n ref_alpha_str_fraction="${1}"
 
-      if ! is_string "${ref_alpha_str_fraction}"; then
-        log_invalid_parameter "ref_alpha_str_fraction"
+      if ! is_reference "${1}"; then
+        log_invalid_parameter "1"
         return 2
       fi
 
