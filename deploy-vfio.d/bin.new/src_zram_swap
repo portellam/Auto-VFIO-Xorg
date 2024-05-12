@@ -9,7 +9,7 @@
 
 #
 # TODO:
-# - [ ] develop.
+# - [x] develop.
 # - [ ] test.
 #
 
@@ -20,6 +20,7 @@
   declare -g SRC_STR_SCRIPT_BIN_DIR="${SRC_STR_SCRIPT_DIR}deploy-vfio.d/"
 
   source "${SRC_STR_SCRIPT_BIN_DIR}src_print"
+  source "${SRC_STR_SCRIPT_BIN_DIR}src_memory"
 
 #
 # logic
@@ -40,6 +41,7 @@
 
   #
   # DESC:   Install ZRAM Swap
+  # $1:     do force restart all ZRAM Swap devices.
   # RETURN: If ZRAM Swap installed successfully, return 0.
   #         If not, return 1.
   #         If an exception occurs, return 2.
@@ -47,6 +49,13 @@
     function install_zram_swap
     {
       log_stdout "${0}: ${FUNCNAME}"
+
+      local bool_do_force_restart="${1}"
+
+      if ! is_bool "${bool_do_force_restart}"; then
+        log_invalid_parameter "bool_do_force_restart"
+        return 1
+      fi
 
       if ! does_zram_swap_repo_exist; then
         print_output_to_log "Install skipped."
@@ -65,7 +74,10 @@
 
       if [[ "${int_code}" -ne 0 ]] \
         || ! modify_zram_swap_configuration \
-        || ! enable_zram_swap_device; then
+          "${bool_do_force_restart}" \
+          "${bool_do_force_restart}" \
+          "${bool_do_force_restart}" \
+        || ! enable_zram_swap_device "${bool_do_force_restart}"; then
         print_error_to_log "Install failed."
         return "${int_code}"
       fi
@@ -75,87 +87,85 @@
     }
 
   #
-  # DESC:   Get ZRAM Swap fraction size.
-  # $1:     the fraction as a string
+  # DESC:   Set ZRAM Swap fraction size.
+  # $1:     the fraction as a string reference.
+  # $2:     do use the default fraction value.
   # RETURN: If ZRAM Swap fraction size is valid, return 0.
   #         If not, return 1.
   #         If an exception occurs, return 2.
   #
-    function get_zram_swap_fraction
+    function set_zram_swap_fraction
     {
       log_stdout "${0}: ${FUNCNAME}"
+
+      local -n ref_beta_str_fraction="${1}"
+      local bool_do_use_default="${2}"
+      local -r str_default_fraction="1/2"
+
+      if ! is_bool "${bool_do_use_default}"; then
+        log_invalid_parameter "bool_do_use_default"
+        return 2
+      fi
 
       if ! is_host_memory_sufficient_for_zram_swap; then
         return 2
       fi
 
-      case "${1}" in
-        *"/"* )
-          local -i int_numerator=$( echo ${1} | cut --delimiter '/' --fields 1 )
-          local -i int_denominator=$( echo ${1} | cut --delimiter '/' --fields 2 ) ;;
-
-        "default" )
-          POST_SETUP_HAS_ARG_ZRAM_SWAP_DEFAULTS=true
-          return 0 ;;
-
-        * )
-          print_error_to_log "Not a fraction."
-          return 2 ;;
-      esac
-
-      if ! is_int "${int_numerator}" &> /dev/null \
-        || ! is_int "${int_denominator}" &> /dev/null; then
-        print_error_to_log "Numerator and/or denominator are not numbers."
-        return 2
+      if "${bool_do_use_default}"; then
+        ref_beta_str_fraction="${str_default_fraction}"
+        print_output_to_log "Set fraction to default: ${str_default_fraction}"
+        return 0
       fi
 
-      if [[ "${int_numerator}" -le 0 ]]; then
-        print_error_to_log "Numerator is less than or equal to zero."
-        return 2
-      fi
-
-      if [[ "${int_denominator}" -le 0 ]]; then
-        print_error_to_log "Denominator is less than or equal to zero."
-        return 2
-      fi
-
-      if [[ "${int_numerator}" -ge "${int_denominator}" ]] \
-        || [[ "${int_denominator}" -le 1 ]]; then
-        print_error_to_log "Invalid fraction."
+      if ! is_absolute_of_fraction_less_than_one "${ref_beta_str_fraction}"; then
         return 1
       fi
 
-      declare -g POST_SETUP_ARGS_FOR_ZRAM_SWAP_FRACTION="${1}"
-      POST_SETUP_HAS_ARG_ZRAM_SWAP_SET_FRACTION=true
-      log_stdout "Fraction: ${POST_SETUP_ARGS_FOR_ZRAM_SWAP_FRACTION}"
+      log_stdout "Fraction: ${ref_beta_str_fraction}"
       return 0
     }
 
   #
   # DESC:   Get ZRAM Swap value by user input.
-  # $1:     the reference of variable.
+  # $1:     the fraction as a string reference.
+  # $2:     do use the default fraction value.
   # RETURN: If ZRAM Swap value is valid, return 0.
   #         If not, return 1.
   #
-    function get_zram_swap_fraction_prompt
+    function set_zram_swap_fraction_prompt
     {
       log_stdout "${0}: ${FUNCNAME}"
 
-      if "${POST_SETUP_HAS_ARG_ZRAM_SWAP_DEFAULTS}" \
-        || "${POST_SETUP_HAS_ARG_ZRAM_SWAP_SET_FRACTION}"; then
+      local -n ref_alpha_str_fraction="${1}"
+      local bool_do_use_default="${2}"
+      local -r str_default_fraction="1/2"
+
+      if ! is_bool "${bool_do_use_default}"; then
+        log_invalid_parameter "bool_do_use_default"
+        return 2
+      fi
+
+      if ! is_string "${ref_alpha_str_fraction}"; then
+        log_invalid_parameter "ref_alpha_str_fraction"
+        return 2
+      fi
+
+      if "${bool_do_use_default}"; then
+        set_zram_swap_fraction "${ref_alpha_str_fraction}" "${ref_alpha_str_fraction}"
         return 0
       fi
 
-      local -n ref="${1}"
-
-      for counter in $( seq 0 2 ); do
+      for int_counter in $( seq 0 2 ); do
         read -r -p "Set fraction of total memory for zram-swap to use " \
           "(to calculate default, enter 'default'): " \
-          answer
+          ref_alpha_str_fraction
 
-        if get_zram_swap_fraction "${answer}"; then
-          ref="${answer}"
-          log_stdout "Fraction: ${answer}"
+        if [[ "${ref_alpha_str_fraction}" == "default" ]]; then
+          bool_do_use_default=true
+        fi
+
+        if set_zram_swap_fraction "${ref_alpha_str_fraction}" \
+          "${bool_do_use_default}"; then
           return 0
         fi
       done
@@ -165,24 +175,11 @@
     }
 
   #
-  # DESC:   Get ZRAM Swap size.
-  # RETURN: If there exists free host memory, return 0.
-  #         If not, return 1.
-  #
-    function is_host_memory_sufficient_for_zram_swap
-    {
-      log_stdout "${0}: ${FUNCNAME}"
-
-      if ! get_free_memory; then
-        print_error_to_log "Insufficient Host memory for ZRAM Swap."
-        return 1
-      fi
-
-      print_output_to_log "Sufficient Host memory for ZRAM Swap."
-    }
-
-  #
   # DESC:   Modify configuration files for ZRAM Swap.
+  # $1:     do use the default fraction value.
+  # $2:     do force restart all ZRAM Swap devices.
+  # $3:     do use calculated fraction value.
+  # $4:     the fraction as a string.
   # RETURN: If output is valid and file is written, return 0.
   #         If not, return 1.
   #         If an exception occurs, return 2.
@@ -191,55 +188,63 @@
     {
       log_stdout "${0}: ${FUNCNAME}"
 
-      return 2
+      local str_fraction="${4}"
+      local bool_do_force_restart="${1}"
+      local bool_do_use_default_fraction="${2}"
+      local bool_do_use_calculated_fraction="${3}"
 
-      # TODO: replace globals?
-      POST_SETUP_ARGS_FOR_ZRAM_SWAP_FRACTION="1/8"
-      POST_SETUP_HAS_ARG_ZRAM_SWAP_DEFAULTS=""
-      POST_SETUP_HAS_ARG_ZRAM_SWAP_SET_FRACTION=""
-      AVAILABLE_MEMORY=""
-      MAX_MEMORY=""
-      POST_SETUP_HAS_ARG_ZRAM_SWAP_FORCE="false"
-
-      local -r str_file="/etc/default/zram-swap"
-      local str_line_to_match="_zram_fraction="
-      local str_fraction="${POST_SETUP_ARGS_FOR_ZRAM_SWAP_FRACTION}"
-
-      if ! get_zram_swap_fraction_prompt "str_fraction"; then
-        print_error_to_log "Could not write output to ZRAM Swap configuration file."
+      if is_string "${str_fraction}" \
+        && ! is_fraction "${str_fraction}"; then
         return 2
       fi
 
-      if "${POST_SETUP_HAS_ARG_ZRAM_SWAP_DEFAULTS}" \
-        && ! "${POST_SETUP_HAS_ARG_ZRAM_SWAP_SET_FRACTION}"; then
-        local -ir int_zram_swap_available_memory=$(( AVAILABLE_MEMORY / 2 ))
+      if ! is_bool "${bool_do_use_calculated_fraction}"; then
+        log_invalid_parameter "bool_do_use_calculated_fraction"
+        return 2
+      fi
 
-        # note: First evaluate the ratio of max system memory to the zram-swap
-        # available memory, as a decimal to the hundredths place.
-        # Then truncate the decimal and return an integer.
-        local -i denominator=$( printf "%.0f" \
-          $( echo "scale=2;${MAX_MEMORY}/${int_zram_swap_available_memory}" | bc )
-        )
+      if ! is_bool "${bool_do_use_default_fraction}"; then
+        log_invalid_parameter "bool_do_use_default_fraction"
+        return 2
+      fi
 
-        # note: If denominator is odd, subtract one.
-        if [[ $( expr ${denominator} % 2 ) -eq 1 ]]; then
-          (( denominator-- ))
+      if ! is_bool "${bool_do_force_restart}"; then
+        log_invalid_parameter "bool_do_force_restart"
+        return 2
+      fi
+
+      local -r str_failed_output="Could not write output to ZRAM Swap configuration"\
+        "file."
+
+      if ! is_fraction "${str_fraction}"; then
+        if "${bool_do_use_calculated_fraction}"; then
+          if ! get_calulated_fraction "${str_fraction}"; then
+            print_error_to_log "${str_failed_output}"
+            return 1
+          fi
+
+        else
+          if ! set_zram_swap_fraction_prompt "str_fraction" \
+            "${bool_do_use_default_fraction}"; then
+            print_error_to_log "${str_failed_output}"
+            return 2
+          fi
         fi
 
-        log_stdout "Denominator: ${denominator}"
-
-        if [[ "${denominator}" -le 0 ]]; then
-          print_error_to_log "Denominator is negative or zero."
+      else
+        if ! is_absolute_of_fraction_less_than_one "${str_fraction}"; then
+          print_error_to_log "${str_failed_output}"
           return 2
         fi
-
-        str_fraction="1/${denominator}"
       fi
+
+      local -r str_file_path="/etc/default/zram-swap"
+      local str_line_to_match="_zram_fraction="
 
       if ! sed -i \
         '/'${str_line_to_match}'"*"/c\'${str_line_to_match}'"'${str_fraction}'"' \
-        "${str_file}"; then
-        print_error_to_log "Could not write output to ZRAM Swap configuration file."
+        "${str_file_path}"; then
+        print_error_to_log "${str_failed_output}"
         return 1
       fi
 
@@ -249,6 +254,7 @@
 
   #
   # DESC:   Enable ZRAM Swap device.
+  # $1:     do force restart all ZRAM Swap devices.
   # RETURN: If ZRAM Swap device is enabled, return 0.
   #         If not, return 1.
   #         If an exception occurs, return 2.
@@ -257,7 +263,14 @@
     {
       log_stdout "${0}: ${FUNCNAME}"
 
-      if ! "${POST_SETUP_HAS_ARG_ZRAM_SWAP_FORCE}" \
+      local bool_do_force_restart="${1}"
+
+      if ! is_bool "${bool_do_force_restart}"; then
+        log_invalid_parameter "bool_do_force_restart"
+        return 1
+      fi
+
+      if ! "${bool_do_force_restart}" \
         && sudo swapon --verbose | grep zram &> /dev/null \
         && sudo swapon --verbose | grep zram &> /dev/null \
         && ! sudo swapon --verbose | grep zram | grep 0B &> /dev/null; then
@@ -296,4 +309,57 @@
 
       log_stdout "Enabled ZRAM Swap device(s)."
       return 0
+    }
+
+  #
+  # DESC:   Get the calculated fraction.
+  # $1:     the fraction as a string reference.
+  # RETURN: If fraction is valid, return 0.
+  #         If not, return 1.
+  #         If an exception occurs, return 2.
+  #
+    function get_calulated_fraction
+    {
+      log_stdout "${0}: ${FUNCNAME}"
+      log_stdout "Calculating fraction value."
+
+      local -n ref_alpha_str_fraction="${1}"
+
+      if ! is_string "${ref_alpha_str_fraction}"; then
+        log_invalid_parameter "ref_alpha_str_fraction"
+        return 2
+      fi
+
+      local -ir int_zram_swap_available_memory=$(( \
+        SRC_MEMORY_INT_CURRENT_FREE_MEMORY_BYTES / 2 \
+      ))
+
+        #
+        # NOTE: First evaluate the ratio of max system memory to the zram-swap
+        # available memory, as a decimal to the hundredths place.
+        # Then truncate the decimal and return an integer.
+        #
+        local -r str_max_and_available_memory_fraction=""\
+          "${SRC_MEMORY_INT_MAX_FREE_MEMORY_BYTES}/${int_zram_swap_available_memory}"
+
+        local -i int_denominator=$( printf "%.0f" \
+          $( echo "scale=2;${str_max_and_available_memory_fraction}" | bc ) \
+        )
+
+        #
+        # NOTE: If denominator is odd, subtract one.
+        #
+        if [[ $( expr ${int_denominator} % 2 ) -eq 1 ]]; then
+          (( int_denominator-- ))
+        fi
+
+        log_stdout "Denominator: ${int_denominator}"
+
+        if [[ "${int_denominator}" -le 1 ]]; then
+          log_stderr "Denominator is less than or equal to one."
+          return 1
+        fi
+
+        ref_alpha_str_fraction="1/${int_denominator}"
+        return 0
     }
