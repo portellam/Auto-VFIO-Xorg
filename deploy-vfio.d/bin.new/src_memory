@@ -9,10 +9,9 @@
 
 #
 # TODO:
-# - [ ] develop.
+# - [x] develop.
 # - [ ] test.
 #
-
 
 #
 # sources
@@ -64,7 +63,8 @@
 
   #
   # DESC:   Sets the global parameter.
-  # RETURN: If true return 0, if false return 1.
+  # RETURN: If true return 0.
+  #         If false, return 1.
   #
     function set_free_memory
     {
@@ -137,27 +137,6 @@
       log_stdout "Found lowest common factor memory channel size."
       return 0
     }
-
-  #
-  # DESC:   Sets the global parameter.
-  # RETURN: Always return 0.
-  #
-    function set_minimum_memory
-    {
-      log_stdout "${0}: ${FUNCNAME}"
-
-      if ! "${BOOL_DO_USE_TWO_MIB_HUGEPAGES}"; then
-        SRC_MEMORY_INT_MIN_FREE_MEMORY_BYTES=$(( \
-          8 * ${SRC_MEMORY_INT_ONE_GIB_IN_KIB} \
-        ))
-
-        log_stdout "Set minimum memory."
-      fi
-
-      log_stdout "Set minimum memory."
-      return 0
-    }
-
 #
 # logic
 #
@@ -169,6 +148,9 @@
     function is_any_host_memory_available
     {
       log_stdout "${0}: ${FUNCNAME}"
+
+      find_lowest_common_factor_memory_channel_size
+      set_free_memory
 
       if [[ "${SRC_MEMORY_INT_CURRENT_FREE_MEMORY_BYTES}" -le 0 ]]; then
         print_error_to_log "Insufficient Host memory available."
