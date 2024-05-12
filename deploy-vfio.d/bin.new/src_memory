@@ -70,8 +70,8 @@
     {
       log_stdout "${0}: ${FUNCNAME}"
 
-      if ! is_int "SRC_MEMORY_INT_MAX_FREE_MEMORY_BYTES" \
-        || ! is_int "SRC_MEMORY_INT_MIN_FREE_MEMORY_BYTES"; then
+      if ! is_int "${SRC_MEMORY_INT_MAX_FREE_MEMORY_BYTES}" \
+        || ! is_int "${SRC_MEMORY_INT_MIN_FREE_MEMORY_BYTES}"; then
         print_error_to_log "Failed to get current free memory."
         return 1
       fi
@@ -108,7 +108,7 @@
         arr_memory_channel_bytes+=( "${int_memory_channel_bytes}" )
       done
 
-      if ! is_enum "arr_memory_channel_bytes"; then
+      if ! is_array "arr_memory_channel_bytes"; then
         print_error_to_log "Could not find memory channel size values."
         return 1
       fi
@@ -118,9 +118,9 @@
       while IFS= read -r var_element; do
         arr_sorted+=( "${var_element}" )
       done < <( printf '%s\n' "${arr_memory_channel_bytes[@]}" | \
-        sort --reverse --field-seperator _  --general-numeric-sort )
+        sort --reverse --field-seperator '_' --general-numeric-sort )
 
-      if ! is_enum "arr_sorted"; then
+      if ! is_array "arr_sorted"; then
         print_error_to_log "Could not sort memory channel size values."
         return 1
       fi
@@ -129,7 +129,7 @@
         declare -p arr_sorted | head --lines 1 \
       )
 
-      if ! is_int "SRC_MEMORY_INT_MIN_FREE_MEMORY_BYTES"; then
+      if ! is_int "${SRC_MEMORY_INT_MIN_FREE_MEMORY_BYTES}"; then
         print_error_to_log "Could not find lowest memory channel size value."
         return 1
       fi
@@ -154,6 +154,7 @@
         log_stdout "Set minimum memory."
       fi
 
+      log_stdout "Set minimum memory."
       return 0
     }
 
@@ -174,7 +175,7 @@
         return 1
       fi
 
-      print_output_to_log "Sufficient Host memory available."
+      log_stdout "Sufficient Host memory available."
       return 0
     }
 
@@ -182,7 +183,7 @@
   # DESC:   Set the memory channel size, given the memory channel size.
   # $1:     the memory channel size (unitless)
   # $2:     the memory channel unit (KB, MB, GB, TB)
-  # $3:     the pointer
+  # $3:     the memory channel in bytes as an int reference.
   # RETURN: If the memory channel size is valid, return 0.
   #         If the memory channel size is not valid, return 1.
   #
@@ -192,26 +193,26 @@
 
       local -u str_memory_channel_size="${1}"
       local -i int_memory_channel_unit="${2}"
-      local -n ref_int__memory_channel_bytes="${3}"
+      local -n ref_int_memory_channel_bytes="${3}"
 
       case "${str_memory_channel_size}" in
           "K" | "KB" | "KIB" )
-            ref_int__memory_channel_bytes=$(( ${SRC_MEMORY_INT_TWO_TO_POWER_OF_TEN} ** 1 ))
+            ref_int_memory_channel_bytes=$(( ${SRC_MEMORY_INT_TWO_TO_POWER_OF_TEN} ** 1 ))
             log_stdout "Selected KIB."
             ;;
 
           "M" | "MB" | "MIB" )
-            ref_int__memory_channel_bytes=$(( ${SRC_MEMORY_INT_TWO_TO_POWER_OF_TEN} ** 2 ))
+            ref_int_memory_channel_bytes=$(( ${SRC_MEMORY_INT_TWO_TO_POWER_OF_TEN} ** 2 ))
             log_stdout "Selected MIB."
             ;;
 
           "G" | "GB" | "GIB" )
-            ref_int__memory_channel_bytes=$(( ${SRC_MEMORY_INT_TWO_TO_POWER_OF_TEN} ** 3 ))
+            ref_int_memory_channel_bytes=$(( ${SRC_MEMORY_INT_TWO_TO_POWER_OF_TEN} ** 3 ))
             log_stdout "Selected GIB."
             ;;
 
           "T" | "TB" | "TIB" )
-            ref_int__memory_channel_bytes=$(( ${SRC_MEMORY_INT_TWO_TO_POWER_OF_TEN} ** 4 ))
+            ref_int_memory_channel_bytes=$(( ${SRC_MEMORY_INT_TWO_TO_POWER_OF_TEN} ** 4 ))
             log_stdout "Selected TIB."
             ;;
 
@@ -221,7 +222,7 @@
             ;;
         esac
 
-        ref_int__memory_channel_bytes=$(( ${int_memory_channel_bytes} * \
+        ref_int_memory_channel_bytes=$(( ${int_memory_channel_bytes} * \
           ${int_memory_channel_unit} ))
 
         return 0
