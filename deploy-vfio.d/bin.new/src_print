@@ -118,6 +118,17 @@
     }
 
   #
+  # DESC:   Log output of parameter name.
+  # $1:     the parameter name as a string.
+  # RETURN: Always return 0.
+  #
+    function log_invalid_parameter
+    {
+      log_stderr "Parameter "'${'"${1}"'}'" is invalid or undefined."
+      return 0
+    }
+
+  #
   # DESC:   Log output to STDERR.
   # RETURN: Always return 0.
   #
