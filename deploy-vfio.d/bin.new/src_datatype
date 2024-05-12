@@ -354,6 +354,34 @@
     }
 
   #
+  # DESC:   Is input a fraction.
+  # $1:     the fraction as a string.
+  # RETURN: If true, return 0.
+  #         If false, return 1.
+  #         If an exception occurs, return 2.
+  #
+    function is_fraction
+    {
+      log_stdout "${0}: ${FUNCNAME}"
+
+      local -r str_fraction="${1}"
+
+      if ! is_string "${str_fraction}"; then
+        log_invalid_parameter "str_fraction"
+        return 2
+      fi
+
+      if ! [[ "${str_fraction}" =~ [0-9]*[/][0-9]* ]] \
+        && ! [[ "${str_fraction}" =~ [0-9]*[\\][0-9]* ]]; then
+        log_stderr "Not a fraction."
+        return 1
+      fi
+
+      log_stdout "Fraction is valid: '${str_fraction}'"
+      return 0
+    }
+
+  #
   # DESC:   Is input an integer.
   # $1:     the input as an int.
   # RETURN: If true, return 0.
@@ -397,6 +425,43 @@
       fi
 
       log_stdout "Variable is not read-only."
+      return 0
+    }
+
+  #
+  # DESC:   Is absolute value of fraction less than positive one.
+  # $1:     the fraction as a string.
+  # RETURN: If true, return 0.
+  #         If false, return 1.
+  #         If an exception occurs, return 2.
+  #
+    function is_absolute_of_fraction_less_than_one
+    {
+      log_stdout "${0}: ${FUNCNAME}"
+
+      local -r str_fraction="${1}"
+
+      if ! is_fraction "${str_fraction}"; then
+        return 2
+      fi
+
+      local -ir int_numerator=$( \
+        echo "${str_fraction}" | cut --delimiter '/' --fields 1 \
+      )
+
+      local -ir int_denominator=$( \
+        echo "${str_fraction}" | cut --delimiter '/' --fields 2 \
+      )
+
+      if ( [[ "${int_numerator}" -ge 0 ]] \
+          && [[ "${int_numerator}" -ge "${int_denominator}" ]] ) \
+        && ( [[ "${int_numerator}" -lt 0 ]] \
+          && [[ "${int_numerator}" -le "${int_denominator}" ]] ); then
+        log_stderr "Fraction is greater than or equal to one."
+        return 1
+      fi
+
+      log_stdout "Fraction is less than one."
       return 0
     }
 
