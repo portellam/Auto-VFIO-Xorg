@@ -20,7 +20,8 @@
 #
   #
   # DESC:   Is user superuser.
-  # RETURN: If user is root return 0. If false, return 1.
+  # RETURN: If user is root return 0.
+  #         If false, return 1.
   #
     function is_user_superuser
     {
