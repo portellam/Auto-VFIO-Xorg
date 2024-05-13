@@ -10,6 +10,7 @@
 #
 # TODO:
 # - [ ] test.
+# - [x] develop.
 #
 
 #
@@ -25,7 +26,7 @@
 #
   #
   # DESC:   Is device driver not blacklisted.
-  # $1:     the device info as a string.
+  # $1:     the device driver as a string.
   # RETURN: If device driver is not 'vfio-pci', return 0.
   #         If device driver is 'vfio-pci', return 1.
   #         If device driver is not valid, return 2.
@@ -34,27 +35,31 @@
     {
       log_stdout "${0}: ${FUNCNAME}"
 
-      if ! is_string "${1}"; then
-        log_stderr "Cannot determine if device driver is not blacklisted, given "\
-          "invalid device driver."
+      local -r str_device_slot_id="${1}"
 
+      if ! is_string "${str_device_slot_id}"; then
+        log_invalid_parameter "str_device_slot_id"
         return 2
       fi
 
-      local -r str_driver="${1}"
-      local -r str_excluded_driver="snd_hda_intel"
+      local -r str_device_driver="${1}"
 
-      case "${str_driver}" in
-        *"${str_excluded_driver}"* )
-          return 1 ;;
-      esac
+      local -ar arr_excluded_drivers=(
+        "snd_hda_intel"
+      )
 
+      if array_contains_value "arr_excluded_drivers" "${str_device_driver}"; then
+        log_stderr "Device is blacklisted."
+        return 1
+      fi
+
+      log_stdout "Device is not blacklisted."
       return 0
     }
 
   #
   # DESC:   Is device driver not 'vfio-pci'.
-  # $1:     the device info as a string.
+  # $1:     the device driver as a string.
   # RETURN: If device driver is not 'vfio-pci', return 0.
   #         If device driver is 'vfio-pci', return 1.
   #         If device driver is not valid, return 2.
@@ -63,27 +68,27 @@
     {
       log_stdout "${0}: ${FUNCNAME}"
 
-      if ! is_string "${1}"; then
-        log_stderr "Cannot determine if device driver is not 'vfio-pci', given "\
-          "invalid device driver."
+      local -r str_device_driver="${1}"
 
+      if ! is_string "${str_device_driver}"; then
+        log_invalid_parameter "str_device_driver"
         return 2
       fi
-
-      local -r str_driver="${1}"
       local -r str_matched_driver="vfio-pci"
 
-      case "${str_driver}" in
+      case "${str_device_driver}" in
         *"${str_matched_driver}"* )
+          log_stderr "Device is binded to '${str_matched_driver}'."
           return 1 ;;
       esac
 
+      log_stdout "Device is not binded to '${str_matched_driver}'."
       return 0
     }
 
   #
   # DESC:   Is device external (example: a PCIE expansion card)?
-  # $1:     the device info as a string.
+  # $1:     the device slot ID as a string.
   # RETURN: If device is external, return 0.
   #         If device is not external, return 1.
   #         If device is not valid, return 2.
@@ -92,9 +97,10 @@
     {
       log_stdout "${0}: ${FUNCNAME}"
 
-      if ! is_string "${1}"; then
-        log_stderr "Cannot determine if device is external, given invalid device."
+      local -r str_device_slot_id="${1}"
 
+      if ! is_string "${str_device_slot_id}"; then
+        log_invalid_parameter "str_device_slot_id"
         return 2
       fi
 
@@ -105,13 +111,19 @@
         echo "${str_device}" | cut --delimiter ':' --fields 2 \
       )
 
-      echo "${str_domain_id}" | \
-        grep --extended-regexp --quiet "${str_regex_get_domain_id}"
+      if ! echo "${str_domain_id}" | \
+        grep --extended-regexp --quiet "${str_regex_get_domain_id}"; then
+        log_stderr "Device is not external."
+        return 1
+      fi
+
+      log_stdout "Device is external."
+      return 0
     }
 
   #
   # DESC:   Is device preferred by 'pci-stub' driver.
-  # $1:     the device info as a string.
+  # $1:     the device slot ID as a string.
   # RETURN: If device is preferred, return 0.
   #         If device is not preferred, return 1.
   #         If device is not valid, return 2.
@@ -120,30 +132,30 @@
     {
       log_stdout "${0}: ${FUNCNAME}"
 
-      if ! is_string "${1}"; then
-        log_stderr "Cannot determine if device driver is preferred by "\
-          "'pci-stub,' given invalid device."
+      local -r str_device_slot_id="${1}"
 
+      if ! is_string "${str_device_slot_id}"; then
+        log_invalid_parameter "str_device_slot_id"
         return 2
       fi
 
-      local -r str_device="${1}"
-
-      local -lr str_class="$( \
-        lspci -ms ${str_device} | cut --delimiter '"' --fields 2 \
+      local -lr str_device_class="$( \
+        lspci -ms ${str_device_slot_id} | cut --delimiter '"' --fields 2 \
       )"
 
-      case "${str_class}" in
+      case "${str_device_class}" in
         *"usb"* )
+          log_stdout "Device class is valid."
           return 0 ;;
       esac
 
+      log_stderr "Device class is not valid."
       return 1
     }
 
   #
   # DESC:   Is device (lspci) ID is valid.
-  # $1:     the device info as a string.
+  # $1:     the device slot ID as a string.
   # RETURN: If device ID is valid, return 0.
   #         If device ID is not valid, return 1.
   #         If device is not valid, return 2.
@@ -152,27 +164,27 @@
     {
       log_stdout "${0}: ${FUNCNAME}"
 
-      if ! is_string "${1}"; then
-        log_stderr "Cannot determine if device ID is valid, "\
-          "given invalid device."
+      local -r str_device_slot_id="${1}"
 
+      if ! is_string "${str_device_slot_id}"; then
+        log_invalid_parameter "str_device_slot_id"
         return 2
       fi
 
-      local -r str_device="${1}"
       local -r str_output="$( lspci -s "${str_device}" )"
 
-      if ! is_string "${str_output}" &> /dev/null; then
+      if ! is_string "${str_output}"; then
         log_stderr "Device ID is not valid."
         return 1
       fi
 
+      log_stdout "Device ID is valid."
       return 0
     }
 
   #
   # DESC:   Is device not binded to 'vfio-pci' (the driver is not binded).
-  # $1:     the device info as a string.
+  # $1:     the device slot ID as a string.
   # RETURN: If device is not binded, return 0.
   #         If device is binded, return 1.
   #         If device is not valid, return 2.
@@ -181,23 +193,26 @@
     {
       log_stdout "${0}: ${FUNCNAME}"
 
-      if ! is_string "${1}"; then
-        print_error_to_log "Cannot determine if device is not binded to 'vfio'pci' "\
-          "given invalid device."
+      local -r str_device_slot_id="${1}"
 
+      if ! is_string "${str_device_slot_id}"; then
+        log_invalid_parameter "str_device_slot_id"
         return 2
       fi
 
-      local -r str_device="${1}"
-      local str_driver=""
-      get_device_driver "${str_device}" "str_driver"
-      is_device_driver_not_vfio "${str_driver}"
-    }
+      local str_device_driver=""
+      get_device_driver "${str_device_slot_id}" "str_device_driver"
 
+      if ! is_device_driver_not_vfio "${str_device_driver}"; then
+        return 1
+      fi
+
+      return 0
+    }
 
   #
   # DESC:   Is device not blacklisted (the driver is not available)?
-  # $1:     the device info as a string.
+  # $1:     the device slot ID as a string.
   # RETURN: If device is not excluded, return 0.
   #         If device is external, return 1.
   #         If device is not valid, return 2.
@@ -206,22 +221,26 @@
     {
       log_stdout "${0}: ${FUNCNAME}"
 
-      if ! is_string "${1}"; then
-        print_error_to_log "Cannot determine if device is not blacklisted, "\
-          "given invalid device."
+      local -r str_device_slot_id="${1}"
 
-        return 21
+      if ! is_string "${str_device_slot_id}"; then
+        log_invalid_parameter "str_device_slot_id"
+        return 2
       fi
 
-      local -r str_device="${1}"
-      local str_driver=""
-      get_device_driver "${str_device}" "str_driver"
-      is_device_driver_not_blacklisted "${str_driver}"
+      local str_device_driver=""
+      get_device_driver "${str_device_slot_id}" "str_device_driver"
+
+      if ! is_device_driver_not_blacklisted "${str_device_driver}"; then
+        return 1
+      fi
+
+      return 0
     }
 
   #
   # DESC:   Is device not external (example: memory bus, integrated sound chip)?
-  # $1:     the device info as a string.
+  # $1:     the device slot ID as a string.
   # RETURN: If device is external, return 0.
   #         If device is not external, return 1.
   #         If device is not valid, return 2.
@@ -230,22 +249,23 @@
     {
       log_stdout "${0}: ${FUNCNAME}"
 
-      if ! is_string "${1}"; then
-        print_error_to_log "Cannot determine if device is not external, "\
-          "given invalid device."
+      local -r str_device_slot_id="${1}"
 
+      if ! is_string "${str_device_slot_id}"; then
+        log_invalid_parameter "str_device_slot_id"
         return 2
       fi
 
-      local -r str_device="${1}"
-      local str_driver=""
-      get_device_driver "${str_device}" "str_driver"
-      is_device_external "${str_device}"
+      if ! is_device_external "${str_device_slot_id}"; then
+        return 1
+      fi
+
+      return 0
     }
 
   #
   # DESC:   Is device a video graphics array (VGA)?
-  # $1:     the device info as a string.
+  # $1:     the device slot ID as a string.
   # RETURN: If device is VGA, return 0.
   #         If device is not VGA, return 1.
   #         If device is not valid, return 2.
@@ -254,21 +274,23 @@
     {
       log_stdout "${0}: ${FUNCNAME}"
 
-      if ! is_string "${1}"; then
-        print_error_to_log "Cannot determine if device is VGA, given invalid device."
+      local -r str_device_slot_id="${1}"
+
+      if ! is_string "${str_device_slot_id}"; then
+        log_invalid_parameter "str_device_slot_id"
         return 2
       fi
 
-      local -r str_device="${1}"
-
-      local -lr str_class="$( \
-        lspci -ms ${str_device} | cut --delimiter '"' --fields 2 \
+      local -lr str_device_class_lowercase="$( \
+        lspci -ms ${str_device_slot_id} | cut --delimiter '"' --fields 2 \
       )"
 
-      case "${str_class}" in
+      case "${str_device_class_lowercase}" in
         *"vga"* | *"graphic"* | *"display"* )
+          log_stdout "Device is VGA."
           return 0 ;;
       esac
 
+      log_stderr "Device is not VGA."
       return 1
     }
