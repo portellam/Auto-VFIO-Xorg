@@ -371,9 +371,3 @@
 
       return 0
     }
-
-#
-# main logic
-#
-  set_globals
-  unset set_globals
