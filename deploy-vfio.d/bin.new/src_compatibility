@@ -156,7 +156,7 @@
 
       if ! sudo apt list --installed "${str_package_name}" | \
         grep "${str_package_name}" &> /dev/null; then
-        log_stdout "Package '${str_package_name}' is not installed."
+        print_error_to_log "Package '${str_package_name}' is not installed."
         return 1
       fi
 
