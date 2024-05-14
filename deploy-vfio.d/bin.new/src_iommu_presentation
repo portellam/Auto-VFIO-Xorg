@@ -75,6 +75,7 @@
   # $3:     the IOMMU group ID as an int.
   # RETURN: If IOMMU group ID is valid, return 0.
   #         If not valid, return 1.
+  #         If an exception occurs, return 2.
   #
     function do_reserve_iommu_group_for_host
     {
@@ -86,17 +87,17 @@
 
       if ! is_iommu_group_id_valid "${int_iommu_group_id}"; then
         log_invalid_parameter "int_iommu_group_id"
-        return 1
+        return 2
       fi
 
       if ! is_array "${arr_iommu_groups_with_vga_for_host}"; then
         log_invalid_parameter "arr_iommu_groups_with_vga_for_host"
-        return 1
+        return 2
       fi
 
       if ! is_array "${arr_iommu_groups_for_host}"; then
         log_invalid_parameter "arr_iommu_groups_for_host"
-        return 1
+        return 2
       fi
 
       arr_iommu_groups_for_host+=( "${int_iommu_group_id}" )
@@ -164,7 +165,8 @@
   # $4:     the reserved IOMMU groups for VFIO as an array reference.
   # $5:     the reserved IOMMU groups with VGA for VFIO as an array reference.
   # RETURN: If one or more arrays are not valid, return 1.
-  #         Else, return 0.
+  #         If not, return 0.
+  #         If an exception occurs, return 2.
   #
     function do_select_iommu_group_collection
     {
@@ -172,22 +174,22 @@
 
       if ! is_array "${4}"; then
         log_invalid_parameter "4"
-        return 1
+        return 2
       fi
 
       if ! is_array "${3}"; then
         log_invalid_parameter "3"
-        return 1
+        return 2
       fi
 
       if ! is_array "${2}"; then
         log_invalid_parameter "2"
-        return 1
+        return 2
       fi
 
       if ! is_array "${1}"; then
         log_invalid_parameter "1"
-        return 1
+        return 2
       fi
 
       local -n arr_iommu_group_id="${1}"
@@ -262,6 +264,7 @@
   # $1:     the IOMMU group ID as an int.
   # RETURN: If IOMMU group ID is valid, return 0.
   #         If not valid, return 1.
+  #         If an exception occurs, return 2.
   #
     function print_iommu_group
     {
@@ -271,7 +274,7 @@
 
       if ! is_iommu_group_id_valid "${int_iommu_group_id}"; then
         log_invalid_parameter "int_iommu_group_id"
-        return 1
+        return 2
       fi
 
       local -ar arr_device_slot_id="$( \
