@@ -10,13 +10,12 @@
 #
 # TODO:
 # - [x] migrate logic and params into separate source files.
-# - [!] rename params.
 # - [!] double-check external class params are named properly.
 # - [x] refactor.
 # - [x] add comments.
-# - [!] add bools?
+# - [x] add bools,
 # - [ ] test.
-# - [ ] develop.
+# - [x] develop.
 #
 
 #
@@ -41,6 +40,7 @@
   # $5:     the reserved IOMMU groups with VGA for VFIO as an array reference.
   # $6:     do parse IOMMU groups.
   # $7:     the XML file path as a string.
+  # $8:     do parse IOMMU groups from XML file.
   # RETURN: If parse is successful or skipped, return 0.
   #         If failed, return 1.
   #         If an exception occurs, return 2.
@@ -51,9 +51,12 @@
 
       local bool_do_parse_iommu_groups="${6}"
       local str_xml_path="${7}"
+      local bool_do_parse_iommu_groups_from_xml_file="${8}"
 
-      local bool_do_parse_iommu_groups="${6}"
-      local str_xml_path="${7}"
+      if ! is_bool "${bool_do_parse_iommu_groups_from_xml_file}"; then
+        log_invalid_parameter "bool_do_parse_iommu_groups_from_xml_file"
+        return 2
+      fi
 
       if ! is_string "${str_xml_path}"; then
         log_invalid_parameter "str_xml_path"
@@ -98,7 +101,8 @@
 
       if ! create_temp_files_for_database \
         || ! try_to_parse_iommu_database "${1}" "${2}" "${3}" "${4}" "${5}" \
-          "${bool_do_parse_iommu_groups}" "${str_xml_path}"; then
+          "${bool_do_parse_iommu_groups}" "${str_xml_path}" \
+          "${bool_do_parse_iommu_groups_from_xml_file}"; then
         cleanup_iommu_groups_xml_file
         print_error_to_log "Parse of IOMMU groups failed."
         return 1
@@ -109,8 +113,6 @@
     }
 
   #
-  # TODO: fix!
-  #
   # DESC:   Try to parse the IOMMU database.
   # $1:     the IOMMU groups as an array reference.
   # $2:     the reserved IOMMU groups for Host as an array reference.
@@ -119,6 +121,7 @@
   # $5:     the reserved IOMMU groups with VGA for VFIO as an array reference.
   # $6:     do parse IOMMU groups.
   # $7:     the XML file path as a string.
+  # $8:     do parse IOMMU groups from XML file.
   # RETURN: If parse is successful, return 0.
   #         If false, return 1.
   #         If an exception occurs, return 2.
@@ -129,6 +132,12 @@
 
       local bool_do_parse_iommu_groups="${6}"
       local str_xml_path="${7}"
+      local bool_do_parse_iommu_groups_from_xml_file="${8}"
+
+      if ! is_bool "${bool_do_parse_iommu_groups_from_xml_file}"; then
+        log_invalid_parameter "bool_do_parse_iommu_groups_from_xml_file"
+        return 2
+      fi
 
       if ! is_string "${str_xml_path}"; then
         log_invalid_parameter "str_xml_path"
@@ -165,15 +174,13 @@
         return 2
       fi
 
-      # TODO: fix below.
-
-      if ! specify_existing_iommu_groups_xml_file_prompt; then
+      if ! specify_iommu_groups_xml_file "${str_xml_path}"; then
         return 1
       fi
 
-      if ! is_xml_file_valid &> /dev/null; then
+      if ! is_iommu_groups_xml_file_valid "${str_xml_path}"; then
         if ! does_host_not_have_existing_vfio_setup \
-          || ! export_iommu_database_to_xml_file; then
+          || ! export_iommu_groups_to_xml_file "${str_xml_path}"; then
           return 1
         fi
 
@@ -182,13 +189,11 @@
           return 1
         fi
 
-        if "${SRC_IOMMU_BOOL_DO_PARSE_DATABASE_FROM_XML}" \
+        if "${bool_do_parse_iommu_groups_from_xml_file}" \
           || ! import_iommu_groups_from_xml_file; then
           return 1
         fi
       fi
-
-      # TODO: fix above.
 
       if ! do_select_iommu_group_collection "${1}" "${2}" "${3}" "${4}" "${5}"; then
         return 1
