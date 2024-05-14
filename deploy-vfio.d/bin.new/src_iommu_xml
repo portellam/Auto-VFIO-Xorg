@@ -320,7 +320,8 @@
   # DESC:   Is given XML file valid or not.
   # $1:     the XML file path as a string.
   # RETURN: If given XML file is valid, return 0.
-  #         If false, return 1.
+  #         If false, return 1.'
+  #         If any exception occurs, return 2.
   #
     function is_iommu_groups_xml_file_valid
     {
@@ -328,14 +329,19 @@
 
       local -r str_xml_file_path="${1}"
 
-      if ! is_file "${str_xml_file_path}" &> /dev/null; then
+      if ! is_file "${str_xml_file_path}"; then
         print_error_to_log "XML file does not exist."
         return 1
       fi
 
-      if ! is_file_not_empty "${str_xml_file_path}" &> /dev/null; then
+      if ! is_file_not_empty "${str_xml_file_path}"; then
         print_error_to_log "XML file is empty."
         return 1
+      fi
+
+      if ! is_xmllint_installed; then
+        print_error_to_log "Cannot validate XML file."
+        return 2
       fi
 
       if ! xmllint "${str_xml_file_path}" &> /dev/null; then
@@ -344,6 +350,22 @@
       fi
 
       log_stdout "XML file is valid."
+      return 0
+    }
+
+  #
+  # DESC:   Is given dependency installed.
+  # RETURN: If given XML file is valid, return 0.
+  #         If false, return 1.
+  #
+    function is_xmllint_installed
+    {
+      log_stdout "${0}: ${FUNCNAME}"
+
+      if is_package_installed "xmllint"; then
+        return 1
+      fi
+
       return 0
     }
 
@@ -390,7 +412,7 @@
     {
       log_stdout "${0}: ${FUNCNAME}"
 
-      local -n ref_alpha_str_xml_file_path="${1}"
+      local -n ref_prompt_str_xml_file_path="${1}"
 
       if ! is_string "${1}"; then
         log_invalid_parameter "1"
@@ -400,19 +422,19 @@
       local -r str_output="Enter XML file name (leave blank for default): "
 
       for int_counter in $( seq 0 2 ); do
-          read -r -p "${str_output}" ref_alpha_str_xml_file_path
+          read -r -p "${str_output}" ref_prompt_str_xml_file_path
 
-          if ! is_string "${ref_alpha_str_xml_file_path}"; then
-            set_iommu_groups_xml_file_to_default "ref_alpha_str_xml_file_path"
+          if ! is_string "${ref_prompt_str_xml_file_path}"; then
+            set_iommu_groups_xml_file_to_default "ref_prompt_str_xml_file_path"
             return 0
           fi
 
-          if ! is_file "${ref_alpha_str_xml_file_path}" \
-            || ! is_file_not_empty "${ref_alpha_str_xml_file_path}"; then
+          if ! is_file "${ref_prompt_str_xml_file_path}" \
+            || ! is_file_not_empty "${ref_prompt_str_xml_file_path}"; then
             continue
           fi
 
-          set_iommu_groups_xml_file "${ref_alpha_str_xml_file_path}"
+          set_iommu_groups_xml_file "${ref_prompt_str_xml_file_path}"
           return 0
         done
 
