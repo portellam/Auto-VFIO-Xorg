@@ -29,7 +29,7 @@
   # $1:     the device driver as a string.
   # RETURN: If device driver is not 'vfio-pci', return 0.
   #         If device driver is 'vfio-pci', return 1.
-  #         If device driver is not valid, return 2.
+  #         If an exception occurs, return 2.
   #
     function is_device_driver_not_blacklisted
     {
@@ -62,7 +62,7 @@
   # $1:     the device driver as a string.
   # RETURN: If device driver is not 'vfio-pci', return 0.
   #         If device driver is 'vfio-pci', return 1.
-  #         If device driver is not valid, return 2.
+  #         If an exception occurs, return 2.
   #
     function is_device_driver_not_vfio
     {
@@ -91,7 +91,7 @@
   # $1:     the device slot ID as a string.
   # RETURN: If device is external, return 0.
   #         If device is not external, return 1.
-  #         If device is not valid, return 2.
+  #         If an exception occurs, return 2.
   #
     function is_device_external
     {
@@ -126,7 +126,7 @@
   # $1:     the device slot ID as a string.
   # RETURN: If device is preferred, return 0.
   #         If device is not preferred, return 1.
-  #         If device is not valid, return 2.
+  #         If an exception occurs, return 2.
   #
     function is_device_for_pci_stub
     {
@@ -158,7 +158,7 @@
   # $1:     the device slot ID as a string.
   # RETURN: If device ID is valid, return 0.
   #         If device ID is not valid, return 1.
-  #         If device is not valid, return 2.
+  #         If an exception occurs, return 2.
   #
     function is_device_id_valid
     {
@@ -187,7 +187,7 @@
   # $1:     the device slot ID as a string.
   # RETURN: If device is not binded, return 0.
   #         If device is binded, return 1.
-  #         If device is not valid, return 2.
+  #         If an exception occurs, return 2.
   #
     function is_device_not_binded_to_vfio
     {
@@ -215,7 +215,7 @@
   # $1:     the device slot ID as a string.
   # RETURN: If device is not excluded, return 0.
   #         If device is external, return 1.
-  #         If device is not valid, return 2.
+  #         If an exception occurs, return 2.
   #
     function is_device_not_blacklisted
     {
@@ -243,7 +243,7 @@
   # $1:     the device slot ID as a string.
   # RETURN: If device is external, return 0.
   #         If device is not external, return 1.
-  #         If device is not valid, return 2.
+  #         If an exception occurs, return 2.
   #
     function is_device_not_external
     {
@@ -268,7 +268,7 @@
   # $1:     the device slot ID as a string.
   # RETURN: If device is VGA, return 0.
   #         If device is not VGA, return 1.
-  #         If device is not valid, return 2.
+  #         If an exception occurs, return 2.
   #
     function is_device_vga
     {

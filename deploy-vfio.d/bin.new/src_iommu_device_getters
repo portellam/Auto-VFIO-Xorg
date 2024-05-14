@@ -31,6 +31,7 @@
   # $2:     the device class as a string reference.
   # RETURN: If device class is found, return 0.
   #         If not, return 1.
+  #         If an exception occurs, return 2.
   #
     function get_device_class
     {
@@ -69,6 +70,7 @@
   # $3:     the reference of dictionary of device drivers from XML file.
   # RETURN: If device driver is found, return 0.
   #         If not, return 1.
+  #         If an exception occurs, return 2.
   #
     function get_device_driver
     {
@@ -126,6 +128,7 @@
   # $2:     the device hardware ID as a string reference.
   # RETURN: If device hardware ID is found, return 0.
   #         If not, return 1.
+  #         If an exception occurs, return 2.
   #
     function get_device_hardware_id
     {
@@ -163,6 +166,7 @@
   # $2:     the device name as a string reference.
   # RETURN: If device name is found, return 0.
   #         If not, return 1.
+  #         If an exception occurs, return 2.
   #
     function get_device_name
     {
@@ -200,6 +204,7 @@
   # $2:     the device vendor as a string reference.
   # RETURN: If device vendor is found, return 0.
   #         If not, return 1.
+  #         If an exception occurs, return 2.
   #
     function get_device_vendor
     {
@@ -239,6 +244,7 @@
   # $4:     the reference of the device vfio-pci hardware ID array.
   # RETURN: If drivers and/or hardware IDs are found, return 0.
   #         If not, return 1.
+  #         If an exception occurs, return 2.
   #
     function get_device_arrays_for_iommu_groups
     {
@@ -327,6 +333,7 @@
   # $2:     the device name as a string reference.
   # RETURN: If the device name is found, return 0.
   #         If not, return 1.
+  #         If an exception occurs, return 2.
   #
     function get_name_for_first_vga_device_in_iommu_group
     {
