@@ -54,7 +54,7 @@
       for var_key in "${!arr_dependencies[@]}"; do
         local -l str_dependency="${arr_dependencies["${var_key}"]}"
 
-        if ! is_package_installed "${str_dependency}"; then
+        if ! is_package_installed "${str_dependency}" &> /dev/null; then
           if is_string "str_packages_to_install" &> /dev/null; then
             str_packages_to_install+=" ${str_dependency}"
           else
