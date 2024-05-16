@@ -1,0 +1,344 @@
+#!/bin/false
+
+#
+# Filename:       src_test_file
+# Description:    Test bash functionality.
+# Author(s):      Alex Portell <github.com/portellam>
+# Maintainer(s):  Alex Portell <github.com/portellam>
+#
+
+#
+# sets
+#
+  #set -e    # stop script on external program returns non-zero code.
+
+  set -x    # debug output
+
+  #set -n    # validate bash syntax
+
+  #strace    # stack trace?
+
+#
+# parameters
+#
+#
+  #
+  # DESC:   color coding
+  #
+    STR_SET_COLOR_GREEN='\033[0;32m'
+    STR_SET_COLOR_RED='\033[0;31m'
+    STR_SET_COLOR_YELLOW='\033[0;33m'
+    STR_RESET_COLOR='\033[0m'
+
+  #
+  # DESC:   font handling
+  #
+    STR_SET_BOLD='\e[1m'
+    STR_SET_ITALIC='\e[3m'
+    STR_SET_UNDERLINE='\e[4m'
+    STR_RESET_TEXT='\e[0m'
+
+  #
+  # DESC:   prompt prefixes
+  #
+    STR_PREFIX_PROMPT="${STR_SCRIPT_NAME}: "
+
+    STR_PREFIX_ERROR="${STR_PREFIX_PROMPT}" + \
+      "${STR_SET_COLOR_YELLOW}An error occurred:" + \
+      "${STR_RESET_COLOR} "
+
+    STR_PREFIX_FAIL="${STR_PREFIX_PROMPT}" + \
+      "${STR_SET_COLOR_RED}Failure:${STR_RESET_COLOR} "
+
+    STR_PREFIX_PASS="${STR_PREFIX_PROMPT}" + \
+      "${STR_SET_COLOR_GREEN}Success:${STR_RESET_COLOR} "
+
+    STR_PREFIX_SKIP="${STR_PREFIX_PROMPT}" + \
+      "${STR_SET_COLOR_YELLOW}Skipped:${STR_RESET_COLOR} "
+
+#
+# datatype logic
+#
+  #
+  # DESC:   Is input a bool.
+  # $1:     the input as a bool.
+  # RETURN: If true, return 0.
+  #         If false, return 1.
+  #         If an exception occurs, return 2.
+  #
+    function is_bool
+    {
+      if  ! is_string "${1}"; then
+        return 2
+      fi
+
+      if  [[ "${1}" != "true" ]] \
+        && [[ "${1}" != "false" ]]; then
+        print_error_to_log "Invalid bool."
+        return 1
+      fi
+
+      print_output_to_log "Valid bool."
+      return 0
+    }
+
+  #
+  # DESC:   Is input an integer.
+  # $1:     the input as an int.
+  # RETURN: If true, return 0.
+  #         If false, return 1.
+  #         If an exception occurs, return 2.
+  #
+    function is_int
+    {
+      if  ! is_string "${1}"; then
+        return 2
+      fi
+
+      if  ! [[ "${1}" =~ ^[0-9]+$ ]] \
+        && ! [[ "${1}" =~ ^[-][0-9]+$ ]]; then
+        print_error_to_log "Invalid integer."
+        return 1
+      fi
+
+      print_output_to_log "Valid integer."
+      return 0
+    }
+
+  #
+  # DESC:   Is input variable a reference.
+  # $1:     the input as a string.
+  # RETURN: If true, return 0.
+  #         If false, return 1.
+  #         If an exception occurs, return 2.
+  #
+    function is_reference
+    {
+      if  ! is_variable "${1}"; then
+        return 2
+      fi
+
+      if  [[ $( declare -p "${1}" 2>/dev/null ) != *"-n"* ]]; then
+        print_error_to_log "Variable is not a reference."
+        return 1
+      fi
+
+      print_output_to_log "Variable is a reference."
+      return 0
+    }
+
+  #
+  # DESC:   Is input a string.
+  # $1:     the input as a string.
+  # RETURN: If true, return 0.
+  #         If false, return 1.
+  #
+    function is_string
+    {
+      if  [[ "${1}" == "" ]]; then
+        print_error_to_log "Empty string."
+        return 1
+      fi
+
+      print_output_to_log "Non-empty string."
+      return 0
+    }
+
+#
+# interaction logic
+#
+  #
+  # DESC:   Ask yes or no question.
+  # $1:     the output as a string.
+  # RETURN: If answer is 'Y' return 0.
+  #         If answer is 'N' return 255.
+  #         If neither, return 1.
+  #
+    function ask_yes_or_no
+    {
+      local str_output=""
+
+      if ! is_string "${1}"; then
+        str_output="${1} "
+      fi
+
+      for int_count in $( seq 0 2 ); do
+        local str_answer=""
+        echo -en "${str_output}[Y/n]: "
+        read -r -p "" str_answer
+
+        case "${str_answer}" in
+          [Yy]* )
+            return 0 ;;
+
+          [Nn]* )
+            return 255 ;;
+
+          * )
+            echo "Please answer 'Y' or 'N'." ;;
+        esac
+      done
+
+      echo "Invalid answer."
+      return 1
+    }
+
+#
+# network logic
+#
+  #
+  # DESC:   Pings given address.
+  # $1:     the server address as a string.
+  # RETURN: If ping is successful, return 0.
+  #         If false, return 1.
+  #         If an exception occurs, return 2.
+  #
+    function do_ping_address
+    {
+      local -r str_log="Pinging..."
+      local -r str_address="${1}"
+
+      print_output_to_log "${str_log}"
+
+      if  ! is_string "${str_address}"; then
+        print_fail_to_log "${str_log}"
+        return 2
+      fi
+
+      local -ir int_number_of_tries=3
+
+      if  ! ping "${str_address}" -c "${int_number_of_tries}" &> /dev/null; then
+        print_fail_to_log "${str_log}"
+        return 1
+      fi
+
+      print_pass_to_log "${str_log}"
+      return 0
+    }
+
+  #
+  # DESC:   Pings Internet IP addresses and domain names.
+  # RETURN: If pings are successful return 0.
+  #         If false, return 1.
+  #         If an exception occurs, return 2.
+  #
+    function do_ping_internet
+    {
+      local -r str_log="Checking connection to Internet..."
+
+      print_output_to_log "${str_log}"
+
+      if  ! do_ping_address "8.8.8.8" \
+        && ! do_ping_address "8.8.4.4"; then
+        print_error_to_log "Failed to ping IP addresses."
+        print_fail_to_log "${str_log}"
+        return 1
+      fi
+
+        if  ! do_ping_address "www.google.com"; then
+          print_error_to_log "Failed to resolve domain names."
+          print_fail_to_log "${str_log}"
+        return 1
+      fi
+
+      print_pass_to_log "${str_log}"
+      return 0
+    }
+
+  #
+  # DESC:     Check if  the Host machine is connected to the Internet.
+  # $1:       do ignore the outcome.
+  # RETURN:   If the Host machine is connected to the Internet, return 0.
+  #           If false, return 1.
+  #
+    function is_connected_to_internet
+    {
+      local -r str_log="Conntecting to Internet..."
+      local bool_do_ignore="${1}"
+
+      print_output_to_log "${str_log}"
+
+      if  ! is_bool "${bool_do_ignore}"; then
+        print_fail_to_log "${str_log}"
+        return 2
+      fi
+
+      if  ! do_ping_internet; then
+        print_output_to_log "Disconnected from Internet."
+
+        if  "${bool_do_ignore}" \
+          ||  ask_yes_or_no "Ignore and continue?"; then
+          print_skip_to_log "${str_log}"
+          return 0;
+        fi
+
+        print_fail_to_log "${str_log}"
+        return 1
+      fi
+
+      print_pass_to_log "${str_log}"
+      return 0
+    }
+
+#
+# print logic
+#
+  #
+  # DESC:   Print error.
+  # $1:     line of text as a string.
+  # RETURN: Always return code from previous scope.
+  #
+    function print_error_to_log
+    {
+      local -ir int_return_code="${?}"
+      echo -e "${STR_PREFIX_ERROR}${1}"
+      return "${int_return_code}"
+    }
+
+  #
+  # DESC:   Print failure.
+  # $1:     line of text as a string.
+  # RETURN: Always return code from previous scope.
+  #
+    function print_fail_to_log
+    {
+      local -ir int_return_code="${?}"
+      echo -e "${STR_PREFIX_FAIL}${1}" >&2
+      return "${int_return_code}"
+    }
+
+  #
+  # DESC:   Print and log.
+  # $1:     line of text as a string.
+  # RETURN: Always return code from previous scope.
+  #
+    function print_output_to_log
+    {
+      local -ir int_return_code="${?}"
+      echo -e "${STR_PREFIX_PROMPT}${1}" >&1
+      return "${int_return_code}"
+    }
+
+  #
+  # DESC:   Print success.
+  # $1:     line of text as a string.
+  # RETURN: Always return code from previous scope.
+  #
+    function print_pass_to_log
+    {
+      local -ir int_return_code="${?}"
+      echo -e "${STR_PREFIX_PASS}${1}" >&1
+      return "${int_return_code}"
+    }
+
+  #
+  # DESC:   Print skip.
+  # $1:     line of text as a string.
+  # RETURN: Always return code from previous scope.
+  #
+    function print_skip_to_log
+    {
+      local -ir int_return_code="${?}"
+      echo -e "${STR_PREFIX_SKIP}${1}" >&1
+      return "${int_return_code}"
+    }
