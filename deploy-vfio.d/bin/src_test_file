@@ -12,16 +12,18 @@
 #
   #set -e    # stop script on external program returns non-zero code.
 
-  set -x    # debug output
+  #set -x    # debug output
 
   #set -n    # validate bash syntax
 
-  #strace    # stack trace?
+  #strace    # stack trace? traces all lines as they are called.
 
 #
 # parameters
 #
 #
+  STR_SCRIPT_NAME="src_test_file"
+
   #
   # DESC:   color coding
   #
@@ -43,18 +45,17 @@
   #
     STR_PREFIX_PROMPT="${STR_SCRIPT_NAME}: "
 
-    STR_PREFIX_ERROR="${STR_PREFIX_PROMPT}" + \
-      "${STR_SET_COLOR_YELLOW}An error occurred:" + \
-      "${STR_RESET_COLOR} "
+    STR_PREFIX_ERROR="${STR_PREFIX_PROMPT}${STR_SET_COLOR_YELLOW}An error occurred: "
+    STR_PREFIX_ERROR+="${STR_RESET_COLOR} "
 
-    STR_PREFIX_FAIL="${STR_PREFIX_PROMPT}" + \
-      "${STR_SET_COLOR_RED}Failure:${STR_RESET_COLOR} "
+    STR_PREFIX_FAIL="${STR_PREFIX_PROMPT}${STR_SET_COLOR_RED}Failure:"
+    STR_PREFIX_FAIL+="${STR_RESET_COLOR} "
 
-    STR_PREFIX_PASS="${STR_PREFIX_PROMPT}" + \
-      "${STR_SET_COLOR_GREEN}Success:${STR_RESET_COLOR} "
+    STR_PREFIX_PASS="${STR_PREFIX_PROMPT}${STR_SET_COLOR_GREEN}Success:"
+    STR_PREFIX_PASS+="${STR_RESET_COLOR} "
 
-    STR_PREFIX_SKIP="${STR_PREFIX_PROMPT}" + \
-      "${STR_SET_COLOR_YELLOW}Skipped:${STR_RESET_COLOR} "
+    STR_PREFIX_SKIP="${STR_PREFIX_PROMPT}${STR_SET_COLOR_YELLOW}Skipped:"
+    STR_PREFIX_FAIL+="${STR_RESET_COLOR} "
 
 #
 # datatype logic
