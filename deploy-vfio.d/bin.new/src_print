@@ -68,7 +68,7 @@
         declare -gr SRC_PRINT_STR_PREFIX_PROMPT="${SRC_PRINT_STR_SCRIPT_NAME}: "
 
         declare -gr SRC_PRINT_STR_PREFIX_ERROR="${SRC_PRINT_STR_PREFIX_PROMPT}" + \
-          "${SRC_PRINT_STR_SET_COLOR_YELLOW}An error occurred:" + \
+          "${SRC_PRINT_STR_SET_COLOR_YELLOW}Error:" + \
           "${SRC_PRINT_STR_RESET_COLOR} "
 
         declare -gr SRC_PRINT_STR_PREFIX_FAIL="${SRC_PRINT_STR_PREFIX_PROMPT}" + \
@@ -88,7 +88,7 @@
     function catch_error
     {
       echo
-      error_disclaimer
+      print_and_log_error_disclaimer
       exit 1
     }
 
@@ -100,6 +100,7 @@
     {
       local -ir int_return_code="${?}"
       print_pass_or_fail_to_log
+      print_help
       reset_ifs
       return "${int_return_code}"
     }
@@ -108,12 +109,12 @@
   # DESC:   Warn user of any errors at exit.
   # RETURN: Always return code from previous scope.
   #
-    function error_disclaimer
+    function print_and_log_error_disclaimer
     {
       local -ir int_return_code="${?}"
 
-      echo -e "${SRC_PRINT_STR_PREFIX_PROMPT}One or more errors have occurred."\
-        "Please view the logfile to troubleshoot ('${SRC_PRINT_STR_LOG_FILE}')." >&2
+      print_and_log_error "One or more errors have occurred."\
+        "Please view the logfile to troubleshoot ('${SRC_PRINT_STR_LOG_FILE}')."
 
       return "${int_return_code}"
     }
@@ -126,30 +127,91 @@
     function log_invalid_parameter
     {
       local -ir int_return_code="${?}"
-      log_stderr "Parameter "'${'"${1}"'}'" is invalid or undefined."
+      log_error "Parameter "'${'"${1}"'}'" is invalid or undefined."
       return "${int_return_code}"
     }
 
   #
-  # DESC:   Log output to STDERR.
+  # DESC:   Log error output to STDERR.
+  # $1:     the input as a string.
   # RETURN: Always return code from previous scope.
   #
-    function log_stderr
+    function log_error
     {
       local -ir int_return_code="${?}"
-      logger --stderr "${1}" 2>> "${SRC_PRINT_STR_LOG_FILE}"
-      echo -e "" >&2
+      log_to_stderr "${SRC_PRINT_STR_PREFIX_ERROR}${1}"
+      return "${int_return_code}"
+    }
+
+  #
+  # DESC:   Log failure output to STDERR.
+  # $1:     the input as a string.
+  # RETURN: Always return code from previous scope.
+  #
+    function log_fail
+    {
+      local -ir int_return_code="${?}"
+      log_to_stderr "${SRC_PRINT_STR_PREFIX_FAIL}${1}"
       return "${int_return_code}"
     }
 
   #
   # DESC:   Log output to STDOUT.
+  # $1:     the input as a string.
   # RETURN: Always return code from previous scope.
   #
-    function log_stdout
+    function log_output
+    {
+      local -ir int_return_code="${?}"
+      log_to_stdout "${SRC_PRINT_STR_PREFIX_PROMPT}${1}"
+      return "${int_return_code}"
+    }
+
+  #
+  # DESC:   Log successful output to STDOUT.
+  # $1:     the input as a string.
+  # RETURN: Always return code from previous scope.
+  #
+    function log_pass
+    {
+      local -ir int_return_code="${?}"
+      log_to_stdout "${SRC_PRINT_STR_PREFIX_PASS}${1}"
+      return "${int_return_code}"
+    }
+
+  #
+  # DESC:   Log output to STDERR.
+  # $1:     the input as a string.
+  # RETURN: Always return code from previous scope.
+  #
+    function log_to_stderr
+    {
+      local -ir int_return_code="${?}"
+      logger --stderr "${1}" 2>> "${SRC_PRINT_STR_LOG_FILE}"
+      return "${int_return_code}"
+    }
+
+  #
+  # DESC:   Log output to STDOUT.
+  # $1:     the input as a string.
+  # RETURN: Always return code from previous scope.
+  #
+    function log_to_stdout
     {
       local -ir int_return_code="${?}"
       logger "${1}" 2>> "${SRC_PRINT_STR_LOG_FILE}"
+      return "${int_return_code}"
+    }
+
+  #
+  # DESC:   Log working output to STDOUT.
+  # $1:     the input as a string.
+  # RETURN: Always return code from previous scope.
+  #
+    function log_work
+    {
+      local -ir int_return_code="${?}"
+      log_to_stdout "${SRC_PRINT_STR_PREFIX_WORK}${1}"
       return "${int_return_code}"
     }
 
@@ -160,7 +222,7 @@
   #
     function print_conflicting_arguments
     {
-      print_error_to_log "Conflicting argument(s)."
+      print_and_log_error "Conflicting argument(s)."
       print_help
       exit 1
     }
@@ -172,7 +234,7 @@
   #
     function print_conflicting_options
     {
-      print_error_to_log "Conflicting option(s)."
+      print_and_log_error "Conflicting option(s)."
       print_help
       exit 1
     }
@@ -182,14 +244,14 @@
   # $1:     the argument as a string.
   # RETURN: Always return 1.
   #
-    function print_duplicate_argument
+    function print_and_log_duplicate_argument
     {
       local -r str_output="Duplicate argument"
 
       if  ! is_string "${1}"; then
-        print_error_to_log "${str_output}."
+        print_and_log_error "${str_output}."
       else
-        print_error_to_log "${str_output}'${1}'."
+        print_and_log_error "${str_output}'${1}'."
       fi
 
       return 1
@@ -200,29 +262,30 @@
   # $1:     the option as a string.
   # RETURN: Always return 1.
   #
-    function print_duplicate_option
+    function print_and_log_duplicate_option
     {
       local -ir int_return_code="${?}"
       local -r str_output="Duplicate option"
 
       if  ! is_string "${1}"; then
-        print_error_to_log "${str_output}."
+        print_and_log_error "${str_output}."
       else
-        print_error_to_log "${str_output}'${1}'."
+        print_and_log_error "${str_output}'${1}'."
       fi
 
       return 1
     }
 
   #
-  # DESC:   Print help.
-  # $1:     the argument as a string.
-  # RETURN: Always return 0.
+  # DESC:   Print and log error statement.
+  # $1:     line of text as a string
+  # RETURN: Always return code from previous scope.
   #
-    function print_help
+    function print_and_log_error
     {
-      echo -e "Try 'sudo bash ${SRC_PRINT_STR_SCRIPT_NAME} --help' for usage."
-      return 0
+      local -ir int_return_code="${?}"
+      log_error "${SRC_PRINT_STR_PREFIX_ERROR}${1}"
+      return "${int_return_code}"
     }
 
   #
@@ -230,17 +293,16 @@
   # $1:     the argument as a string.
   # RETURN: Always exit 1.
   #
-    function print_invalid_argument
+    function print_and_log_invalid_argument
     {
       local -r str_output="Invalid argument"
 
       if  ! is_string "${1}"; then
-        print_error_to_log "${str_output}."
+        print_and_log_error "${str_output}."
       else
-        print_error_to_log "${str_output} '${1}'."
+        print_and_log_error "${str_output} '${1}'."
       fi
 
-      print_help
       exit 1
     }
 
@@ -249,30 +311,17 @@
   # $1:     the option as a string.
   # RETURN: Always exit 1.
   #
-    function print_invalid_option
+    function print_and_log_invalid_option
     {
       local -r str_output="Invalid option"
 
       if  ! is_string "${1}"; then
-        print_error_to_log "${str_output}."
+        print_and_log_error "${str_output}."
       else
-        print_error_to_log "${str_output} '${1}'."
+        print_and_log_error "${str_output} '${1}'."
       fi
 
-      print_help
       exit 1
-    }
-
-  #
-  # DESC:   Print and log error statement.
-  # $1:     line of text as a string
-  # RETURN: Always return code from previous scope.
-  #
-    function print_error_to_log
-    {
-      local -ir int_return_code="${?}"
-      log_stderr "${SRC_PRINT_STR_PREFIX_ERROR}${1}"
-      return "${int_return_code}"
     }
 
   #
@@ -280,10 +329,10 @@
   # $1:     line of text as a string
   # RETURN: Always return code from previous scope.
   #
-    function print_fail_to_log
+    function print_and_log_fail
     {
       local -ir int_return_code="${?}"
-      log_stdout "${SRC_PRINT_STR_PREFIX_FAIL}${1}"
+      log_fail "${SRC_PRINT_STR_PREFIX_FAIL}${1}"
       echo -e "${SRC_PRINT_STR_PREFIX_FAIL}${1}" >&2
       return "${int_return_code}"
     }
@@ -293,35 +342,12 @@
   # $1:     line of text as a string
   # RETURN: Always return code from previous scope.
   #
-    function print_output_to_log
+    function print_and_log_output
     {
       local -ir int_return_code="${?}"
-      log_stdout "${SRC_PRINT_STR_PREFIX_PROMPT}${1}"
+      log_output "${1}"
       echo -e "${SRC_PRINT_STR_PREFIX_PROMPT}${1}" >&1
       return "${int_return_code}"
-    }
-
-  #
-  # DESC:   Print and log error statement.
-  # $1:     line of text as a string.
-  # RETURN: Always return code from previous scope.
-  #
-    function print_pass_or_fail_to_log
-    {
-      local -ir int_return_code="${?}"
-
-      if  [[ "${int_return_code}" -eq 255 ]]; then
-        print_output_to_log "Skipped."
-        return 255
-      fi
-
-      if  [[ "${int_return_code}" -ne 0 ]]; then
-        print_fail_to_log "Failure."
-        return "${int_return_code}"
-      fi
-
-      print_pass_to_log "Success."
-      return 0
     }
 
   #
@@ -329,10 +355,10 @@
   # $1:     line of text as a string.
   # RETURN: Always return code from previous scope.
   #
-    function print_pass_to_log
+    function print_and_log_pass
     {
       local -ir int_return_code="${?}"
-      log_stdout "${SRC_PRINT_STR_PREFIX_PASS}${1}"
+      log_pass "${SRC_PRINT_STR_PREFIX_PASS}${1}"
       echo -e "${SRC_PRINT_STR_PREFIX_PASS}${1}" >&1
       return "${int_return_code}"
     }
@@ -342,12 +368,25 @@
   # $1:     line of text as a string.
   # RETURN: Always return code from previous scope.
   #
-    function print_work_to_log
+    function print_and_log_work
     {
       local -ir int_return_code="${?}"
-      log_stdout "${SRC_PRINT_STR_PREFIX_PASS}${1}"
+      log_work "${1}"
       echo -e "${SRC_PRINT_STR_PREFIX_WORK}${1}" >&1
       return "${int_return_code}"
+    }
+
+  #
+  # DESC:   Print help.
+  # $1:     the argument as a string.
+  # RETURN: Always return 0.
+  #
+    function print_help
+    {
+      print_and_log_output "Try 'sudo bash ${SRC_PRINT_STR_SCRIPT_NAME} --help' for "\
+        "usage."
+
+      return 0
     }
 
   #
@@ -357,7 +396,6 @@
     function reset_ifs
     {
       local -ir int_return_code="${?}"
-      log_stdout "${0}: ${FUNCNAME}"
       IFS="${SRC_PRINT_SAVEIFS}"
       return "${int_return_code}"
     }
@@ -368,7 +406,6 @@
   #
     function set_ifs_to_newline
     {
-      log_stdout "${0}: ${FUNCNAME}"
       IFS=$'\n'
    }
 
