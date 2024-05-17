@@ -17,40 +17,38 @@
 #
   #
   # DESC:   Ask yes or no question.
-  # $1:     the output as a string
+  # $1:     the output as a string.
   # RETURN: If answer is 'Y' return 0.
   #         If answer is 'N' return 255.
   #         If neither, return 1.
   #
     function ask_yes_or_no
     {
-      log_stdout "${0}: ${FUNCNAME}"
-
       local str_output=""
 
-      if [[ ! -z "${1}" ]]; then
+      if is_string "${1}"; then
         str_output="${1} "
       fi
 
-      for int_count in $( seq 0 2 ); do
+      local -i int_max_tries=2
+
+      for int_count in $( seq 0 "${int_max_tries}" ); do
         local str_answer=""
         echo -en "${str_output}[Y/n]: "
         read -r -p "" str_answer
 
         case "${str_answer}" in
           [Yy]* )
-            log_stdout "Answered: Yes"
             return 0 ;;
 
           [Nn]* )
-            log_stdout "Answered: No"
             return 255 ;;
 
           * )
-            echo "Please answer 'Y' or 'N'." ;;
+            echo "Invalid answer. Please answer 'Y' or 'N'." ;;
         esac
       done
 
-      log_stderr "Invalid answer."
+      echo "Exceeded number of tries."
       return 1
     }
