@@ -20,14 +20,12 @@
 #
   #
   # DESC:   Is user superuser.
-  # RETURN: If user is root return 0.
+  # RETURN: If user is root, return 0.
   #         If false, return 1.
   #
     function is_user_superuser
     {
-      log_stdout "${0}: ${FUNCNAME}"
-
-      if [[ $( whoami ) != "root" ]]; then
+      if  [[ $( whoami ) != "root" ]]; then
         print_error_to_log "User is not sudo or root."
         return 1
       fi
