@@ -37,11 +37,11 @@
     #
       function is_not_readonly
       {
-        if  ! is_string "${1}"; then
+        if ! is_string "${1}"; then
           return 2
         fi
 
-        if  ! [[ $( declare -p ${1} 2>/dev/null ) == "declare -r"* ]]; then
+        if ! [[ $( declare -p ${1} 2>/dev/null ) == "declare -r"* ]]; then
           log_to_stderr "Variable is read-only."
           return 1
         fi
@@ -62,11 +62,11 @@
     #
       function is_bool
       {
-        if  ! is_string "${1}"; then
+        if ! is_string "${1}"; then
           return 2
         fi
 
-        if  [[ "${1}" != "true" ]] \
+        if [[ "${1}" != "true" ]] \
           && [[ "${1}" != "false" ]]; then
           log_to_stderr "Invalid bool."
           return 1
@@ -88,7 +88,7 @@
     #
       function add_to_array
       {
-        if  ! is_array "${1}" \
+        if ! is_array "${1}" \
           ||  ! is_string "${2}"; then
           return 2
         fi
@@ -97,7 +97,7 @@
         local str_val="${2}"
         ref_arr+=( "${str_val}" )
 
-        if  [[ "${?}" -ne 0 ]]; then
+        if [[ "${?}" -ne 0 ]]; then
           log_to_stderr "Could not add value to array."
           return 1
         fi
@@ -116,7 +116,7 @@
     #
       function array_contains_value
       {
-        if  ! is_string "${2}" \
+        if ! is_string "${2}" \
           ||  ! is_array "${1}"; then
           return 2
         fi
@@ -124,7 +124,7 @@
         local -I ref_arr="${1}"
         local str_val="${2}"
 
-        if  ! [[ ${ref_arr[@]} =~ "${str_val}" ]]; then
+        if ! [[ ${ref_arr[@]} =~ "${str_val}" ]]; then
           log_to_stderr "Array does not contain value."
           return 1
         fi
@@ -144,17 +144,17 @@
     #
       function add_to_dict
       {
-        if  ! is_string "${3}"; then
+        if ! is_string "${3}"; then
           log_to_stderr "Invalid value."
           return 2
         fi
 
-        if  ! is_string "${2}"; then
+        if ! is_string "${2}"; then
           log_to_stderr "Invalid key."
           return 2
         fi
 
-        if  ! is_not_readonly "${1}" \
+        if ! is_not_readonly "${1}" \
           ||  ! is_dict "${1}"; then
           return 2
         fi
@@ -164,7 +164,7 @@
         local -r str_value="${3}"
         ref_dict+=( ["${str_key}"]="${str_element}" )
 
-        if  [[ "${?}" -ne 0 ]]; then
+        if [[ "${?}" -ne 0 ]]; then
           log_to_stderr "Could not remove value from array."
           return 1
         fi
@@ -184,17 +184,17 @@
     #
       function dict_contains_key_value_pair
       {
-        if  ! is_string "${3}"; then
+        if ! is_string "${3}"; then
           log_to_stderr "Invalid value."
           return 2
         fi
 
-        if  ! is_string "${2}"; then
+        if ! is_string "${2}"; then
           log_to_stderr "Invalid key."
           return 2
         fi
 
-        if  ! is_dict "${1}"; then
+        if ! is_dict "${1}"; then
           return 2
         fi
 
@@ -202,12 +202,12 @@
         local -r str_key="${2}"
         local -r str_value="${3}"
 
-        if  ! $( -v "${ref_arr["${str_key}"]}" &> /dev/null ); then
+        if ! $( -v "${ref_arr["${str_key}"]}" &> /dev/null ); then
           log_to_stderr "Dictionary does not contain key."
           return 1
         fi
 
-        if  [[ ${ref_arr["${str_key}"]} != "${str_value}" ]]; then
+        if [[ ${ref_arr["${str_key}"]} != "${str_value}" ]]; then
           log_to_stderr "Dictionary key does not contain value."
           return 1
         fi
@@ -229,18 +229,18 @@
       {
         local -r str_delimiter="${3}"
 
-        if  ! is_string "${3}" \
+        if ! is_string "${3}" \
           ||  [[ "${#str_delimiter}" -gt 1 ]]; then
           log_to_stderr "Invalid delimiter."
           return 2
         fi
 
-        if  ! is_not_readonly "${2}" \
+        if ! is_not_readonly "${2}" \
           ||  ! is_string "${2}"; then
           return 2
         fi
 
-        if  ! is_array "${1}"; then
+        if ! is_array "${1}"; then
           return 2
         fi
 
@@ -251,7 +251,7 @@
           ref_str_delimited+="${var_value}${str_delimiter}"
         done
 
-        if  [[ ${ref_str_delimited: -1} == "," ]]; then
+        if [[ ${ref_str_delimited: -1} == "," ]]; then
           ref_str_delimited="${ref_str_delimited::-1}"
         fi
 
@@ -268,7 +268,7 @@
     #
       function is_array
       {
-        if  ! is_string "${1}"; then
+        if ! is_string "${1}"; then
           return 2
         fi
 
@@ -293,11 +293,11 @@
     #
       function is_dict
       {
-        if  ! is_string "${1}"; then
+        if ! is_string "${1}"; then
           return 2
         fi
 
-        if  ! [[ $( declare -p ${1} 2>/dev/null ) == "declare -A"* ]]; then
+        if ! [[ $( declare -p ${1} 2>/dev/null ) == "declare -A"* ]]; then
           log_to_stderr "Variable is not a dictionary."
           return 1
         fi
@@ -315,7 +315,7 @@
     #
       function is_enum
       {
-        if  ! is_string "${1}"; then
+        if ! is_string "${1}"; then
           return 2
         fi
 
@@ -340,7 +340,7 @@
     #
       function is_enum_not_empty
       {
-        if  ! is_enum "${1}"; then
+        if ! is_enum "${1}"; then
           return 2
         fi
 
@@ -353,7 +353,7 @@
         local -n ref_enum="${1}"
 
         for var_value in "${ref_enum[@]}"; do
-          if  is_string "${var_value}" &> /dev/null; then
+          if is_string "${var_value}" &> /dev/null; then
             log_to_stdout "Not empty enum."
             return 0
           fi
@@ -372,7 +372,7 @@
     #
       function remove_from_array
       {
-        if  ! is_string "${2}" \
+        if ! is_string "${2}" \
           ||  ! is_not_readonly "${1}" \
           ||  ! is_array "${1}"; then
           return 2
@@ -383,14 +383,14 @@
         local -i int_return_code=1
 
         for int_key in "${!ref_arr[@]}"; do
-          if  [[ "${ref_arr["${int_key}"]}" == "${str_val}" ]]; then
+          if [[ "${ref_arr["${int_key}"]}" == "${str_val}" ]]; then
             unset ref_arr[$int_key]
             int_return_code="${?}"
             break
           fi
         done
 
-        if  [[ "${int_return_code}" -ne 0 ]]; then
+        if [[ "${int_return_code}" -ne 0 ]]; then
           log_to_stderr "Could not remove value from array."
           return 1
         fi
@@ -409,12 +409,12 @@
     #
       function remove_from_dict
       {
-        if  ! is_string "${2}"; then
+        if ! is_string "${2}"; then
           log_to_stderr "Invalid key."
           return 2
         fi
 
-        if  ! is_not_readonly "${1}" \
+        if ! is_not_readonly "${1}" \
           ||  ! is_dict "${1}"; then
           return 2
         fi
@@ -422,7 +422,7 @@
         local -n ref_dict="${1}"
         local -r str_key="${2}"
 
-        if  ! unset ref_dict["${str_key}"]; then
+        if ! unset ref_dict["${str_key}"]; then
           log_to_stderr "Could not remove key from dictionary."
           return 1
         fi
@@ -445,7 +445,7 @@
       {
         local -r str_fraction="${1}"
 
-        if  ! is_fraction "${str_fraction}"; then
+        if ! is_fraction "${str_fraction}"; then
           return 2
         fi
 
@@ -457,7 +457,7 @@
           echo "${str_fraction}" | cut --delimiter '/' --fields 2 \
         )
 
-        if  ( [[ "${int_numerator}" -ge 0 ]] \
+        if ( [[ "${int_numerator}" -ge 0 ]] \
             && [[ "${int_numerator}" -ge "${int_denominator}" ]] ) \
           && ( [[ "${int_numerator}" -lt 0 ]] \
             && [[ "${int_numerator}" -le "${int_denominator}" ]] ); then
@@ -480,12 +480,12 @@
       {
         local -r str_fraction="${1}"
 
-        if  ! is_string "${str_fraction}"; then
+        if ! is_string "${str_fraction}"; then
           log_invalid_parameter "str_fraction"
           return 2
         fi
 
-        if  ! [[ "${str_fraction}" =~ [0-9]*[/][0-9]* ]] \
+        if ! [[ "${str_fraction}" =~ [0-9]*[/][0-9]* ]] \
           && ! [[ "${str_fraction}" =~ [0-9]*[\\][0-9]* ]]; then
           log_to_stderr "Not a fraction."
           return 1
@@ -504,11 +504,11 @@
     #
       function is_int
       {
-        if  ! is_string "${1}"; then
+        if ! is_string "${1}"; then
           return 2
         fi
 
-        if  ! [[ "${1}" =~ ^[0-9]+$ ]] \
+        if ! [[ "${1}" =~ ^[0-9]+$ ]] \
           && ! [[ "${1}" =~ ^[-][0-9]+$ ]]; then
           log_to_stderr "Invalid integer."
           return 1
@@ -530,11 +530,11 @@
     #
       function is_reference
       {
-        if  ! is_variable "${1}"; then
+        if ! is_variable "${1}"; then
           return 2
         fi
 
-        if  [[ $( declare -p "${1}" 2>/dev/null ) != *"-n"* ]]; then
+        if [[ $( declare -p "${1}" 2>/dev/null ) != *"-n"* ]]; then
           log_to_stderr "Variable is not a reference."
           return 1
         fi
@@ -554,7 +554,7 @@
     #
       function is_string
       {
-        if  [[ "${1}" == "" ]]; then
+        if [[ "${1}" == "" ]]; then
           log_to_stderr "Empty string."
           return 1
         fi
@@ -575,13 +575,13 @@
     #
       function var_has_value
       {
-        if  ! is_variable "${1}"; then
+        if ! is_variable "${1}"; then
           return 2
         fi
 
         local -I inh="${1}"
 
-        if  ! is_string "${inh}"; then
+        if ! is_string "${inh}"; then
           log_to_stderr "Variable does not have a value."
           return 1
         fi
