@@ -26,10 +26,10 @@
     function is_user_superuser
     {
       if  [[ $( whoami ) != "root" ]]; then
-        print_error_to_log "User is not sudo or root."
+        print_and_log_error "User is not sudo or root."
         return 1
       fi
 
-      log_stdout "User is sudo or root."
+      log_to_stdout "User is sudo or root."
       return 0
     }
