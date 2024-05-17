@@ -26,573 +26,593 @@
 # logic
 #
   #
-  # DESC:   Does array contain value.
-  # $1:     the array as a reference.
-  # $2:     the value as a string.
-  # RETURN: If true, return 0.
-  #         If false, return 1.
-  #         If an exception occurs, return 2.
+  # access modifiers
   #
-    function array_contains_value
-    {
-      if  ! is_string "${2}" \
-        ||  ! is_array "${1}"; then
-        return 2
-      fi
-
-      local -I ref_arr="${1}"
-      local str_val="${2}"
-
-      if  ! [[ ${ref_arr[@]} =~ "${str_val}" ]]; then
-        log_stderr "Array does not contain value."
-        return 1
-      fi
-
-      log_stdout "Array does contain value."
-      return 0
-    }
-
-  #
-  # DESC:   Add value to array.
-  # $1:     the array as a reference.
-  # $2:     the value as a string.
-  # RETURN: If true, return 0.
-  #         If false, return 1.
-  #         If an exception occurs, return 2.
-  #
-    function add_to_array
-    {
-      if  ! is_array "${1}" \
-        ||  ! is_string "${2}"; then
-        return 2
-      fi
-
-      local -n ref_arr="${1}"
-      local str_val="${2}"
-      ref_arr+=( "${str_val}" )
-
-      if  [[ "${?}" -ne 0 ]]; then
-        log_stderr "Could not add value to array."
-        return 1
-      fi
-
-      log_stdout "Add value to array."
-      return 0
-    }
-
-  #
-  # DESC:   Add key-value pair to dictionary.
-  # $1:     the dictionary as a reference.
-  # $2:     the key as a string.
-  # $3:     the value as a string.
-  # RETURN: If true, return 0.
-  #         If false, return 1.
-  #         If an exception occurs, return 2.
-  #
-    function add_to_dict
-    {
-      if  ! is_string "${3}"; then
-        log_stderr "Invalid value."
-        return 2
-      fi
-
-      if  ! is_string "${2}"; then
-        log_stderr "Invalid key."
-        return 2
-      fi
-
-      if  ! is_not_readonly "${1}" \
-        ||  ! is_dict "${1}"; then
-        return 2
-      fi
-
-      local -n ref_dict="${1}"
-      local -r str_key="${2}"
-      local -r str_value="${3}"
-      ref_dict+=( ["${str_key}"]="${str_element}" )
-
-      if  [[ "${?}" -ne 0 ]]; then
-        log_stderr "Could not remove value from array."
-        return 1
-      fi
-
-      log_stdout "Removed value from array."
-      return 0
-    }
-
-  #
-  # DESC:   Does dictionary contain key-value pair.
-  # $1:     the dictionary as a reference.
-  # $2:     the key as a string.
-  # $3:     the value as a string.
-  # RETURN: If true, return 0.
-  #         If false, return 1.
-  #         If an exception occurs, return 2.
-  #
-    function dict_contains_key_value_pair
-    {
-      if  ! is_string "${3}"; then
-        log_stderr "Invalid value."
-        return 2
-      fi
-
-      if  ! is_string "${2}"; then
-        log_stderr "Invalid key."
-        return 2
-      fi
-
-      if  ! is_dict "${1}"; then
-        return 2
-      fi
-
-      local -n ref_dict="${1}"
-      local -r str_key="${2}"
-      local -r str_value="${3}"
-
-      if  ! $( -v "${ref_arr["${str_key}"]}" &> /dev/null ); then
-        log_stderr "Dictionary does not contain key."
-        return 1
-      fi
-
-      if  [[ ${ref_arr["${str_key}"]} != "${str_value}" ]]; then
-        log_stderr "Dictionary key does not contain value."
-        return 1
-      fi
-
-      log_stdout "Dictionary key does contain value."
-      return 0
-    }
-
-  #
-  # DESC:   Get the given array as a delimited string.
-  # $1:     the array as a reference.
-  # $2:     the delimited string as a reference.
-  # $3:     the delimiter.
-  # RETURN: If true, return 0.
-  #         If false, return 1.
-  #         If an exception occurs, return 2.
-  #
-    function get_delimited_string_from_array
-    {
-      local -r str_delimiter="${3}"
-
-      if  ! is_string "${3}" \
-        ||  [[ "${#str_delimiter}" -gt 1 ]]; then
-        log_stderr "Invalid delimiter."
-        return 2
-      fi
-
-      if  ! is_not_readonly "${2}" \
-        ||  ! is_string "${2}"; then
-        return 2
-      fi
-
-      if  ! is_array "${1}"; then
-        return 2
-      fi
-
-      local -n ref_arr="${1}"
-      local -n ref_str_delimited="${2}"
-
-      for var_value in ${ref_arr[@]}; do
-        ref_str_delimited+="${var_value}${str_delimiter}"
-      done
-
-      if  [[ ${ref_str_delimited: -1} == "," ]]; then
-        ref_str_delimited="${ref_str_delimited::-1}"
-      fi
-
-      log_stdout "Got delimited string from array."
-      return 0
-    }
-
-  #
-  # DESC:   Is input variable an array.
-  # $1:     the array as a reference.
-  # RETURN: If true, return 0.
-  #         If false, return 1.
-  #         If an exception occurs, return 2.
-  #
-    function is_array
-    {
-      if  ! is_string "${1}"; then
-        return 2
-      fi
-
-      case "$( declare -p ${1} 2>/dev/null )" in
-        *"-a"* )
-          log_stdout "Variable is an array."
-          return 0
-          ;;
-        * )
-          log_stderr "Variable is not an array."
-          return 1
-          ;;
-      esac
-    }
-
-  #
-  # DESC:   Is input a bool.
-  # $1:     the input as a bool.
-  # RETURN: If true, return 0.
-  #         If false, return 1.
-  #         If an exception occurs, return 2.
-  #
-    function is_bool
-    {
-      if  ! is_string "${1}"; then
-        return 2
-      fi
-
-      if  [[ "${1}" != "true" ]] \
-        && [[ "${1}" != "false" ]]; then
-        log_stderr "Invalid bool."
-        return 1
-      fi
-
-      log_stdout "Valid bool."
-      return 0
-    }
-
-  #
-  # DESC:   Is reference variable an dictionary.
-  # $1:     the dictionary as a reference.
-  # RETURN: If true, return 0.
-  #         If false, return 1.
-  #         If an exception occurs, return 2.
-  #
-    function is_dict
-    {
-      if  ! is_string "${1}"; then
-        return 2
-      fi
-
-      if  ! [[ $( declare -p ${1} 2>/dev/null ) == "declare -A"* ]]; then
-        log_stderr "Variable is not a dictionary."
-        return 1
-      fi
-
-      log_stdout "Variable is a dictionary."
-      return 0
-    }
-
-  #
-  # DESC:   Is input variable an enum.
-  # $1:     the enum as a reference.
-  # RETURN: If true, return 0.
-  #         If false, return 1.
-  #         If an exception occurs, return 2.
-  #
-    function is_enum
-    {
-      if  ! is_string "${1}"; then
-        return 2
-      fi
-
-      case "$( declare -p ${1} 2>/dev/null )" in
-        *"-a"* | *"-A"* )
-          log_stdout "Variable is an enum."
-          return 0
-          ;;
-        * )
-          log_stderr "Variable is not an enum."
-          return 1
-          ;;
-      esac
-    }
-
-  #
-  # DESC:   Is input variable a non-empty enum.
-  # $1:     the enum as a reference.
-  # RETURN: If true, return 0.
-  #         If false, return 1.
-  #         If an exception occurs, return 2.
-  #
-    function is_enum_not_empty
-    {
-      if  ! is_enum "${1}"; then
-        return 2
-      fi
-
-      case "$( declare -p ${1} 2>/dev/null )" in
-        *"-a"* | *"-A"* )
-          log_stdout "Variable is an enum."
-          return 0
-      esac
-
-      local -n ref_enum="${1}"
-
-      for var_value in "${ref_enum[@]}"; do
-        if  is_string "${var_value}" &> /dev/null; then
-          log_stdout "Not empty enum."
-          return 0
-        fi
-      done
-
-      log_stderr "Empty enum."
-      return 1
-    }
-
-  #
-  # DESC:   Is input a fraction.
-  # $1:     the fraction as a string.
-  # RETURN: If true, return 0.
-  #         If false, return 1.
-  #         If an exception occurs, return 2.
-  #
-    function is_fraction
-    {
-      local -r str_fraction="${1}"
-
-      if  ! is_string "${str_fraction}"; then
-        log_invalid_parameter "str_fraction"
-        return 2
-      fi
-
-      if  ! [[ "${str_fraction}" =~ [0-9]*[/][0-9]* ]] \
-        && ! [[ "${str_fraction}" =~ [0-9]*[\\][0-9]* ]]; then
-        log_stderr "Not a fraction."
-        return 1
-      fi
-
-      log_stdout "Fraction is valid: '${str_fraction}'"
-      return 0
-    }
-
-  #
-  # DESC:   Is input an integer.
-  # $1:     the input as an int.
-  # RETURN: If true, return 0.
-  #         If false, return 1.
-  #         If an exception occurs, return 2.
-  #
-    function is_int
-    {
-      if  ! is_string "${1}"; then
-        return 2
-      fi
-
-      if  ! [[ "${1}" =~ ^[0-9]+$ ]] \
-        && ! [[ "${1}" =~ ^[-][0-9]+$ ]]; then
-        log_stderr "Invalid integer."
-        return 1
-      fi
-
-      log_stdout "Valid integer."
-      return 0
-    }
-
-  #
-  # DESC:   Is input variable not read-only.
-  # $1:     the variable as a reference.
-  # RETURN: If true, return 0.
-  #         If false, return 1.
-  #         If an exception occurs, return 2.
-  #
-    function is_not_readonly
-    {
-      if  ! is_string "${1}"; then
-        return 2
-      fi
-
-      if  ! [[ $( declare -p ${1} 2>/dev/null ) == "declare -r"* ]]; then
-        log_stderr "Variable is read-only."
-        return 1
-      fi
-
-      log_stdout "Variable is not read-only."
-      return 0
-    }
-
-  #
-  # DESC:   Is absolute value of fraction less than positive one.
-  # $1:     the fraction as a string.
-  # RETURN: If true, return 0.
-  #         If false, return 1.
-  #         If an exception occurs, return 2.
-  #
-    function is_absolute_of_fraction_less_than_one
-    {
-      local -r str_fraction="${1}"
-
-      if  ! is_fraction "${str_fraction}"; then
-        return 2
-      fi
-
-      local -ir int_numerator=$( \
-        echo "${str_fraction}" | cut --delimiter '/' --fields 1 \
-      )
-
-      local -ir int_denominator=$( \
-        echo "${str_fraction}" | cut --delimiter '/' --fields 2 \
-      )
-
-      if  ( [[ "${int_numerator}" -ge 0 ]] \
-          && [[ "${int_numerator}" -ge "${int_denominator}" ]] ) \
-        && ( [[ "${int_numerator}" -lt 0 ]] \
-          && [[ "${int_numerator}" -le "${int_denominator}" ]] ); then
-        log_stderr "Fraction is greater than or equal to one."
-        return 1
-      fi
-
-      log_stdout "Fraction is less than one."
-      return 0
-    }
-
-  #
-  # DESC:   Is input variable a reference.
-  # $1:     the input as a string.
-  # RETURN: If true, return 0.
-  #         If false, return 1.
-  #         If an exception occurs, return 2.
-  #
-    function is_reference
-    {
-      if  ! is_variable "${1}"; then
-        return 2
-      fi
-
-      if  [[ $( declare -p "${1}" 2>/dev/null ) != *"-n"* ]]; then
-        log_stderr "Variable is not a reference."
-        return 1
-      fi
-
-      log_stdout "Variable is a reference."
-      return 0
-    }
-
-  #
-  # DESC:   Is input a string.
-  # $1:     the input as a string.
-  # RETURN: If true, return 0.
-  #         If false, return 1.
-  #
-    function is_string
-    {
-      if  [[ "${1}" == "" ]]; then
-        log_stderr "Empty string."
-        return 1
-      fi
-
-      log_stdout "Non-empty string."
-      return 0
-    }
-
-  #
-  # DESC:   Is input a variable.
-  # $1:     the name of the variable.
-  # RETURN: If variable is declared, return 0.
-  #         If variable not declared, return 1.
-  #         If an exception occurs, return 2.
-  #
-    function is_variable
-    {
-      case "$( declare -p "${1}" 2>/dev/null )" in
-        *"--"* | *"-"* )
-          log_stdout "Variable is declared."
-          return 0
-          ;;
-
-        "" )
-          log_stderr "Variable is not declared or is of unknown datatype."
+    #
+    # DESC:   Is input variable not read-only.
+    # $1:     the variable as a reference.
+    # RETURN: If true, return 0.
+    #         If false, return 1.
+    #         If an exception occurs, return 2.
+    #
+      function is_not_readonly
+      {
+        if  ! is_string "${1}"; then
           return 2
-          ;;
-
-        *"not found"* )
-          log_stderr "Variable is not declared."
-          return 1
-          ;;
-      esac
-    }
-
-  #
-  # DESC:   Remove value from array.
-  # $1:     the array as a reference.
-  # $2:     the value as a string.
-  # RETURN: If successful, return 0.
-  #         If not, return 1.
-  #
-    function remove_from_array
-    {
-      if  ! is_string "${2}" \
-        ||  ! is_not_readonly "${1}" \
-        ||  ! is_array "${1}"; then
-        return 2
-      fi
-
-      local -n ref_arr="${1}"
-      local str_val="${2}"
-      local -i int_return_code=1
-
-      for int_key in "${!ref_arr[@]}"; do
-        if  [[ "${ref_arr["${int_key}"]}" == "${str_val}" ]]; then
-          unset ref_arr[$int_key]
-          int_return_code="${?}"
-          break
         fi
-      done
 
-      if  [[ "${int_return_code}" -ne 0 ]]; then
-        log_stderr "Could not remove value from array."
+        if  ! [[ $( declare -p ${1} 2>/dev/null ) == "declare -r"* ]]; then
+          log_stderr "Variable is read-only."
+          return 1
+        fi
+
+        log_stdout "Variable is not read-only."
+        return 0
+      }
+
+  #
+  # bools
+  #
+    #
+    # DESC:   Is input a bool.
+    # $1:     the input as a bool.
+    # RETURN: If true, return 0.
+    #         If false, return 1.
+    #         If an exception occurs, return 2.
+    #
+      function is_bool
+      {
+        if  ! is_string "${1}"; then
+          return 2
+        fi
+
+        if  [[ "${1}" != "true" ]] \
+          && [[ "${1}" != "false" ]]; then
+          log_stderr "Invalid bool."
+          return 1
+        fi
+
+        log_stdout "Valid bool."
+        return 0
+      }
+  #
+  # enumerables
+  #
+    #
+    # DESC:   Add value to array.
+    # $1:     the array as a reference.
+    # $2:     the value as a string.
+    # RETURN: If true, return 0.
+    #         If false, return 1.
+    #         If an exception occurs, return 2.
+    #
+      function add_to_array
+      {
+        if  ! is_array "${1}" \
+          ||  ! is_string "${2}"; then
+          return 2
+        fi
+
+        local -n ref_arr="${1}"
+        local str_val="${2}"
+        ref_arr+=( "${str_val}" )
+
+        if  [[ "${?}" -ne 0 ]]; then
+          log_stderr "Could not add value to array."
+          return 1
+        fi
+
+        log_stdout "Add value to array."
+        return 0
+      }
+
+    #
+    # DESC:   Does array contain value.
+    # $1:     the array as a reference.
+    # $2:     the value as a string.
+    # RETURN: If true, return 0.
+    #         If false, return 1.
+    #         If an exception occurs, return 2.
+    #
+      function array_contains_value
+      {
+        if  ! is_string "${2}" \
+          ||  ! is_array "${1}"; then
+          return 2
+        fi
+
+        local -I ref_arr="${1}"
+        local str_val="${2}"
+
+        if  ! [[ ${ref_arr[@]} =~ "${str_val}" ]]; then
+          log_stderr "Array does not contain value."
+          return 1
+        fi
+
+        log_stdout "Array does contain value."
+        return 0
+      }
+
+    #
+    # DESC:   Add key-value pair to dictionary.
+    # $1:     the dictionary as a reference.
+    # $2:     the key as a string.
+    # $3:     the value as a string.
+    # RETURN: If true, return 0.
+    #         If false, return 1.
+    #         If an exception occurs, return 2.
+    #
+      function add_to_dict
+      {
+        if  ! is_string "${3}"; then
+          log_stderr "Invalid value."
+          return 2
+        fi
+
+        if  ! is_string "${2}"; then
+          log_stderr "Invalid key."
+          return 2
+        fi
+
+        if  ! is_not_readonly "${1}" \
+          ||  ! is_dict "${1}"; then
+          return 2
+        fi
+
+        local -n ref_dict="${1}"
+        local -r str_key="${2}"
+        local -r str_value="${3}"
+        ref_dict+=( ["${str_key}"]="${str_element}" )
+
+        if  [[ "${?}" -ne 0 ]]; then
+          log_stderr "Could not remove value from array."
+          return 1
+        fi
+
+        log_stdout "Removed value from array."
+        return 0
+      }
+
+    #
+    # DESC:   Does dictionary contain key-value pair.
+    # $1:     the dictionary as a reference.
+    # $2:     the key as a string.
+    # $3:     the value as a string.
+    # RETURN: If true, return 0.
+    #         If false, return 1.
+    #         If an exception occurs, return 2.
+    #
+      function dict_contains_key_value_pair
+      {
+        if  ! is_string "${3}"; then
+          log_stderr "Invalid value."
+          return 2
+        fi
+
+        if  ! is_string "${2}"; then
+          log_stderr "Invalid key."
+          return 2
+        fi
+
+        if  ! is_dict "${1}"; then
+          return 2
+        fi
+
+        local -n ref_dict="${1}"
+        local -r str_key="${2}"
+        local -r str_value="${3}"
+
+        if  ! $( -v "${ref_arr["${str_key}"]}" &> /dev/null ); then
+          log_stderr "Dictionary does not contain key."
+          return 1
+        fi
+
+        if  [[ ${ref_arr["${str_key}"]} != "${str_value}" ]]; then
+          log_stderr "Dictionary key does not contain value."
+          return 1
+        fi
+
+        log_stdout "Dictionary key does contain value."
+        return 0
+      }
+
+    #
+    # DESC:   Get the given array as a delimited string.
+    # $1:     the array as a reference.
+    # $2:     the delimited string as a reference.
+    # $3:     the delimiter.
+    # RETURN: If true, return 0.
+    #         If false, return 1.
+    #         If an exception occurs, return 2.
+    #
+      function get_delimited_string_from_array
+      {
+        local -r str_delimiter="${3}"
+
+        if  ! is_string "${3}" \
+          ||  [[ "${#str_delimiter}" -gt 1 ]]; then
+          log_stderr "Invalid delimiter."
+          return 2
+        fi
+
+        if  ! is_not_readonly "${2}" \
+          ||  ! is_string "${2}"; then
+          return 2
+        fi
+
+        if  ! is_array "${1}"; then
+          return 2
+        fi
+
+        local -n ref_arr="${1}"
+        local -n ref_str_delimited="${2}"
+
+        for var_value in ${ref_arr[@]}; do
+          ref_str_delimited+="${var_value}${str_delimiter}"
+        done
+
+        if  [[ ${ref_str_delimited: -1} == "," ]]; then
+          ref_str_delimited="${ref_str_delimited::-1}"
+        fi
+
+        log_stdout "Got delimited string from array."
+        return 0
+      }
+
+    #
+    # DESC:   Is input variable an array.
+    # $1:     the array as a reference.
+    # RETURN: If true, return 0.
+    #         If false, return 1.
+    #         If an exception occurs, return 2.
+    #
+      function is_array
+      {
+        if  ! is_string "${1}"; then
+          return 2
+        fi
+
+        case "$( declare -p ${1} 2>/dev/null )" in
+          *"-a"* )
+            log_stdout "Variable is an array."
+            return 0
+            ;;
+          * )
+            log_stderr "Variable is not an array."
+            return 1
+            ;;
+        esac
+      }
+
+    #
+    # DESC:   Is reference variable an dictionary.
+    # $1:     the dictionary as a reference.
+    # RETURN: If true, return 0.
+    #         If false, return 1.
+    #         If an exception occurs, return 2.
+    #
+      function is_dict
+      {
+        if  ! is_string "${1}"; then
+          return 2
+        fi
+
+        if  ! [[ $( declare -p ${1} 2>/dev/null ) == "declare -A"* ]]; then
+          log_stderr "Variable is not a dictionary."
+          return 1
+        fi
+
+        log_stdout "Variable is a dictionary."
+        return 0
+      }
+
+    #
+    # DESC:   Is input variable an enum.
+    # $1:     the enum as a reference.
+    # RETURN: If true, return 0.
+    #         If false, return 1.
+    #         If an exception occurs, return 2.
+    #
+      function is_enum
+      {
+        if  ! is_string "${1}"; then
+          return 2
+        fi
+
+        case "$( declare -p ${1} 2>/dev/null )" in
+          *"-a"* | *"-A"* )
+            log_stdout "Variable is an enum."
+            return 0
+            ;;
+          * )
+            log_stderr "Variable is not an enum."
+            return 1
+            ;;
+        esac
+      }
+
+    #
+    # DESC:   Is input variable a non-empty enum.
+    # $1:     the enum as a reference.
+    # RETURN: If true, return 0.
+    #         If false, return 1.
+    #         If an exception occurs, return 2.
+    #
+      function is_enum_not_empty
+      {
+        if  ! is_enum "${1}"; then
+          return 2
+        fi
+
+        case "$( declare -p ${1} 2>/dev/null )" in
+          *"-a"* | *"-A"* )
+            log_stdout "Variable is an enum."
+            return 0
+        esac
+
+        local -n ref_enum="${1}"
+
+        for var_value in "${ref_enum[@]}"; do
+          if  is_string "${var_value}" &> /dev/null; then
+            log_stdout "Not empty enum."
+            return 0
+          fi
+        done
+
+        log_stderr "Empty enum."
         return 1
-      fi
+      }
 
-      log_stdout "Removed value from array."
-      return 0
-    }
+    #
+    # DESC:   Remove value from array.
+    # $1:     the array as a reference.
+    # $2:     the value as a string.
+    # RETURN: If successful, return 0.
+    #         If not, return 1.
+    #
+      function remove_from_array
+      {
+        if  ! is_string "${2}" \
+          ||  ! is_not_readonly "${1}" \
+          ||  ! is_array "${1}"; then
+          return 2
+        fi
+
+        local -n ref_arr="${1}"
+        local str_val="${2}"
+        local -i int_return_code=1
+
+        for int_key in "${!ref_arr[@]}"; do
+          if  [[ "${ref_arr["${int_key}"]}" == "${str_val}" ]]; then
+            unset ref_arr[$int_key]
+            int_return_code="${?}"
+            break
+          fi
+        done
+
+        if  [[ "${int_return_code}" -ne 0 ]]; then
+          log_stderr "Could not remove value from array."
+          return 1
+        fi
+
+        log_stdout "Removed value from array."
+        return 0
+      }
+
+    #
+    # DESC:   Remove key-value pair from dictionary.
+    # $1:     the dictionary as a reference.
+    # $2:     the key as a string.
+    # RETURN: If true, return 0.
+    #         If false, return 1.
+    #         If an exception occurs, return 2.
+    #
+      function remove_from_dict
+      {
+        if  ! is_string "${2}"; then
+          log_stderr "Invalid key."
+          return 2
+        fi
+
+        if  ! is_not_readonly "${1}" \
+          ||  ! is_dict "${1}"; then
+          return 2
+        fi
+
+        local -n ref_dict="${1}"
+        local -r str_key="${2}"
+
+        if  ! unset ref_dict["${str_key}"]; then
+          log_stderr "Could not remove key from dictionary."
+          return 1
+        fi
+
+        log_stdout "Removed key-value from array."
+        return 0
+      }
 
   #
-  # DESC:   Remove key-value pair from dictionary.
-  # $1:     the dictionary as a reference.
-  # $2:     the key as a string.
-  # RETURN: If true, return 0.
-  #         If false, return 1.
-  #         If an exception occurs, return 2.
+  # numerals
   #
-    function remove_from_dict
-    {
-      if  ! is_string "${2}"; then
-        log_stderr "Invalid key."
-        return 2
-      fi
+    #
+    # DESC:   Is absolute value of fraction less than positive one.
+    # $1:     the fraction as a string.
+    # RETURN: If true, return 0.
+    #         If false, return 1.
+    #         If an exception occurs, return 2.
+    #
+      function is_absolute_value_of_fraction_less_than_one
+      {
+        local -r str_fraction="${1}"
 
-      if  ! is_not_readonly "${1}" \
-        ||  ! is_dict "${1}"; then
-        return 2
-      fi
+        if  ! is_fraction "${str_fraction}"; then
+          return 2
+        fi
 
-      local -n ref_dict="${1}"
-      local -r str_key="${2}"
+        local -ir int_numerator=$( \
+          echo "${str_fraction}" | cut --delimiter '/' --fields 1 \
+        )
 
-      if  ! unset ref_dict["${str_key}"]; then
-        log_stderr "Could not remove key from dictionary."
-        return 1
-      fi
+        local -ir int_denominator=$( \
+          echo "${str_fraction}" | cut --delimiter '/' --fields 2 \
+        )
 
-      log_stdout "Removed key-value from array."
-      return 0
-    }
+        if  ( [[ "${int_numerator}" -ge 0 ]] \
+            && [[ "${int_numerator}" -ge "${int_denominator}" ]] ) \
+          && ( [[ "${int_numerator}" -lt 0 ]] \
+            && [[ "${int_numerator}" -le "${int_denominator}" ]] ); then
+          log_stderr "Fraction is greater than or equal to one."
+          return 1
+        fi
+
+        log_stdout "Fraction is less than one."
+        return 0
+      }
+
+    #
+    # DESC:   Is input a fraction.
+    # $1:     the fraction as a string.
+    # RETURN: If true, return 0.
+    #         If false, return 1.
+    #         If an exception occurs, return 2.
+    #
+      function is_fraction
+      {
+        local -r str_fraction="${1}"
+
+        if  ! is_string "${str_fraction}"; then
+          log_invalid_parameter "str_fraction"
+          return 2
+        fi
+
+        if  ! [[ "${str_fraction}" =~ [0-9]*[/][0-9]* ]] \
+          && ! [[ "${str_fraction}" =~ [0-9]*[\\][0-9]* ]]; then
+          log_stderr "Not a fraction."
+          return 1
+        fi
+
+        log_stdout "Fraction is valid: '${str_fraction}'"
+        return 0
+      }
+
+    #
+    # DESC:   Is input an integer.
+    # $1:     the input as an int.
+    # RETURN: If true, return 0.
+    #         If false, return 1.
+    #         If an exception occurs, return 2.
+    #
+      function is_int
+      {
+        if  ! is_string "${1}"; then
+          return 2
+        fi
+
+        if  ! [[ "${1}" =~ ^[0-9]+$ ]] \
+          && ! [[ "${1}" =~ ^[-][0-9]+$ ]]; then
+          log_stderr "Invalid integer."
+          return 1
+        fi
+
+        log_stdout "Valid integer."
+        return 0
+      }
 
   #
-  # DESC:   Does input variable have a value.
-  # $1:     the name of the variable.
-  # RETURN: If variable has a value, return 0.
-  #         If variable has no value, return 1.
-  #         If an exception occurs, return 2.
+  # references
   #
-    function var_has_value
-    {
-      if  ! is_variable "${1}"; then
-        return 2
-      fi
+    #
+    # DESC:   Is input variable a reference.
+    # $1:     the input as a string.
+    # RETURN: If true, return 0.
+    #         If false, return 1.
+    #         If an exception occurs, return 2.
+    #
+      function is_reference
+      {
+        if  ! is_variable "${1}"; then
+          return 2
+        fi
 
-      local -I inh="${1}"
+        if  [[ $( declare -p "${1}" 2>/dev/null ) != *"-n"* ]]; then
+          log_stderr "Variable is not a reference."
+          return 1
+        fi
 
-      if  ! is_string "${inh}"; then
-        log_stderr "Variable does not have a value."
-        return 1
-      fi
+        log_stdout "Variable is a reference."
+        return 0
+      }
 
-      log_stdout "Variable does have a value."
-      return 0
-    }
+  #
+  # strings
+  #
+    #
+    # DESC:   Is input a string.
+    # $1:     the input as a string.
+    # RETURN: If true, return 0.
+    #         If false, return 1.
+    #
+      function is_string
+      {
+        if  [[ "${1}" == "" ]]; then
+          log_stderr "Empty string."
+          return 1
+        fi
+
+        log_stdout "Non-empty string."
+        return 0
+      }
+
+  #
+  # generics
+  #
+    #
+    # DESC:   Does input variable have a value.
+    # $1:     the name of the variable.
+    # RETURN: If variable has a value, return 0.
+    #         If variable has no value, return 1.
+    #         If an exception occurs, return 2.
+    #
+      function var_has_value
+      {
+        if  ! is_variable "${1}"; then
+          return 2
+        fi
+
+        local -I inh="${1}"
+
+        if  ! is_string "${inh}"; then
+          log_stderr "Variable does not have a value."
+          return 1
+        fi
+
+        log_stdout "Variable does have a value."
+        return 0
+      }
+
+    #
+    # DESC:   Is input a variable.
+    # $1:     the name of the variable.
+    # RETURN: If variable is declared, return 0.
+    #         If variable not declared, return 1.
+    #         If an exception occurs, return 2.
+    #
+      function is_variable
+      {
+        case "$( declare -p "${1}" 2>/dev/null )" in
+          *"--"* | *"-"* )
+            log_stdout "Variable is declared."
+            return 0
+            ;;
+
+          "" )
+            log_stderr "Variable is not declared or is of unknown datatype."
+            return 2
+            ;;
+
+          *"not found"* )
+            log_stderr "Variable is not declared."
+            return 1
+            ;;
+        esac
+      }
