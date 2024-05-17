@@ -34,7 +34,7 @@
 
       declare -g SRC_PRINT_BOOL_SET_GLOBALS=true
 
-      declare -g SRC_PRINT_SAVEIFS="${IFS}"
+      declare -gr SRC_PRINT_SAVEIFS="${IFS}"
 
       #
       # DESC:   vanity
@@ -52,30 +52,37 @@
         declare -gr SRC_PRINT_STR_SET_COLOR_GREEN='\033[0;32m'
         declare -gr SRC_PRINT_STR_SET_COLOR_RED='\033[0;31m'
         declare -gr SRC_PRINT_STR_SET_COLOR_YELLOW='\033[0;33m'
-        declare -gr SRC_PRINT_STR_RESET_COLOR='\033[0m'
+        declare -gr SRC_PRINT_STR_SET_ESCAPE='\033[0m'
 
       #
       # DESC:   font handling
       #
+        declare -gr SRC_PRINT_STR_SET_BLINKING='\e[5m'
         declare -gr SRC_PRINT_STR_SET_BOLD='\e[1m'
         declare -gr SRC_PRINT_STR_SET_ITALIC='\e[3m'
         declare -gr SRC_PRINT_STR_SET_UNDERLINE='\e[4m'
-        declare -gr SRC_PRINT_STR_RESET_TEXT='\e[0m'
+        declare -gr SRC_PRINT_STR_SET_ESCAPE='\e[0m'
 
       #
       # DESC:   prompt prefixes
       #
         declare -gr SRC_PRINT_STR_PREFIX_PROMPT="${SRC_PRINT_STR_SCRIPT_NAME}: "
 
-        declare -gr SRC_PRINT_STR_PREFIX_ERROR="${SRC_PRINT_STR_PREFIX_PROMPT}" + \
-          "${SRC_PRINT_STR_SET_COLOR_YELLOW}Error:" + \
-          "${SRC_PRINT_STR_RESET_COLOR} "
+        declare -g SRC_PRINT_STR_PREFIX_FAIL="${SRC_PRINT_STR_PREFIX_PROMPT}"\
+        SRC_PRINT_STR_PREFIX_FAIL+="${SRC_PRINT_STR_SET_COLOR_RED}Failure:"
+        declare -r SRC_PRINT_STR_PREFIX_FAIL+="${SRC_PRINT_STR_SET_ESCAPE} "
 
-        declare -gr SRC_PRINT_STR_PREFIX_FAIL="${SRC_PRINT_STR_PREFIX_PROMPT}" + \
-          "${SRC_PRINT_STR_SET_COLOR_RED}Failure:${SRC_PRINT_STR_RESET_COLOR} "
+        declare -g SRC_PRINT_STR_PREFIX_PASS="${SRC_PRINT_STR_PREFIX_PROMPT}"\
+        SRC_PRINT_STR_PREFIX_PASS+="${SRC_PRINT_STR_SET_COLOR_GREEN}Success:"
+        declare -r SRC_PRINT_STR_PREFIX_PASS+="${SRC_PRINT_STR_SET_ESCAPE} "
 
-        declare -gr SRC_PRINT_STR_PREFIX_PASS="${SRC_PRINT_STR_PREFIX_PROMPT}" + \
-          "${SRC_PRINT_STR_SET_COLOR_GREEN}Success:${SRC_PRINT_STR_RESET_COLOR} "
+        declare -g SRC_PRINT_STR_PREFIX_WARN="${SRC_PRINT_STR_PREFIX_PROMPT}"
+        SRC_PRINT_STR_PREFIX_WARN+="${SRC_PRINT_STR_SET_COLOR_YELLOW}Warning:"
+        declare -r SRC_PRINT_STR_PREFIX_WARN+="${SRC_PRINT_STR_SET_ESCAPE} "
+
+        declare -g SRC_PRINT_STR_PREFIX_WORK="${SRC_PRINT_STR_PREFIX_PROMPT}"\
+        SRC_PRINT_STR_PREFIX_WORK+="${SRC_PRINT_STR_SET_BLINKING}Working:"
+        declare -r SRC_PRINT_STR_PREFIX_WORK+="${SRC_PRINT_STR_SET_ESCAPE} "
     }
 
 #
@@ -88,7 +95,7 @@
     function catch_error
     {
       echo
-      print_and_log_error_disclaimer
+      print_and_log_warn_disclaimer
       exit 1
     }
 
@@ -109,11 +116,11 @@
   # DESC:   Warn user of any errors at exit.
   # RETURN: Always return code from previous scope.
   #
-    function print_and_log_error_disclaimer
+    function print_and_log_warn_disclaimer
     {
       local -ir int_return_code="${?}"
 
-      print_and_log_error "One or more errors have occurred."\
+      print_and_log_warn "One or more errors have occurred."\
         "Please view the logfile to troubleshoot ('${SRC_PRINT_STR_LOG_FILE}')."
 
       return "${int_return_code}"
@@ -139,7 +146,7 @@
     function log_error
     {
       local -ir int_return_code="${?}"
-      log_to_stderr "${SRC_PRINT_STR_PREFIX_ERROR}${1}"
+      log_to_stderr "${SRC_PRINT_STR_PREFIX_WARN}${1}"
       return "${int_return_code}"
     }
 
@@ -222,7 +229,7 @@
   #
     function print_conflicting_arguments
     {
-      print_and_log_error "Conflicting argument(s)."
+      print_and_log_warn "Conflicting argument(s)."
       print_help
       exit 1
     }
@@ -234,7 +241,7 @@
   #
     function print_conflicting_options
     {
-      print_and_log_error "Conflicting option(s)."
+      print_and_log_warn "Conflicting option(s)."
       print_help
       exit 1
     }
@@ -249,9 +256,9 @@
       local -r str_output="Duplicate argument"
 
       if  ! is_string "${1}"; then
-        print_and_log_error "${str_output}."
+        print_and_log_warn "${str_output}."
       else
-        print_and_log_error "${str_output}'${1}'."
+        print_and_log_warn "${str_output}'${1}'."
       fi
 
       return 1
@@ -268,24 +275,12 @@
       local -r str_output="Duplicate option"
 
       if  ! is_string "${1}"; then
-        print_and_log_error "${str_output}."
+        print_and_log_warn "${str_output}."
       else
-        print_and_log_error "${str_output}'${1}'."
+        print_and_log_warn "${str_output}'${1}'."
       fi
 
       return 1
-    }
-
-  #
-  # DESC:   Print and log error statement.
-  # $1:     line of text as a string
-  # RETURN: Always return code from previous scope.
-  #
-    function print_and_log_error
-    {
-      local -ir int_return_code="${?}"
-      log_error "${SRC_PRINT_STR_PREFIX_ERROR}${1}"
-      return "${int_return_code}"
     }
 
   #
@@ -298,9 +293,9 @@
       local -r str_output="Invalid argument"
 
       if  ! is_string "${1}"; then
-        print_and_log_error "${str_output}."
+        print_and_log_warn "${str_output}."
       else
-        print_and_log_error "${str_output} '${1}'."
+        print_and_log_warn "${str_output} '${1}'."
       fi
 
       exit 1
@@ -316,9 +311,9 @@
       local -r str_output="Invalid option"
 
       if  ! is_string "${1}"; then
-        print_and_log_error "${str_output}."
+        print_and_log_warn "${str_output}."
       else
-        print_and_log_error "${str_output} '${1}'."
+        print_and_log_warn "${str_output} '${1}'."
       fi
 
       exit 1
@@ -360,6 +355,19 @@
       local -ir int_return_code="${?}"
       log_pass "${SRC_PRINT_STR_PREFIX_PASS}${1}"
       echo -e "${SRC_PRINT_STR_PREFIX_PASS}${1}" >&1
+      return "${int_return_code}"
+    }
+
+  #
+  # DESC:   Print and log warning statement.
+  # $1:     line of text as a string
+  # RETURN: Always return code from previous scope.
+  #
+    function print_and_log_warn
+    {
+      local -ir int_return_code="${?}"
+      log_error "${SRC_PRINT_STR_PREFIX_WARN}${1}"
+      echo -e "${SRC_PRINT_STR_PREFIX_WARN}${1}" >&2
       return "${int_return_code}"
     }
 
