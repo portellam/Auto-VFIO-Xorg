@@ -10,6 +10,7 @@
 #
 # TODO:
 # - [ ] test.
+# - [x] develop.
 #
 
 #
@@ -24,82 +25,97 @@
 # logic
 #
   #
-  # DESC:   Pings Internet IP addresses and domain names.
-  # RETURN: If pings are successful return 0.
-  #         If false, return 1.
-  #
-    function do_ping_internet
-    {
-      log_stdout "${0}: ${FUNCNAME}"
-
-      print_output_to_log "Checking connection to Internet..."
-
-      if ! do_ping_server "8.8.8.8" \
-        && ! do_ping_server "8.8.4.4"; then
-        print_error_to_log "Failed to ping IP addresses."
-        return 1
-      fi
-
-        if ! do_ping_server "www.google.com"; then
-          print_error_to_log "Failed to resolve domain names."
-        return 1
-      fi
-
-      print_output_to_log "Connected to Internet."
-    }
-
-  #
   # DESC:   Pings given address.
-  # $1:     the server address
+  # $1:     the server address as a string.
   # RETURN: If ping is successful, return 0.
   #         If false, return 1.
+  #         If an exception occurs, return 2.
   #
-    function do_ping_server
+    function do_ping_address
     {
-      log_stdout "${0}: ${FUNCNAME}"
+      print_output_to_log "$0: $FUNCNAME"
+
+      local -r str_log="Pinging address."
+      local -r str_address="${1}"
+
+      print_work_to_log "${str_log}"
+
+      if  ! is_string "${str_address}" &> /dev/null; then
+        print_fail_to_log "${str_log}"
+        return 2
+      fi
 
       local -ir int_number_of_tries=3
 
-      log_stdout "Pinging. Please wait..."
-
-      if ! ping "${1}" -c "${int_number_of_tries}" &> /dev/null; then
-        log_stderr "Failure."
+      if  ! ping "${str_address}" -c "${int_number_of_tries}" &> /dev/null; then
+        print_fail_to_log "${str_log}"
         return 1
       fi
 
-      log_stdout "Success."
+      print_pass_to_log "${str_log}"
       return 0
     }
 
   #
-  # DESC:     Check if the Host machine is connected to the Internet.
+  # DESC:   Pings Internet IP addresses and domain names.
+  # RETURN: If pings are successful return 0.
+  #         If false, return 1.
+  #         If an exception occurs, return 2.
+  #
+    function do_ping_internet
+    {
+      local -r str_log="Checking connection to Internet."
+
+      print_work_to_log "${str_log}"
+
+      if  ! do_ping_address "8.8.8.8" \
+        && ! do_ping_address "8.8.4.4"; then
+        print_error_to_log "Failed to ping IP addresses."
+        print_fail_to_log "${str_log}"
+        return 1
+      fi
+
+        if  ! do_ping_address "www.google.com"; then
+          print_error_to_log "Failed to resolve domain names."
+          print_fail_to_log "${str_log}"
+        return 1
+      fi
+
+      print_pass_to_log "${str_log}"
+      return 0
+    }
+
+  #
+  # DESC:     Check if  the Host machine is connected to the Internet.
   # $1:       do ignore the outcome.
   # RETURN:   If the Host machine is connected to the Internet, return 0.
   #           If false, return 1.
   #
     function is_connected_to_internet
     {
-      log_stdout "${0}: ${FUNCNAME}"
+      local -r str_log="Conntecting to Internet."
+      local bool_do_ignore="${1}"
 
-      local bool_do_ignore=false
+      print_work_to_log "${str_log}"
 
-      if is_bool "${1}" &> /dev/null; then
-        bool_do_ignore="${1}"
+      if  ! is_bool "${bool_do_ignore}" &> /dev/null; then
+        print_fail_to_log "${str_log}"
+        return 2
       fi
 
-      if ! do_ping_internet; then
-        print_output_to_log "Disconnected."
+      if  ! do_ping_internet; then
+        print_output_to_log "Disconnected from Internet."
 
-        if "${bool_do_ignore}" \
-          || ask_yes_or_no "Ignore and continue?"; then
-          print_output_to_log "Continuing."
+        if  "${bool_do_ignore}" \
+          ||  ask_yes_or_no "Ignore and continue?"; then
+          print_skip_to_log "${str_log}"
           return 0;
         fi
 
-        print_error_to_log "Stopping."
+        print_fail_to_log "${str_log}"
         return 1
       fi
 
-      print_output_to_log "Connected."
+      print_pass_to_log "${str_log}"
       return 0
     }
