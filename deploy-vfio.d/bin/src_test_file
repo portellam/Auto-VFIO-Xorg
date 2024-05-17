@@ -96,7 +96,7 @@
 
       if  [[ "${1}" != "true" ]] \
         && [[ "${1}" != "false" ]]; then
-        print_and_log_error "Invalid bool."
+        print_and_log_warn "Invalid bool."
         return 1
       fi
 
@@ -113,7 +113,7 @@
     function is_string
     {
       if  [[ "${1}" == "" ]]; then
-        print_and_log_error "Empty string."
+        print_and_log_warn "Empty string."
         return 1
       fi
 
@@ -211,13 +211,13 @@
 
       if  ! do_ping_address "8.8.8.8" \
         && ! do_ping_address "8.8.4.4"; then
-        print_and_log_error "Failed to ping IP addresses."
+        print_and_log_warn "Failed to ping IP addresses."
         print_and_log_fail "${str_log}"
         return 1
       fi
 
         if  ! do_ping_address "www.google.com"; then
-          print_and_log_error "Failed to resolve domain names."
+          print_and_log_warn "Failed to resolve domain names."
           print_and_log_fail "${str_log}"
         return 1
       fi
@@ -269,7 +269,7 @@
   # $1:     line of text as a string.
   # RETURN: Always return code from previous scope.
   #
-    function print_and_log_error
+    function print_and_log_warn
     {
       local -ir int_return_code="${?}"
       echo -e "${STR_PREFIX_ERROR}${1}"
