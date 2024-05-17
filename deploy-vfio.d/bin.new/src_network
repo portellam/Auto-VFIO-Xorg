@@ -40,7 +40,7 @@
 
       print_work_to_log "${str_log}"
 
-      if  ! is_string "${str_address}" &> /dev/null; then
+      if  ! is_string "${str_address}"; then
         print_fail_to_log "${str_log}"
         return 2
       fi
@@ -98,7 +98,7 @@
 
       print_work_to_log "${str_log}"
 
-      if  ! is_bool "${bool_do_ignore}" &> /dev/null; then
+      if  ! is_bool "${bool_do_ignore}"; then
         print_fail_to_log "${str_log}"
         return 2
       fi
