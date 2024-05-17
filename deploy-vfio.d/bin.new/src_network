@@ -40,14 +40,14 @@
 
       print_and_log_work "${str_log}"
 
-      if  ! is_string "${str_address}"; then
+      if ! is_string "${str_address}"; then
         print_and_log_fail "${str_log}"
         return 2
       fi
 
       local -ir int_number_of_tries=3
 
-      if  ! ping "${str_address}" -c "${int_number_of_tries}" &> /dev/null; then
+      if ! ping "${str_address}" -c "${int_number_of_tries}" &> /dev/null; then
         print_and_log_fail "${str_log}"
         return 1
       fi
@@ -68,14 +68,14 @@
 
       print_and_log_work "${str_log}"
 
-      if  ! do_ping_address "8.8.8.8" \
+      if ! do_ping_address "8.8.8.8" \
         && ! do_ping_address "8.8.4.4"; then
         print_and_log_warn "Failed to ping IP addresses."
         print_and_log_fail "${str_log}"
         return 1
       fi
 
-        if  ! do_ping_address "www.google.com"; then
+        if ! do_ping_address "www.google.com"; then
           print_and_log_warn "Failed to resolve domain names."
           print_and_log_fail "${str_log}"
         return 1
@@ -86,7 +86,7 @@
     }
 
   #
-  # DESC:     Check if  the Host machine is connected to the Internet.
+  # DESC:     Check if the Host machine is connected to the Internet.
   # $1:       do ignore the outcome.
   # RETURN:   If the Host machine is connected to the Internet, return 0.
   #           If false, return 1.
@@ -98,15 +98,15 @@
 
       print_and_log_work "${str_log}"
 
-      if  ! is_bool "${bool_do_ignore}"; then
+      if ! is_bool "${bool_do_ignore}"; then
         print_and_log_fail "${str_log}"
         return 2
       fi
 
-      if  ! do_ping_internet; then
+      if ! do_ping_internet; then
         print_and_log_output "Disconnected from Internet."
 
-        if  "${bool_do_ignore}" \
+        if "${bool_do_ignore}" \
           ||  ask_yes_or_no "Ignore and continue?"; then
           print_skip_to_log "${str_log}"
           return 0;
