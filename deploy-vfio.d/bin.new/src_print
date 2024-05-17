@@ -28,7 +28,7 @@
   #
     function set_globals
     {
-      if  [[ "${SRC_PRINT_BOOL_SET_GLOBALS}" == true ]]; then
+      if [[ "${SRC_PRINT_BOOL_SET_GLOBALS}" == true ]]; then
         return 0
       fi
 
@@ -255,7 +255,7 @@
     {
       local -r str_output="Duplicate argument"
 
-      if  ! is_string "${1}"; then
+      if ! is_string "${1}"; then
         print_and_log_warn "${str_output}."
       else
         print_and_log_warn "${str_output}'${1}'."
@@ -274,7 +274,7 @@
       local -ir int_return_code="${?}"
       local -r str_output="Duplicate option"
 
-      if  ! is_string "${1}"; then
+      if ! is_string "${1}"; then
         print_and_log_warn "${str_output}."
       else
         print_and_log_warn "${str_output}'${1}'."
@@ -292,7 +292,7 @@
     {
       local -r str_output="Invalid argument"
 
-      if  ! is_string "${1}"; then
+      if ! is_string "${1}"; then
         print_and_log_warn "${str_output}."
       else
         print_and_log_warn "${str_output} '${1}'."
@@ -310,7 +310,7 @@
     {
       local -r str_output="Invalid option"
 
-      if  ! is_string "${1}"; then
+      if ! is_string "${1}"; then
         print_and_log_warn "${str_output}."
       else
         print_and_log_warn "${str_output} '${1}'."
