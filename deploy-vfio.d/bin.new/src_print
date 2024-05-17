@@ -2,7 +2,7 @@
 
 #
 # Filename:       src_print
-# Description:    Print logic and loggers.
+# Description:    Print and logger logic.
 # Author(s):      Alex Portell <github.com/portellam>
 # Maintainer(s):  Alex Portell <github.com/portellam>
 #
@@ -10,6 +10,7 @@
 #
 # TODO:
 # - [ ] test.
+# - [x] develop.
 #
 
 #
@@ -27,7 +28,7 @@
   #
     function set_globals
     {
-      if [[ "${SRC_PRINT_BOOL_SET_GLOBALS}" == true ]]; then
+      if  [[ "${SRC_PRINT_BOOL_SET_GLOBALS}" == true ]]; then
         return 0
       fi
 
@@ -66,9 +67,6 @@
       #
         declare -gr SRC_PRINT_STR_PREFIX_PROMPT="${SRC_PRINT_STR_SCRIPT_NAME}: "
 
-        declare -gr SRC_PRINT_STR_PREFIX_NOTE="${SRC_PRINT_STR_PREFIX_PROMPT}" + \
-          "${SRC_PRINT_STR_SET_COLOR_YELLOW}Note:${SRC_PRINT_STR_RESET_COLOR} "
-
         declare -gr SRC_PRINT_STR_PREFIX_ERROR="${SRC_PRINT_STR_PREFIX_PROMPT}" + \
           "${SRC_PRINT_STR_SET_COLOR_YELLOW}An error occurred:" + \
           "${SRC_PRINT_STR_RESET_COLOR} "
@@ -96,57 +94,63 @@
 
   #
   # DESC:   Trap exit code and run logic before exit.
-  # RETURN: Always return 0.
+  # RETURN: Always return code from previous scope.
   #
     function catch_exit
     {
+      local -ir int_return_code="${?}"
       print_pass_or_fail_to_log
       reset_ifs
-      return 0
+      return "${int_return_code}"
     }
 
   #
   # DESC:   Warn user of any errors at exit.
-  # RETURN: Always return 0.
+  # RETURN: Always return code from previous scope.
   #
     function error_disclaimer
     {
+      local -ir int_return_code="${?}"
+
       echo -e "${SRC_PRINT_STR_PREFIX_PROMPT}One or more errors have occurred."\
         "Please view the logfile to troubleshoot ('${SRC_PRINT_STR_LOG_FILE}')." >&2
 
-      return 0
+      return "${int_return_code}"
     }
 
   #
   # DESC:   Log output of parameter name.
   # $1:     the parameter name as a string.
-  # RETURN: Always return 0.
+  # RETURN: Always return code from previous scope.
   #
     function log_invalid_parameter
     {
+      local -ir int_return_code="${?}"
       log_stderr "Parameter "'${'"${1}"'}'" is invalid or undefined."
-      return 0
+      return "${int_return_code}"
     }
 
   #
   # DESC:   Log output to STDERR.
-  # RETURN: Always return 0.
+  # RETURN: Always return code from previous scope.
   #
     function log_stderr
     {
+      local -ir int_return_code="${?}"
       logger --stderr "${1}" 2>> "${SRC_PRINT_STR_LOG_FILE}"
       echo -e "" >&2
-      return 0
+      return "${int_return_code}"
     }
 
   #
   # DESC:   Log output to STDOUT.
-  # RETURN: Always return 0.
+  # RETURN: Always return code from previous scope.
   #
     function log_stdout
     {
+      local -ir int_return_code="${?}"
       logger "${1}" 2>> "${SRC_PRINT_STR_LOG_FILE}"
-      return 0
+      return "${int_return_code}"
     }
 
   #
@@ -176,34 +180,37 @@
   #
   # DESC:   Print duplicate argument output.
   # $1:     the argument as a string.
-  # RETURN: Always exit 1.
+  # RETURN: Always return 1.
   #
     function print_duplicate_argument
     {
       local -r str_output="Duplicate argument"
 
-      if ! is_string "${1}"; then
+      if  ! is_string "${1}"; then
         print_error_to_log "${str_output}."
+      else
+        print_error_to_log "${str_output}'${1}'."
       fi
 
-      print_error_to_log "${str_output}'${1}'."
       return 1
     }
 
   #
   # DESC:   Print duplicate option output.
   # $1:     the option as a string.
-  # RETURN: Always exit 1.
+  # RETURN: Always return 1.
   #
     function print_duplicate_option
     {
+      local -ir int_return_code="${?}"
       local -r str_output="Duplicate option"
 
-      if ! is_string "${1}"; then
+      if  ! is_string "${1}"; then
         print_error_to_log "${str_output}."
+      else
+        print_error_to_log "${str_output}'${1}'."
       fi
 
-      print_error_to_log "${str_output}'${1}'."
       return 1
     }
 
@@ -227,7 +234,7 @@
     {
       local -r str_output="Invalid argument"
 
-      if ! is_string "${1}"; then
+      if  ! is_string "${1}"; then
         print_error_to_log "${str_output}."
       else
         print_error_to_log "${str_output} '${1}'."
@@ -246,7 +253,7 @@
     {
       local -r str_output="Invalid option"
 
-      if ! is_string "${1}"; then
+      if  ! is_string "${1}"; then
         print_error_to_log "${str_output}."
       else
         print_error_to_log "${str_output} '${1}'."
@@ -257,82 +264,90 @@
     }
 
   #
-  # DESC:   Print and log error.
+  # DESC:   Print and log error statement.
   # $1:     line of text as a string
-  # RETURN: Always return 0.
+  # RETURN: Always return code from previous scope.
   #
     function print_error_to_log
     {
+      local -ir int_return_code="${?}"
       log_stderr "${SRC_PRINT_STR_PREFIX_ERROR}${1}"
+      return "${int_return_code}"
     }
 
   #
-  # DESC:   Print and log failure.
+  # DESC:   Print and log failure statement.
   # $1:     line of text as a string
-  # RETURN: Always return 0.
+  # RETURN: Always return code from previous scope.
   #
     function print_fail_to_log
     {
+      local -ir int_return_code="${?}"
       log_stdout "${SRC_PRINT_STR_PREFIX_FAIL}${1}"
       echo -e "${SRC_PRINT_STR_PREFIX_FAIL}${1}" >&2
+      return "${int_return_code}"
     }
 
   #
-  # DESC:   Print and log.
+  # DESC:   Print and log statement.
   # $1:     line of text as a string
-  # RETURN: Always return 0.
+  # RETURN: Always return code from previous scope.
   #
     function print_output_to_log
     {
+      local -ir int_return_code="${?}"
       log_stdout "${SRC_PRINT_STR_PREFIX_PROMPT}${1}"
       echo -e "${SRC_PRINT_STR_PREFIX_PROMPT}${1}" >&1
+      return "${int_return_code}"
     }
 
   #
-  # DESC:   Print notable output.
-  # $1:     line of text as a string
-  # RETURN: Always return 0.
-  #
-    function print_note
-    {
-      log_stdout "${SRC_PRINT_STR_PREFIX_NOTE}${1}"
-      echo -e "${SRC_PRINT_STR_PREFIX_NOTE}${1}"
-    }
-
-  #
-  # DESC:   Print and log error.
+  # DESC:   Print and log error statement.
   # $1:     line of text as a string.
-  # RETURN: Return incoming return code.
-  #         If 0, output success.
-  #         If 255, output skipped.
-  #         If else, output failure.
+  # RETURN: Always return code from previous scope.
   #
     function print_pass_or_fail_to_log
     {
       local -ir int_return_code="${?}"
 
-      if [[ "${int_return_code}" -eq 255 ]]; then
+      if  [[ "${int_return_code}" -eq 255 ]]; then
         print_output_to_log "Skipped."
-        return "${int_return_code}"
+        return 255
       fi
 
-      if [[ "${int_return_code}" -ne 0 ]]; then
+      if  [[ "${int_return_code}" -ne 0 ]]; then
         print_fail_to_log "Failure."
         return "${int_return_code}"
       fi
 
       print_pass_to_log "Success."
+      return 0
     }
 
   #
-  # DESC:   Print and log success.
+  # DESC:   Print and log success statement.
   # $1:     line of text as a string.
-  # RETURN: Always return 0.
+  # RETURN: Always return code from previous scope.
   #
     function print_pass_to_log
     {
+      local -ir int_return_code="${?}"
       log_stdout "${SRC_PRINT_STR_PREFIX_PASS}${1}"
       echo -e "${SRC_PRINT_STR_PREFIX_PASS}${1}" >&1
+      return "${int_return_code}"
+    }
+
+  #
+  # DESC:   Print and log working statement.
+  # $1:     line of text as a string.
+  # RETURN: Always return code from previous scope.
+  #
+    function print_work_to_log
+    {
+      local -ir int_return_code="${?}"
+      log_stdout "${SRC_PRINT_STR_PREFIX_PASS}${1}"
+      echo -e "${SRC_PRINT_STR_PREFIX_WORK}${1}" >&1
+      return "${int_return_code}"
     }
 
   #
@@ -341,8 +356,10 @@
   #
     function reset_ifs
     {
+      local -ir int_return_code="${?}"
       log_stdout "${0}: ${FUNCNAME}"
       IFS="${SRC_PRINT_SAVEIFS}"
+      return "${int_return_code}"
     }
 
   #
@@ -353,7 +370,7 @@
     {
       log_stdout "${0}: ${FUNCNAME}"
       IFS=$'\n'
-    }
+   }
 
   #
   # DESC:   Trap exit code and run logic before exit.
