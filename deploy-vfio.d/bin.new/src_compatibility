@@ -28,8 +28,6 @@
   #
     function set_globals
     {
-      log_stdout "${0}: ${FUNCNAME}"
-
       if [[ "${SRC_COMPATIBILITY_BOOL_SET_GLOBALS}" == true ]]; then
         return 0
       fi
@@ -51,20 +49,18 @@
   #
     function is_option_ignore_distro
     {
-      log_stdout "${0}: ${FUNCNAME}"
-
       if [[ "${1}" != "--ignore-distro" ]]; then
         SRC_COMPATIBILITY_BOOL_DO_IGNORE_DISTRO=false
-        log_stdout "Enabled system distribution check."
+        log_output "Enabled system distribution check."
         return 1
       fi
 
       if is_string "${1}"; then
-        print_error_to_log "Invalid argument. Valid arguments: --ignore-distro"
+        print_and_log_warn "Invalid argument. Valid arguments: --ignore-distro"
         return 2
       fi
 
-      log_stdout "Disabled system distribution check."
+      log_output "Disabled system distribution check."
       SRC_COMPATIBILITY_BOOL_DO_IGNORE_DISTRO=true
       return 0
     }
@@ -76,8 +72,6 @@
   #
     function is_option_of_compatibility
     {
-      log_stdout "${0}: ${FUNCNAME}"
-
       if ! is_option_ignore_distro; then
         return 1
       fi
@@ -95,10 +89,8 @@
   #
     function is_distribution_supported
     {
-      log_stdout "${0}: ${FUNCNAME}"
-
       if "${SRC_COMPATIBILITY_BOOL_DO_IGNORE_DISTRO}"; then
-        log_stdout "Skipped system distribution support check."
+        log_to_stdout "Skipped system distribution support check."
         return 0
       fi
 
@@ -107,13 +99,13 @@
 
       if [[ "${str_operating_system_lowercase}" != *"debian"* ]] \
         && [[ "${str_operating_system_lowercase}" != *"ubuntu"* ]]; then
-        print_error_to_log "System distribution " \
+        print_and_log_warn "System distribution " \
           "'${str_operating_system_lowercase}' is not explicitly supported."
 
         return 1
       fi
 
-      log_stdout "System distribution '${str_operating_system_lowercase}' "\
+      log_pass "System distribution '${str_operating_system_lowercase}' "\
         "is supported."
 
       return 0
@@ -126,14 +118,12 @@
   #
     function is_iommu_enabled
     {
-      log_stdout "${0}: ${FUNCNAME}"
-
       if ! compgen -G "/sys/kernel/iommu_groups/*/devices/*" &> /dev/null; then
-        print_error_to_log "System does not support IOMMU groups."
+        print_and_log_warn "System does not support IOMMU groups."
         return 1
       fi
 
-      log_stdout "System does support IOMMU groups."
+      log_pass "System does support IOMMU groups."
       return 0
     }
 
@@ -145,22 +135,20 @@
   #
     function is_package_installed
     {
-      log_stdout "${0}: ${FUNCNAME}"
-
       local str_package_name="${1}"
 
       if command -v "${str_package_name}" &> /dev/null; then
-        log_stdout "Package '${str_package_name}' is installed."
+        log_pass "Package '${str_package_name}' is installed."
         return 0
       fi
 
       if ! sudo apt list --installed "${str_package_name}" | \
         grep "${str_package_name}" &> /dev/null; then
-        print_error_to_log "Package '${str_package_name}' is not installed."
+        print_and_log_warn "Package '${str_package_name}' is not installed."
         return 1
       fi
 
-      log_stdout "Package '${str_package_name}' is installed."
+      log_pass "Package '${str_package_name}' is installed."
       return 0
     }
 
@@ -171,18 +159,16 @@
   #
     function is_system_supported
     {
-      log_stdout "${0}: ${FUNCNAME}"
-
       if ! is_virtualization_enabled \
         || ! is_iommu_enabled \
         || ! is_systemd_installed \
         || ! is_xml_library_installed \
         || ! is_distribution_supported; then
-        print_error_to_log "System is not supported."
+        print_and_log_warn "System is not supported."
         exit 1
       fi
 
-      log_stdout "System is supported."
+      log_pass "System is supported."
       return 0
     }
 
@@ -193,14 +179,12 @@
   #
     function is_systemd_installed
     {
-      log_stdout "${0}: ${FUNCNAME}"
-
       if ! command -v systemd &> /dev/null; then
-        print_error_to_log "'systemd' is not installed."
+        print_and_log_warn "'systemd' is not installed."
         return 1
       fi
 
-      log_stdout "'systemd' is installed."
+      log_pass "'systemd' is installed."
       return 0
     }
 
@@ -211,18 +195,16 @@
   #
     function is_virtualization_enabled
     {
-      log_stdout "${0}: ${FUNCNAME}"
-
       if ! LC_ALL=C lscpu | grep --ignore-case Virtualization &> /dev/null \
         && ! grep --extended-regexp --quiet --color=auto 'vmx|svm|0xc0f' \
           /proc/cpuinfo &> /dev/null; then
-        print_error_to_log "System does not or cannot support hardware " \
+        print_and_log_warn "System does not or cannot support hardware " \
           "virtualization."
 
         return 1
       fi
 
-      log_stdout "System supports hardware virtualization."
+      log_pass "System supports hardware virtualization."
       return 0
     }
 
@@ -233,18 +215,16 @@
   #
     function is_xml_library_installed
     {
-      log_stdout "${0}: ${FUNCNAME}"
-
       if ! command -v "xmlstarlet" &> /dev/null; then
-        print_error_to_log "Required XML libraries are not installed."
+        print_and_log_warn "Required XML libraries are not installed."
 
-        print_output_to_log "To install, execute 'sudo apt install -y  \
+        print_and_log_output "To install, execute 'sudo apt install -y  \
           xmlstarlet'."
 
         return 1
       fi
 
-      log_stdout "Required XML libraries are installed."
+      log_pass "Required XML libraries are installed."
       return 0
     }
 
