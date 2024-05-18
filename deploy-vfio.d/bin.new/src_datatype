@@ -89,7 +89,7 @@
       function add_to_array
       {
         if ! is_array "${1}" \
-          ||  ! is_string "${2}"; then
+          || ! is_string "${2}"; then
           return 2
         fi
 
@@ -117,7 +117,7 @@
       function array_contains_value
       {
         if ! is_string "${2}" \
-          ||  ! is_array "${1}"; then
+          || ! is_array "${1}"; then
           return 2
         fi
 
@@ -155,7 +155,7 @@
         fi
 
         if ! is_not_readonly "${1}" \
-          ||  ! is_dict "${1}"; then
+          || ! is_dict "${1}"; then
           return 2
         fi
 
@@ -230,13 +230,13 @@
         local -r str_delimiter="${3}"
 
         if ! is_string "${3}" \
-          ||  [[ "${#str_delimiter}" -gt 1 ]]; then
+          || [[ "${#str_delimiter}" -gt 1 ]]; then
           log_to_stderr "Invalid delimiter."
           return 2
         fi
 
         if ! is_not_readonly "${2}" \
-          ||  ! is_string "${2}"; then
+          || ! is_string "${2}"; then
           return 2
         fi
 
@@ -373,8 +373,8 @@
       function remove_from_array
       {
         if ! is_string "${2}" \
-          ||  ! is_not_readonly "${1}" \
-          ||  ! is_array "${1}"; then
+          || ! is_not_readonly "${1}" \
+          || ! is_array "${1}"; then
           return 2
         fi
 
@@ -415,7 +415,7 @@
         fi
 
         if ! is_not_readonly "${1}" \
-          ||  ! is_dict "${1}"; then
+          || ! is_dict "${1}"; then
           return 2
         fi
 
