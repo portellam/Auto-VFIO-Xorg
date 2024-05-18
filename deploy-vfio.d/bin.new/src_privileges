@@ -27,6 +27,7 @@
     {
       if [[ $( whoami ) != "root" ]]; then
         print_and_log_warn "User is not sudo or root."
+        print_and_log_warn "Logger may not work."
         return 1
       fi
 
