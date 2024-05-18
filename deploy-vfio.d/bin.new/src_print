@@ -52,7 +52,6 @@
         declare -gr SRC_PRINT_STR_SET_COLOR_GREEN='\033[0;32m'
         declare -gr SRC_PRINT_STR_SET_COLOR_RED='\033[0;31m'
         declare -gr SRC_PRINT_STR_SET_COLOR_YELLOW='\033[0;33m'
-        declare -gr SRC_PRINT_STR_SET_ESCAPE='\033[0m'
 
       #
       # DESC:   font handling
