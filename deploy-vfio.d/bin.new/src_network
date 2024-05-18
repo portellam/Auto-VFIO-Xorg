@@ -33,26 +33,25 @@
   #
     function do_ping_address
     {
-      print_and_log_output "$0: $FUNCNAME"
+      local -r str_warn="Pinging address."
 
-      local -r str_log="Pinging address."
+      log_work "Pinging address."
+
       local -r str_address="${1}"
 
-      print_and_log_work "${str_log}"
-
       if ! is_string "${str_address}"; then
-        print_and_log_fail "${str_log}"
+        print_and_log_warn "${str_warn}"
         return 2
       fi
 
       local -ir int_number_of_tries=3
 
       if ! ping "${str_address}" -c "${int_number_of_tries}" &> /dev/null; then
-        print_and_log_fail "${str_log}"
+        print_and_log_warn "${str_warn}"
         return 1
       fi
 
-      print_and_log_pass "${str_log}"
+      log_output "Pinged address."
       return 0
     }
 
@@ -64,24 +63,24 @@
   #
     function do_ping_internet
     {
-      local -r str_log="Checking connection to Internet."
+      local -r str_warn="Cannot ping Internet addresses."
 
-      print_and_log_work "${str_log}"
+      log_work "Pinging Internet addresses."
 
       if ! do_ping_address "8.8.8.8" \
         && ! do_ping_address "8.8.4.4"; then
-        print_and_log_warn "Failed to ping IP addresses."
-        print_and_log_fail "${str_log}"
+        log_warn "Failed to ping IP addresses."
+        print_and_log_warn "${str_warn}"
         return 1
       fi
 
         if ! do_ping_address "www.google.com"; then
-          print_and_log_warn "Failed to resolve domain names."
-          print_and_log_fail "${str_log}"
+          log_warn "Failed to ping domain names."
+          print_and_log_warn "${str_warn}"
         return 1
       fi
 
-      print_and_log_pass "${str_log}"
+      log_output "Pinged Internet addresses."
       return 0
     }
 
@@ -93,29 +92,30 @@
   #
     function is_connected_to_internet
     {
-      local -r str_log="Conntecting to Internet."
+      local -r str_warn="Disconnected from Internet."
+
+      print_and_log_work "Checking Internet connection."
+
       local bool_do_ignore="${1}"
 
-      print_and_log_work "${str_log}"
-
       if ! is_bool "${bool_do_ignore}"; then
-        print_and_log_fail "${str_log}"
+        print_and_log_fail "${str_warn}"
         return 2
       fi
 
       if ! do_ping_internet; then
-        print_and_log_output "Disconnected from Internet."
+        print_and_log_output "${str_warn}"
 
         if "${bool_do_ignore}" \
-          ||  ask_yes_or_no "Ignore and continue?"; then
-          print_skip_to_log "${str_log}"
+          || ask_yes_or_no "Ignore and continue?"; then
+          print_skip_to_log "Ignoring status of Internet connection."
           return 0;
         fi
 
-        print_and_log_fail "${str_log}"
+        print_and_log_fail "${str_warn}"
         return 1
       fi
 
-      print_and_log_pass "${str_log}"
+      print_and_log_pass "Connected to Internet."
       return 0
     }
