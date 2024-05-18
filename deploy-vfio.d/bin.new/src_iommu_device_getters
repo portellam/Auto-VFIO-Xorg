@@ -35,8 +35,6 @@
   #
     function get_device_class
     {
-      log_stdout "${0}: ${FUNCNAME}"
-
       local -r str_device_slot_id="${1}"
       local -n ref_str_device_class="${2}"
 
@@ -55,11 +53,11 @@
       )"
 
       if ! is_string "${ref_str_device_class}"; then
-        log_stderr "Could not find device class."
+        log_to_stderr "Could not find device class."
         return 1
       fi
 
-      log_stdout "Found device class."
+      log_to_stdout "Found device class."
       return 0
     }
 
@@ -74,8 +72,6 @@
   #
     function get_device_driver
     {
-      log_stdout "${0}: ${FUNCNAME}"
-
       local str_device_slot_id="${1}"
       local -n ref_str_device_driver="${2}"
       local -n ref_dict_device_slot_id_and_driver="${3}"
@@ -94,10 +90,10 @@
       if ! is_dict "${ref_dict_device_slot_id_and_driver}"; then
         bool_do_parse_from_xml_file=false
         log_invalid_parameter "ref_dict_device_slot_id_and_driver."
-        log_stdout "Not parsing from XML file."
+        log_to_stdout "Not parsing from XML file."
       else
         bool_do_parse_from_xml_file=true
-        log_stdout "Parsing from XML file."
+        log_to_stdout "Parsing from XML file."
       fi
 
       if ! "${bool_do_parse_from_xml_file}"; then
@@ -106,7 +102,7 @@
             awk 'END {print $5}' \
         )"
 
-        log_stdout "Found device driver."
+        log_to_stdout "Found device driver."
         return 0
       fi
 
@@ -114,11 +110,11 @@
 
       if ! dict_contains_key "ref_dict_device_slot_id_and_driver" \
           "${str_device_slot_id}"; then
-        log_stderr "Could not find device driver from XML file."
+        log_to_stderr "Could not find device driver from XML file."
         return 1
       fi
 
-      log_stdout "Found device driver from XML file."
+      log_to_stdout "Found device driver from XML file."
       return 0
     }
 
@@ -132,8 +128,6 @@
   #
     function get_device_hardware_id
     {
-      log_stdout "${0}: ${FUNCNAME}"
-
       local -r str_device_slot_id="${1}"
       local -n ref_str_device_hardware_id="${2}"
 
@@ -152,11 +146,11 @@
       )"
 
       if ! is_string "${ref_str_device_hardware_id}"; then
-        log_stderr "Could not find device hardware ID."
+        log_to_stderr "Could not find device hardware ID."
         return 1
       fi
 
-      log_stdout "Found device hardware ID."
+      log_to_stdout "Found device hardware ID."
       return 0
     }
 
@@ -170,8 +164,6 @@
   #
     function get_device_name
     {
-      log_stdout "${0}: ${FUNCNAME}"
-
       local -r str_device_slot_id="${1}"
       local -n ref_str_device_name="${2}"
 
@@ -190,11 +182,11 @@
       )"
 
       if ! is_string "${ref_str_device_hardware_id}"; then
-        log_stderr "Could not find device name."
+        log_to_stderr "Could not find device name."
         return 1
       fi
 
-      log_stdout "Found device name."
+      log_to_stdout "Found device name."
       return 0
     }
 
@@ -208,8 +200,6 @@
   #
     function get_device_vendor
     {
-      log_stdout "${0}: ${FUNCNAME}"
-
       local -r str_device_slot_id="${1}"
       local -n ref_str_device_vendor="${2}"
 
@@ -228,11 +218,11 @@
       )"
 
       if ! is_string "${ref_str_device_vendor}"; then
-        log_stderr "Could not find device vendor."
+        log_to_stderr "Could not find device vendor."
         return 1
       fi
 
-      log_stdout "Found device vendor."
+      log_to_stdout "Found device vendor."
       return 0
     }
 
@@ -248,8 +238,6 @@
   #
     function get_device_arrays_for_iommu_groups
     {
-      log_stdout "${0}: ${FUNCNAME}"
-
       local -n ref_arr_iommu_group_id="${1}"
       local -n ref_arr_device_driver="${2}"
       local -n ref_arr_stub_hardware_id="${3}"
@@ -313,17 +301,17 @@
       )
 
       if ! is_enum_not_empty "ref_arr_device_driver"; then
-        log_stdout "Could not find device drivers."
+        log_to_stdout "Could not find device drivers."
         return 1
       fi
 
       if ! is_enum_not_empty "ref_arr_stub_hardware_id" \
         && ! is_enum_not_empty "ref_arr_vfio_hardware_id"; then
-        log_stderr "Could not find device hardware IDs."
+        log_to_stderr "Could not find device hardware IDs."
         return 1
       fi
 
-      log_stdout "Found device drivers and hardware IDs."
+      log_to_stdout "Found device drivers and hardware IDs."
       return 0
     }
 
@@ -337,8 +325,6 @@
   #
     function get_name_for_first_vga_device_in_iommu_group
     {
-      log_stdout "${0}: ${FUNCNAME}"
-
       local -ir int_iommu_group_id="${1}"
       local -n ref_str_device_name="${2}"
 
@@ -367,13 +353,13 @@
       done
 
       if ! is_string "${ref_str_device_name}"; then
-        log_stderr "Could not find device name of any VGA device in IOMMU group "\
+        log_to_stderr "Could not find device name of any VGA device in IOMMU group "\
           "${int_iommu_group_id}."
 
         return 1
       fi
 
-      log_stdout "Found device name of any VGA device in IOMMU group "\
+      log_to_stdout "Found device name of any VGA device in IOMMU group "\
         "${int_iommu_group_id}."
 
       return 0
