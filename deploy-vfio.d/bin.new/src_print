@@ -193,7 +193,12 @@
     function log_to_stderr
     {
       local -ir int_return_code="${?}"
-      eval $( logger --stderr "${1}" 2>> "${SRC_PRINT_STR_LOG_FILE}" ) &> /dev/null
+
+      if [[ ! -w "${SRC_PRINT_STR_LOG_FILE}" ]]; then
+        return "${int_return_code}"
+      fi
+
+      logger --stderr "${1}" 2>> "${SRC_PRINT_STR_LOG_FILE}"
       return "${int_return_code}"
     }
 
@@ -205,7 +210,12 @@
     function log_to_stdout
     {
       local -ir int_return_code="${?}"
-      eval $( logger "${1}" 2>> "${SRC_PRINT_STR_LOG_FILE}" ) &> /dev/null
+
+      if [[ ! -w "${SRC_PRINT_STR_LOG_FILE}" ]]; then
+        return "${int_return_code}"
+      fi
+
+      logger "${1}" 2>> "${SRC_PRINT_STR_LOG_FILE}"
       return "${int_return_code}"
     }
 
