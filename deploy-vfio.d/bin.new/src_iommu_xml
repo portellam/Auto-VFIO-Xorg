@@ -34,16 +34,14 @@
   #
     function set_iommu_groups_xml_file
     {
-      log_stdout "${0}: ${FUNCNAME}"
-
       local -r str_xml_file_path="${1}"
 
       if ! is_string "${str_xml_file_path}"; then
-        print_output_to_log "XML file is not set."
+        print_and_log_warn "XML file is not set."
         return 1
       fi
 
-      print_output_to_log "XML file '${str_xml_file_path}' is set."
+      log_pass "XML file '${str_xml_file_path}' is set."
       return 0
     }
 
@@ -55,10 +53,17 @@
   #
     function set_iommu_groups_xml_file_to_default
     {
-      log_stdout "${0}: ${FUNCNAME}"
+      log_work "Setting XML file to default."
 
       local -n ref_str_xml_file_path="${1}"
+
+      if ! is_not_readonly "${ref_str_xml_file_path}"; then
+        print_and_log_warn "Cannot set XML file to default."
+        return 1
+      fi
+
       ref_str_xml_file_path="${SRC_BACKUPS_ETC_PATH}parse.xml"
+      log_output "Set XML file to default."
       return 0
     }
 
@@ -73,22 +78,24 @@
   #
     function cleanup_iommu_groups_xml_file
     {
-      log_stdout "${0}: ${FUNCNAME}"
+      log_work "Cleaning-up XML file..."
 
-      local -r str_xml_file_name="${1}"
+      local -r str_warn="Could not clean-up XML file."
+      local -r str_xml_file_path="${1}"
 
-      if ! is_string "${str_xml_file_name}"; then
-        log_invalid_parameter "str_xml_file_name"
+      if ! is_string "${str_xml_file_path}"; then
+        log_invalid_parameter "str_xml_file_path"
+        print_and_log_warn "${str_warn}"
         return 2
       fi
 
-      if ! restore_temp_files_for_iommu_groups_xml_file "${str_xml_file_name}" \
-        || ! delete_temp_files_for_iommu_groups_xml_file "${str_xml_file_name}"; then
-        print_error_to_log "Clean-up of XML file failed."
+      if ! restore_temp_files_for_iommu_groups_xml_file "${str_xml_file_path}" \
+        || ! delete_temp_files_for_iommu_groups_xml_file "${str_xml_file_path}"; then
+        print_and_log_warn "${str_warn}"
         return 1
       fi
 
-      print_error_to_log "Clean-up of XML file successful."
+      print_and_log_warn "Clean-up of XML file '${str_xml_file_path}' successful."
       return 0
     }
 
@@ -100,19 +107,23 @@
   #
     function create_temp_files_for_iommu_groups_xml_file
     {
-      log_stdout "${0}: ${FUNCNAME}"
+      log_work "Creating temp files for XML file..."
 
-      local -r str_xml_file_name="${1}"
+      local -r str_warn="Could not create temp files for XML file."
+      local -r str_xml_file_path="${1}"
 
-      if ! is_string "${str_xml_file_name}"; then
-        log_invalid_parameter "str_xml_file_name"
+      if ! is_string "${str_xml_file_path}"; then
+        log_invalid_parameter "str_xml_file_path"
+        print_and_log_warn "${str_warn}"
         return 2
       fi
 
-      if ! create_temp_file_of_file "${str_xml_file_name}"; then
+      if ! create_temp_file_of_file "${str_xml_file_path}"; then
+        print_and_log_warn "${str_warn}"
         return 1
       fi
 
+      log_pass "Created temp files for XML file '${str_xml_file_path}'."
       return 0
     }
 
@@ -124,19 +135,23 @@
   #
     function delete_temp_files_for_iommu_groups_xml_file
     {
-      log_stdout "${0}: ${FUNCNAME}"
+      log_work "Deleting temp files for XML file..."
 
+      local -r str_warn="Could not delete temp files for XML file."
       local -r str_xml_file_path="${1}"
 
-      if ! is_string "${str_xml_file_name}"; then
-        log_invalid_parameter "str_xml_file_name"
+      if ! is_string "${str_xml_file_path}"; then
+        log_invalid_parameter "str_xml_file_path"
+        print_and_log_warn "${str_warn}"
         return 2
       fi
 
-      if ! delete_temp_file_of_file "${str_xml_file_name}"; then
+      if ! delete_temp_file_of_file "${str_xml_file_path}"; then
+        print_and_log_warn "${str_warn}"
         return 1
       fi
 
+      log_pass "Deleted temp files for XML file '${str_xml_file_path}'."
       return 0
     }
 
@@ -149,12 +164,14 @@
   #
     function export_iommu_groups_to_xml_file
     {
-      log_stdout "${0}: ${FUNCNAME}"
+      log_work "Exporting IOMMU groups from to file..."
 
+      local -r str_warn="Cannot export IOMMU groups to XML file."
       local -r str_xml_file_name="${1}"
 
       if ! is_string "${str_xml_file_name}"; then
         log_invalid_parameter "str_xml_file_name"
+        print_and_log_warn "${str_warn}"
         return 2
       fi
 
@@ -211,9 +228,11 @@
       )
 
       if ! overwrite_file "arr_xml_output" "${str_xml_file_name}"; then
+        print_and_log_warn "${str_warn}"
         return 1
       fi
 
+      print_and_log_output "Exported IOMMU groups to XML file '${str_xml_file_path}'."
       return 0
     }
 
@@ -227,29 +246,35 @@
   #
     function import_iommu_groups_from_xml_file
     {
-      log_stdout "${0}: ${FUNCNAME}"
+      log_work "Importing IOMMU groups from XML file..."
 
-      local -r str_xml_file_path="${1}"
+      local -r str_warn="Cannot import IOMMU groups from XML file."
       local -n ref_dict_device_id_and_driver="${2}"
 
       if ! is_dict "${ref_dict_device_id_and_driver}"; then
         log_invalid_parameter "ref_dict_device_id_and_driver"
+        print_and_log_warn "${str_warn}"
         return 2
       fi
 
-      if ! is_string "${str_xml_file_name}"; then
-        log_invalid_parameter "str_xml_file_name"
+      local -r str_xml_file_path="${1}"
+
+      if ! is_string "${str_xml_file_path}"; then
+        log_invalid_parameter "str_xml_file_path"
+        print_and_log_warn "${str_warn}"
         return 2
       fi
 
       if ! is_file "${str_xml_file_path}"; then
-        print_error_to_log "XML file does not exist."
-        return 1
+        print_and_log_output "XML file does not exist."
+        print_and_log_warn "${str_warn}"
+        return 2
       fi
 
       if ! is_file_not_empty "${str_xml_file_path}"; then
-        print_error_to_log "XML file is empty."
-        return 1
+        print_and_log_output "XML file is empty."
+        print_and_log_warn "${str_warn}"
+        return 2
       fi
 
       local -i int_counter=1
@@ -267,7 +292,8 @@
         )
 
         if [[ "${str_driver}" == "vfio-pci" ]]; then
-          print_error_to_log "Detected VFIO drivers in XML file."
+          print_and_log_output "Detected VFIO drivers in XML file."
+          print_and_log_warn "${str_warn}"
           return 1
         fi
 
@@ -284,11 +310,13 @@
       done
 
       if ! is_dict_not_empty "ref_dict_device_id_and_driver" &> /dev/null; then
-        print_error_to_log "Failed to parse XML file."
+        print_and_log_warn "${str_warn}"
         return 1
       fi
 
-      print_output_to_log "Parsed XML file."
+      print_and_log_output "Imported IOMMU groups from XML file "\
+        "'${str_xml_file_path}'."
+
       return 0
     }
 
@@ -300,19 +328,17 @@
   #
     function is_iommu_groups_xml_file_created
     {
-      log_stdout "${0}: ${FUNCNAME}"
-
       local -r str_xml_file_path="${1}"
 
       if ! is_file "${str_xml_file_path}" \
         && ! sudo touch "${str_xml_file_path}"; then
-        print_error_to_log "Could not create IOMMU groups XML file "\
-          "'${str_xml_file_path}'".
+        print_and_log_warn "Could not create IOMMU groups XML file "\
+          "'${str_xml_file_path}'."
 
         return 1
       fi
 
-      log_stdout "IOMMU groups XML file '${str_xml_file_path}' exists".
+      log_output "IOMMU groups XML file '${str_xml_file_path}' exists."
       return 0
     }
 
@@ -325,31 +351,29 @@
   #
     function is_iommu_groups_xml_file_valid
     {
-      log_stdout "${0}: ${FUNCNAME}"
-
       local -r str_xml_file_path="${1}"
 
       if ! is_file "${str_xml_file_path}"; then
-        print_error_to_log "XML file does not exist."
+        print_and_log_warn "XML file does not exist."
         return 1
       fi
 
       if ! is_file_not_empty "${str_xml_file_path}"; then
-        print_error_to_log "XML file is empty."
+        print_and_log_warn "XML file is empty."
         return 1
       fi
 
       if ! is_xmllint_installed; then
-        print_error_to_log "Cannot validate XML file."
+        print_and_log_warn "Cannot validate XML file."
         return 2
       fi
 
       if ! xmllint "${str_xml_file_path}" &> /dev/null; then
-        print_error_to_log "XML file is not valid."
+        print_and_log_warn "XML file is not valid."
         return 1
       fi
 
-      log_stdout "XML file is valid."
+      log_output "XML file '${str_xml_file_path}' is valid."
       return 0
     }
 
@@ -360,8 +384,6 @@
   #
     function is_xmllint_installed
     {
-      log_stdout "${0}: ${FUNCNAME}"
-
       if is_package_installed "xmllint"; then
         return 1
       fi
@@ -377,12 +399,11 @@
   #
     function set_flag_to_parse_iommu_groups_from_xml_file
     {
-      log_stdout "${0}: ${FUNCNAME}"
-
       local -n ref_bool_do_parse_xml_file="${1}"
 
       if ! is_bool "${1}"; then
         log_invalid_parameter "1"
+        print_and_log_warn "IOMMU groups will not be parsed."
         return 2
       fi
 
@@ -393,9 +414,9 @@
       fi
 
       if ! "${ref_bool_do_parse_xml_file}"; then
-        print_output_to_log "IOMMU groups will be cross-referenced by XML file."
+        print_and_log_output "IOMMU groups will be cross-referenced by XML file."
       else
-        print_output_to_log "IOMMU groups will be not cross-referenced by XML file."
+        print_and_log_output "IOMMU groups will be not cross-referenced by XML file."
       fi
 
       return 0
@@ -410,22 +431,27 @@
   #
     function specify_existing_iommu_groups_xml_file_prompt
     {
-      log_stdout "${0}: ${FUNCNAME}"
-
+      local -r str_warn="XML file path is not specified."
       local -n ref_prompt_str_xml_file_path="${1}"
 
       if ! is_string "${1}"; then
         log_invalid_parameter "1"
+        print_and_log_warn "${str_warn}"
         return 2
       fi
 
       local -r str_output="Enter XML file name (leave blank for default): "
+      local -ir int_max_tries=2
 
-      for int_counter in $( seq 0 2 ); do
+      for int_counter in $( seq 0 "${int_max_tries}" ); do
           read -r -p "${str_output}" ref_prompt_str_xml_file_path
 
           if ! is_string "${ref_prompt_str_xml_file_path}"; then
             set_iommu_groups_xml_file_to_default "ref_prompt_str_xml_file_path"
+
+            log_pass "XML file '${ref_prompt_str_xml_file_path}' is "\
+              "specified and selected to be parsed."
+
             return 0
           fi
 
@@ -435,10 +461,14 @@
           fi
 
           set_iommu_groups_xml_file "${ref_prompt_str_xml_file_path}"
+
+          log_pass "XML file '${ref_prompt_str_xml_file_path}' is "\
+              "specified and selected to be parsed."
+
           return 0
         done
 
-      print_error_to_log "XML file name is not specified."
+      print_and_log_warn "${str_warn}"
       return 1
     }
 
@@ -451,27 +481,32 @@
   #
     function specify_iommu_groups_xml_file
     {
-      log_stdout "${0}: ${FUNCNAME}"
+      local -r str_warn="XML file path is not specified."
 
-      local -n ref_str_xml_file_path="${1}"
+      log_output "Specifying XML file path."
+
       local bool_do_parse_xml_file="${2}"
-
-      if ! is_string "${1}"; then
-        log_invalid_parameter "1"
-        return 2
-      fi
 
       if ! is_bool "${bool_do_parse_xml_file}" \
         && ! set_flag_to_parse_iommu_groups_from_xml_file "bool_do_parse_xml_file"
         then
         log_invalid_parameter "bool_do_parse_xml_file"
+        print_and_log_warn "${str_warn}"
+        return 2
+      fi
+
+      local -n ref_str_xml_file_path="${1}"
+
+      if ! is_string "${1}"; then
+        log_invalid_parameter "1"
+        print_and_log_warn "${str_warn}"
         return 2
       fi
 
       if "${bool_do_parse_xml_file}" \
         && is_iommu_groups_xml_file_valid "${ref_str_xml_file_path}"; then
-        print_output_to_log "XML file '${ref_str_xml_file_path}'"\
-          "is specified and selected to be parsed."
+        print_and_log_output "XML file '${ref_str_xml_file_path}' is specified and "\
+          "selected to be parsed."
 
         return 0
       fi
@@ -480,13 +515,11 @@
         && ! is_iommu_groups_xml_file_valid "${ref_str_xml_file_path}"; then
         set_iommu_groups_xml_file "${ref_str_xml_file_path}"
 
-        print_output_to_log "The default XML file "\
+        print_and_log_output "The default XML file "\
           "'${ref_str_xml_file_path}'is selected to be parsed."
 
         return 0
       fi
-
-      print_output_to_log "XML file name is not specified."
 
       if ! specify_existing_iommu_groups_xml_file_prompt "ref_str_xml_file_path"; then
         return 1
@@ -503,19 +536,15 @@
   #
     function restore_temp_files_for_iommu_groups_xml_file
     {
-      log_stdout "${0}: ${FUNCNAME}"
-
       local -r str_xml_file_path="${1}"
 
       if ! copy_temp_file_to_file "${str_xml_file_path}"; then
-        print_error_to_log "Could not restore XML file "\
-          "'${str_xml_file_path}' from temp file".
+        print_and_log_warn "Could not restore XML file '${str_xml_file_path}' from "\
+          "temp file."
 
         return 1
       fi
 
-      log_stdout "Restored XML file "\
-        "'${str_xml_file_path}' from temp file".
-
+      log_output "Restored XML file '${str_xml_file_path}' from temp file."
       return 0
     }

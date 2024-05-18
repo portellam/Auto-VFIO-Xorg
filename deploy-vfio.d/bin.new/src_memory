@@ -30,8 +30,6 @@
   #
     function set_globals
     {
-      log_stdout "${0}: ${FUNCNAME}"
-
       if [[ "${SRC_MEMORY_BOOL_SET_GLOBALS}" == true ]]; then
         return 0
       fi
@@ -68,11 +66,9 @@
   #
     function set_free_memory
     {
-      log_stdout "${0}: ${FUNCNAME}"
-
       if ! is_int "${SRC_MEMORY_INT_MAX_FREE_MEMORY_BYTES}" \
         || ! is_int "${SRC_MEMORY_INT_MIN_FREE_MEMORY_BYTES}"; then
-        print_error_to_log "Failed to get current free memory."
+        log_warn "Failed to get current free memory."
         return 1
       fi
 
@@ -80,7 +76,8 @@
         SRC_MEMORY_INT_MAX_FREE_MEMORY_BYTES - SRC_MEMORY_INT_MIN_FREE_MEMORY_BYTES \
       ))
 
-      log_stdout "Set free memory."
+      log_output "Set free memory."
+      return 0
     }
 
   #
@@ -90,8 +87,6 @@
   #
     function find_lowest_common_factor_memory_channel_size
     {
-      log_stdout "${0}: ${FUNCNAME}"
-
       local -a arr_memory_channel_bytes=( )
 
       for str_line in $( sudo dmidecode --type memory | \
@@ -109,7 +104,7 @@
       done
 
       if ! is_array "arr_memory_channel_bytes"; then
-        print_error_to_log "Could not find memory channel size values."
+        log_warn "Could not find memory channel size values."
         return 1
       fi
 
@@ -121,7 +116,7 @@
         sort --reverse --field-seperator '_' --general-numeric-sort )
 
       if ! is_array "arr_sorted"; then
-        print_error_to_log "Could not sort memory channel size values."
+        log_warn "Could not sort memory channel size values."
         return 1
       fi
 
@@ -130,11 +125,11 @@
       )
 
       if ! is_int "${SRC_MEMORY_INT_MIN_FREE_MEMORY_BYTES}"; then
-        print_error_to_log "Could not find lowest memory channel size value."
+        log_warn "Could not find lowest memory channel size value."
         return 1
       fi
 
-      log_stdout "Found lowest common factor memory channel size."
+      log_output "Found lowest common factor memory channel size."
       return 0
     }
 #
@@ -147,17 +142,15 @@
   #
     function is_any_host_memory_available
     {
-      log_stdout "${0}: ${FUNCNAME}"
-
       find_lowest_common_factor_memory_channel_size
       set_free_memory
 
       if [[ "${SRC_MEMORY_INT_CURRENT_FREE_MEMORY_BYTES}" -le 0 ]]; then
-        print_error_to_log "Insufficient Host memory available."
+        log_warn "Insufficient Host memory available."
         return 1
       fi
 
-      log_stdout "Sufficient Host memory available."
+      log_output "Sufficient Host memory available."
       return 0
     }
 
@@ -171,8 +164,6 @@
   #
     function set_memory_channel_size_in_bytes
     {
-      log_stdout "${0}: ${FUNCNAME}"
-
       local -u str_memory_channel_size="${1}"
       local -i int_memory_channel_unit="${2}"
       local -n ref_int_memory_channel_bytes="${3}"
@@ -180,26 +171,26 @@
       case "${str_memory_channel_size}" in
           "K" | "KB" | "KIB" )
             ref_int_memory_channel_bytes=$(( ${SRC_MEMORY_INT_TWO_TO_POWER_OF_TEN} ** 1 ))
-            log_stdout "Selected KIB."
+            log_output "Selected KIB."
             ;;
 
           "M" | "MB" | "MIB" )
             ref_int_memory_channel_bytes=$(( ${SRC_MEMORY_INT_TWO_TO_POWER_OF_TEN} ** 2 ))
-            log_stdout "Selected MIB."
+            log_output "Selected MIB."
             ;;
 
           "G" | "GB" | "GIB" )
             ref_int_memory_channel_bytes=$(( ${SRC_MEMORY_INT_TWO_TO_POWER_OF_TEN} ** 3 ))
-            log_stdout "Selected GIB."
+            log_output "Selected GIB."
             ;;
 
           "T" | "TB" | "TIB" )
             ref_int_memory_channel_bytes=$(( ${SRC_MEMORY_INT_TWO_TO_POWER_OF_TEN} ** 4 ))
-            log_stdout "Selected TIB."
+            log_output "Selected TIB."
             ;;
 
           * )
-            print_error_to_log "Unsupported channel size or invalid input."
+            log_warn "Unsupported channel size or invalid input."
             return 1
             ;;
         esac

@@ -33,10 +33,9 @@
   #
     function do_ping_address
     {
+      log_work "Pinging address..."
+
       local -r str_warn="Pinging address."
-
-      log_work "Pinging address."
-
       local -r str_address="${1}"
 
       if ! is_string "${str_address}"; then
@@ -65,7 +64,7 @@
     {
       local -r str_warn="Cannot ping Internet addresses."
 
-      log_work "Pinging Internet addresses."
+      log_work "Pinging Internet addresses..."
 
       if ! do_ping_address "8.8.8.8" \
         && ! do_ping_address "8.8.4.4"; then
@@ -92,10 +91,9 @@
   #
     function is_connected_to_internet
     {
+      print_and_log_work "Checking Internet connection..."
+
       local -r str_warn="Disconnected from Internet."
-
-      print_and_log_work "Checking Internet connection."
-
       local bool_do_ignore="${1}"
 
       if ! is_bool "${bool_do_ignore}"; then
