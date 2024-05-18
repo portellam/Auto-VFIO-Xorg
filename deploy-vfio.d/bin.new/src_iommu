@@ -47,8 +47,6 @@
   #
     function parse_iommu_database
     {
-      log_stdout "${0}: ${FUNCNAME}"
-
       local bool_do_parse_iommu_groups="${6}"
       local str_xml_path="${7}"
       local bool_do_parse_iommu_groups_from_xml_file="${8}"
@@ -95,7 +93,7 @@
 
       if ! "${bool_do_parse_iommu_groups}" \
         || ! parse_iommu_database_prompt; then
-        print_output_to_log "Parse of IOMMU groups skipped."
+        print_and_log_output "Parse of IOMMU groups skipped."
         return 0
       fi
 
@@ -104,12 +102,12 @@
           "${bool_do_parse_iommu_groups}" "${str_xml_path}" \
           "${bool_do_parse_iommu_groups_from_xml_file}"; then
         cleanup_iommu_groups_xml_file
-        print_error_to_log "Parse of IOMMU groups failed."
+        print_and_log_warn "Parse of IOMMU groups failed."
         return 1
       fi
 
       cleanup_iommu_groups_xml_file
-      log_stdout "Parse of IOMMU groups successful."
+      log_to_stdout "Parse of IOMMU groups successful."
     }
 
   #
@@ -128,8 +126,6 @@
   #
     function try_to_parse_iommu_database
     {
-      log_stdout "${0}: ${FUNCNAME}"
-
       local bool_do_parse_iommu_groups="${6}"
       local str_xml_path="${7}"
       local bool_do_parse_iommu_groups_from_xml_file="${8}"
@@ -210,8 +206,6 @@
   #
     function parse_iommu_database_prompt
     {
-      log_stdout "${0}: ${FUNCNAME}"
-
       if ! ask_yes_or_no "Parse IOMMU groups?"; then
         return 1
       fi
