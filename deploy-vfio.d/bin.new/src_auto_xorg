@@ -27,16 +27,46 @@
 #
   #
   # DESC:   Checks if git repo exists.
+  # $1:     do force download repo.
   # RETURN: If repo exists, return 0.
   #         If false, return 1.
+  #         If any exception occurs, return 2.
   #
     function does_auto_xorg_repo_exist
     {
-      log_stdout "${0}: ${FUNCNAME}"
+      local -r str_repo_name="Auto X.Org"
+      local -r str_warn="Could not determine if ${str_repo_name} repository exists."
+
+      log_work "Determining if ${str_repo_name} repository exists..."
 
       local -r str_last_dir="$( pwd )"
-      does_this_git_repo_exist "Auto X.Org" "github.com/portellam/auto-xorg"
-      cd "${str_last_dir}"
+      local -r bool_do_force_download="${1}"
+
+      if ! is_bool "${bool_do_force_download_repo}"; then
+        log_invalid_parameter "bool_do_force_download_repo"
+        print_and_log_warn "${str_warn}"
+        return 2
+      fi
+
+      does_this_git_repo_exist \
+        "${str_repo_name}" \
+        "github.com/portellam/auto-xorg" \
+        "${bool_do_force_download}"
+
+      local -ir int_return_code="${?}"
+
+      if ! change_directory "${str_last_dir}"; then
+        print_and_log_warn "${str_warn}"
+        return 2
+      fi
+
+      if [[ "${int_return_code}" -ne 0 ]]; then
+        print_and_log_warn "${str_warn}"
+        return "${int_return_code}"
+      fi
+
+      log_pass "${str_repo_name} repository exists."
+      return 0
     }
 
   #
@@ -47,10 +77,12 @@
   #
     function execute_auto_xorg
     {
-      log_stdout "${0}: ${FUNCNAME}"
+      local -r str_repo_name="Auto X.Org"
+      local -r str_fail="Could not execute ${str_repo_name}."
 
       if ! does_auto_xorg_repo_exist; then
-        return 1
+        print_and_log_fail "${str_fail}"
+        return 2
       fi
 
       local -a arr_arguments="$@"
@@ -58,11 +90,17 @@
 
       if ! src_auto_xorg_parse_arguments "$@" \
         || ! get_delimited_string_from_array "arr_arguments" "str_arguments" " "; then
+        print_and_log_fail "${str_fail}"
         return 1
       fi
 
-      cd "${str_project_path}"
-      log_stdout "Executing Auto X.Org...\n"
+      if ! go_to_parent_path \
+        || ! change_directory "auto-xorg"; then
+        print_and_log_fail "${str_fail}"
+        return 2
+      fi
+
+      log_work "Executing ${str_repo_name}...\n"
       sudo bash auto-xorg "${str_arguments}"
 
       local -i int_code="${?}"
@@ -70,11 +108,11 @@
       echo
 
       if [[ "${int_code}" -ne 0 ]]; then
-        log_stderr "Execution failed."
+        print_and_log_fail "${str_fail}"
         return "${int_code}"
       fi
 
-      log_stdout "Execution successful."
+      log_pass "Executed ${str_repo_name}."
       return 0
     }
 
@@ -86,9 +124,11 @@
   #
     function execute_auto_xorg_installer
     {
-      log_stdout "${0}: ${FUNCNAME}"
+      local -r str_repo_name="Auto X.Org"
+      local -r str_warn="Could not execute ${str_repo_name} installer."
 
       if ! does_auto_xorg_repo_exist; then
+        print_and_log_warn "${str_warn}"
         return 1
       fi
 
@@ -97,11 +137,17 @@
 
       if ! src_auto_xorg_parse_installer_arguments "$@" \
         || ! get_delimited_string_from_array "arr_arguments" "str_arguments" " "; then
+        print_and_log_warn "${str_warn}"
         return 1
       fi
 
-      cd "${str_project_path}"
-      log_stdout "Executing Auto X.Org installer...\n"
+      if ! go_to_parent_path \
+        || ! change_directory "auto-xorg"; then
+        print_and_log_warn "${str_warn}"
+        return 2
+      fi
+
+      log_work "Executing ${str_repo_name} installer...\n"
       sudo bash installer.bash "${str_arguments}"
 
       local -i int_code="${?}"
@@ -109,11 +155,11 @@
       echo
 
       if [[ "${int_code}" -ne 0 ]]; then
-        log_stderr "Execution failed."
+        print_and_log_warn "${str_warn}"
         return "${int_code}"
       fi
 
-      log_stdout "Execution successful."
+      log_pass "Executed ${str_repo_name} installer."
       return 0
     }
 
@@ -125,18 +171,16 @@
   #
     function install_auto_xorg
     {
-      log_stdout "${0}: ${FUNCNAME}"
+      local -r str_repo_name="Auto X.Org"
 
-      local -r str_arguments="${*}"
-
-      print_output_to_log "Installing Auto X.Org..."
+      print_and_log_work "Installing ${str_repo_name}..."
 
       if ! execute_auto_xorg_installer "--install ${str_arguments}"; then
-        print_output_to_log "Failed."
+        print_and_log_fail "Could not install ${str_repo_name}."
         return 1
       fi
 
-      print_output_to_log "Successful."
+      print_and_log_pass "Installed ${str_repo_name}"
       return 0
     }
 
@@ -168,6 +212,7 @@
     function src_auto_xorg_parse_argument
     {
       if ! is_string "${1}"; then
+        log_output "No arguments."
         return 0
       fi
 
@@ -188,10 +233,11 @@
       fi
 
       if is_string "${1}"; then
-        print_invalid_argument "${1}"
+        print_and_log_invalid_argument "${1}"
         return 1
       fi
 
+      log_output "All arguments are valid."
       return 0
     }
 
@@ -203,7 +249,7 @@
   #
     function src_auto_xorg_parse_installer_arguments
     {
-      while [[ ! -z "${1}" ]]; do
+      while $( is_string "${1}" ); do
         if ! src_auto_xorg_parse_installer_argument "$@"; then
           return 1
         fi
@@ -223,6 +269,7 @@
     function src_auto_xorg_parse_installer_argument
     {
       if ! is_string "${1}"; then
+        log_output "No arguments."
         return 0
       fi
 
@@ -234,15 +281,13 @@
         return 1
       fi
 
-      if ! src_auto_xorg_parse_argument "$@"; then
+      if ! src_auto_xorg_parse_argument "$@" \
+        || is_string "${1}"; then
+        print_and_log_invalid_argument "${1}"
         return 1
       fi
 
-      if is_string "${1}"; then
-        print_invalid_argument "${1}"
-        return 1
-      fi
-
+      log_output "All arguments are valid."
       return 0
     }
 
@@ -268,21 +313,22 @@
       return 0
     }
 
+  #
   # DESC:   Uninstall Auto X.Org.
   # RETURN: If uninstall is successful, return 0.
   #         If false, return 1.
   #
     function uninstall_auto_xorg
     {
-      log_stdout "${0}: ${FUNCNAME}"
+      local -r str_repo_name="Auto X.Org"
 
-      print_output_to_log "Uninstalling Auto X.Org..."
+      print_and_log_work "Uninstalling ${str_repo_name}..."
 
       if ! execute_auto_xorg_installer "--uninstall"; then
-        print_output_to_log "Failed."
+        print_and_log_fail "Could not uninstall ${str_repo_name}."
         return 1
       fi
 
-      print_output_to_log "Successful."
+      print_and_log_pass "Uninstalled ${str_repo_name}"
       return 0
     }

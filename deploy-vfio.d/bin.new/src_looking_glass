@@ -34,7 +34,9 @@
   #
     function are_looking_glass_dependencies_installed
     {
-      log_stdout "${0}: ${FUNCNAME}"
+      local -r str_pass="Installed required build dependencies."
+
+      log_work "Installing required build dependencies..."
 
       local -a arr_dependencies=( \
         "cmake" \
@@ -64,173 +66,223 @@
       done
 
       if ! is_string "str_packages_to_install" &> /dev/null; then
-        print_output_to_log "All required build dependencies are installed." \
-          "Glass."
-
+        log_pass "${str_pass}"
         return 0
       fi
 
-      print_output_to_log "Installing required build dependencies..."
-
       if ! sudo apt install -y "${str_packages_to_install}" &> /dev/null; then
-        print_error_to_log "Could not install required build dependencies..."
+        print_and_log_warn "Could not install required build dependencies."
         return 1
       fi
 
-      print_output_to_log "Installed required build dependencies..."
+      log_pass "${str_pass}"
       return 0
     }
 
   #
   # DESC:   Execute cmake. If any dependency fails, disable and try again.
-  # $1:     the arguments for cmake as a string
+  # $1:     the argument for cmake as a string
   # RETURN: If cmake execute, return 0.
   #         If false, return 1.
   #
     function execute_cmake
     {
-      log_stdout "${0}: ${FUNCNAME}"
+      local -r str_pass="Execute 'cmake' successful."
+      local -r str_warn="Execute 'cmake' failed."
 
-      local str_arguments="${1}"
+      log_work "Executing 'cmake'..."
 
-      print_output_to_log "Executing 'cmake'. Please wait..."
+      local str_argument="${1}"
 
-      if cmake "${str_arguments}" &> /dev/null; then
-        print_pass_to_log "Successful."
+      if cmake "${str_argument}" &> /dev/null; then
+        log_pass "${str_pass}"
         return 0
       fi
 
       local -r str_disable_backtrace="-DENABLE_BACKTRACE=no binutils-dev"
 
-      log_stdout "Failed. Executing 'cmake' with disabled backtrace dependencies..."
+      log_warn "${str_warn}"
+      log_work "Executing 'cmake' with disabled backtrace dependencies..."
 
-      if cmake "${str_disable_backtrace}" "${str_arguments}" &> /dev/null; then
-        print_pass_to_log "Successful."
+      if cmake "${str_disable_backtrace}" "${str_argument}" &> /dev/null; then
+        log_pass "${str_pass}"
         return 0
       fi
 
       local -r str_disable_x11="-DENABLE_X11=no libx11-dev libxfixes-dev libxi-dev " \
         "libxinerama-dev libxss-dev libxcursor-dev libxpresent-dev"
 
-      log_stdout "Failed. Executing 'cmake' with disabled X11 dependencies..."
+      log_warn "${str_warn}"
+      log_work "Executing 'cmake' with disabled X11 dependencies..."
 
-      if cmake "${str_disable_x11}" "${str_arguments}" &> /dev/null; then
-        print_pass_to_log "Successful."
+      if cmake "${str_disable_x11}" "${str_argument}" &> /dev/null; then
+        log_pass "${str_pass}"
         return 0
       fi
 
       local -r str_disable_wayland="-DENABLE_WAYLAND=no libxkbcommon-dev " \
         "libwayland-bin libwayland-dev wayland-protocols"
 
-      log_stdout "Failed. Executing 'cmake' with disabled Wayland dependencies..."
+      log_warn "${str_warn}"
+      log_work "Executing 'cmake' with disabled Wayland dependencies..."
 
-      if cmake cmake "${str_disable_wayland}" "${str_arguments}" &> /dev/null; then
-        print_pass_to_log "Successful."
+      if cmake cmake "${str_disable_wayland}" "${str_argument}" &> /dev/null; then
+        log_pass "${str_pass}"
         return 0
       fi
 
       local -r str_disable_pipewire="-DENABLE_PIPEWIRE=no libpipewire-0.3-dev " \
         "libsamplerate0-dev"
 
-      log_stdout "Failed. Executing 'cmake' with disabled Pipe Wire dependencies..."
+      log_warn "${str_warn}"
+      log_work "Executing 'cmake' with disabled Pipe Wire dependencies..."
 
-      if cmake cmake "${str_disable_pipewire}" "${str_arguments}" &> /dev/null; then
-        print_pass_to_log "Successful."
+      if cmake cmake "${str_disable_pipewire}" "${str_argument}" &> /dev/null; then
+        log_pass "${str_pass}"
         return 0
       fi
 
       local -r str_disable_pulseaudio="-DENABLE_PULSEAUDIO=no libpulse-dev " \
         "libsamplerate0-dev"
 
-      log_stdout "Failed. Executing 'cmake' with disabled Pulse Audio dependencies..."
+      log_warn "${str_warn}"
+      log_work "Executing 'cmake' with disabled Pulse Audio dependencies..."
 
-      if cmake cmake "${str_disable_pulseaudio}" "${str_arguments}" &> /dev/null; then
-        print_pass_to_log "Successful."
+      if cmake cmake "${str_disable_pulseaudio}" "${str_argument}" &> /dev/null; then
+        log_pass "${str_pass}"
         return 0
       fi
 
-      log_stdout "Failed. Executing 'cmake' with all disabled dependencies..."
+      log_warn "${str_warn}"
+      log_work "Executing 'cmake' with all disabled dependencies..."
 
-      if ! cmake "${str_disable_backtrace}" \
+      if ! cmake \
+        "${str_disable_backtrace}" \
         "${str_disable_x11}" \
         "${str_disable_wayland}" \
         "${str_disable_pipewire}" \
         "${str_disable_pulseaudio}" \
-        "${str_arguments}" &> /dev/null; then
-        print_error_to_log "Failed."
+        "${str_argument}" &> /dev/null; then
+        print_and_log_warn "${str_warn}"
         return 1
       fi
 
-      print_pass_to_log "Successful."
+      log_pass "${str_pass}"
       return 0
     }
 
   #
   # DESC:   Checks if git repo exists.
+  # $1:     do force download repo.
   # RETURN: If repo exists, return 0.
   #         If false, return 1.
+  #         If any exception occurs, return 2.
   #
     function does_looking_glass_repo_exist
     {
-      log_stdout "${0}: ${FUNCNAME}"
+      local -r str_repo_name="Looking Glass"
+      local -r str_warn="Could not determine if ${str_repo_name} repository exists."
+
+      log_work "Determining if ${str_repo_name} repository exists..."
 
       local -r str_last_dir="$( pwd )"
-      does_this_git_repo_exist "Looking Glass" "github.com/gnif/LookingGlass"
-      cd "${str_last_dir}"
+      local -r bool_do_force_download="${1}"
+
+      if ! is_bool "${bool_do_force_download_repo}"; then
+        log_invalid_parameter "bool_do_force_download_repo"
+        print_and_log_warn "${str_warn}"
+        return 2
+      fi
+
+      does_this_git_repo_exist \
+        "${str_repo_name}" \
+        "github.com/gnif/LookingGlass" \
+        "${bool_do_force_download}"
+
+      local -ir int_return_code="${?}"
+
+      if ! change_directory "${str_last_dir}"; then
+        print_and_log_warn "${str_warn}"
+        return 2
+      fi
+
+      if [[ "${int_return_code}" -ne 0 ]]; then
+        print_and_log_warn "${str_warn}"
+        return "${int_return_code}"
+      fi
+
+      log_pass "${str_repo_name} repository exists."
+      return 0
     }
 
   #
   # DESC:   Install Looking Glass.
   # RETURN: If install is successful, return 0.
   #         If false, return 1.
+  #         If any exceptions occur, return 2.
   #
     function install_looking_glass
     {
-      log_stdout "${0}: ${FUNCNAME}"
+      local -r str_repo_name="Looking Glass"
+      local -r str_fail="Could not install ${str_repo_name}."
 
-      does_looking_glass_repo_exist || return 1
+      print_and_log_work "Installing ${str_repo_name}..."
 
-      local -r str_project_path="${STR_GIT_STR_REPO_PARENT_PATH}/LookingGlass"
+      local -r str_arguments="${*}"
 
-      cd "${str_project_path}"
-      print_output_to_log "Installing Looking Glass..."
-
-      if ! mkdir --parent "client/build" &> /dev/null; then
-        print_error_to_log "Could not create build folder."
-        return 1
+      if ! does_looking_glass_repo_exist; then
+        print_and_log_fail "${str_fail}"
+        return 2
       fi
 
-      cd "client/build"
+      if ! go_to_parent_path \
+        || ! change_directory "LookingGlass"; then
+        print_and_log_fail "${str_fail}"
+        return 2
+      fi
+
+      local -r str_build_dir="client/build"
+
+      if ! mkdir --parent "${str_build_dir}" &> /dev/null; then
+        log_warn "Could not create build folder."
+        print_and_log_fail "${str_fail}"
+        return 2
+      fi
+
+      if ! change_directory "${str_build_dir}"; then
+        print_and_log_fail "${str_fail}"
+        return 2
+      fi
 
       if ! execute_cmake "../"; then
+        print_and_log_fail "${str_fail}"
         return 1
       fi
 
-      print_output_to_log "Executing 'make'..."
+      log_work "Executing 'make'..."
 
       if ! make &> /dev/null; then
-        print_error_to_log "'make' failed."
+        log_warn "'make' failed."
+        print_and_log_fail "${str_fail}"
         return 1
       fi
 
-      print_output_to_log "'make' sucessful."
+      log_output "'make' sucessful."
 
-      if [[ "${int_code}" -ne 0 ]]; then
-        print_output_to_log "Execution failed."
-        return "${int_code}"
-      fi
-
-      print_output_to_log "Execution successful."
-
-      print_output_to_log "For usage on how to run Looking Glass, execute: " \
-        "'looking-glass-client --help"
-
-      # TODO: create libvirt hook to execute Looking glass at start of Guest!
+      local -r str_arguments="${*}"
+      # TODO: execute libvirt here, or inform user how to execute.
 
       # TODO: follow all advice in install documentations
       # (clipboard, vm setup, tuning, memory calculating)
       # https://looking-glass.io/docs/B6/install/#client-install
       # https://looking-glass.io/docs/B6/usage/
+
+      # TODO: create libvirt hook to execute Looking glass at start of Guest!
+
+      print_and_log_pass "Installed ${str_repo_name}."
+
+      print_and_log_output "For usage on how to run ${str_repo_name}, execute: " \
+        "'looking-glass-client --help"
 
       return 0
     }

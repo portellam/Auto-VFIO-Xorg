@@ -10,6 +10,7 @@
 #
 # TODO:
 # - [ ] test.
+# - [x] develop.
 #
 
 
@@ -27,18 +28,46 @@
 #
   #
   # DESC:   Checks if git repo exists.
-  # RETURN: Return incoming return code.
+  # $1:     do force download repo.
+  # RETURN: If repo exists, return 0.
+  #         If false, return 1.
+  #         If any exception occurs, return 2.
   #
     function does_libvirt_hooks_repo_exist
     {
-      log_stdout "${0}: ${FUNCNAME}"
+      local -r str_repo_name="Libvirt Hooks"
+      local -r str_warn="Could not determine if ${str_repo_name} repository exists."
+
+      log_work "Determining if ${str_repo_name} repository exists..."
 
       local -r str_last_dir="$( pwd )"
-      does_this_git_repo_exist "Libvirt Hooks" "github.com/portellam/libvirt-hooks"
-      local -i int_code="${?}"
+      local -r bool_do_force_download="${1}"
 
-      cd "${str_last_dir}"
-      return "${int_code}"
+      if ! is_bool "${bool_do_force_download_repo}"; then
+        log_invalid_parameter "bool_do_force_download_repo"
+        log_warn "${str_warn}"
+        return 2
+      fi
+
+      does_this_git_repo_exist \
+        "${str_repo_name}" \
+        "github.com/portellam/libvirt-hooks" \
+        "${bool_do_force_download}"
+
+      local -ir int_return_code="${?}"
+
+      if ! change_directory "${str_last_dir}"; then
+        log_warn "${str_warn}"
+        return 2
+      fi
+
+      if [[ "${int_return_code}" -ne 0 ]]; then
+        log_warn "${str_warn}"
+        return "${int_return_code}"
+      fi
+
+      log_pass "${str_repo_name} repository exists."
+      return 0
     }
 
   #
@@ -48,17 +77,18 @@
   #         If false, return 1.
     function execute_libvirt_hooks_installer
     {
-      log_stdout "${0}: ${FUNCNAME}"
-
       if ! does_libvirt_hooks_repo_exist; then
         return 1
       fi
 
-      local -r str_arguments="${*}"
-      local -r str_project_path="${STR_GIT_STR_REPO_PARENT_PATH}/libvirt-hooks"
+      if ! go_to_parent_path \
+        || ! change_directory "libvirt-hooks"; then
+        return 2
+      fi
 
-      cd "${str_project_path}"
-      log_stdout "Executing Libvirt Hooks installer...\n"
+      local -r str_repo_name="Libvirt Hooks"
+      local -r str_arguments="${*}"
+      log_work "Executing ${str_repo_name} installer...\n"
       sudo bash installer.bash "${str_arguments}"
 
       local -i int_code="${?}"
@@ -66,11 +96,11 @@
       echo
 
       if [[ "${int_code}" -ne 0 ]]; then
-        log_stderr "Execution failed."
+        print_and_log_warn "Could not execute ${str_repo_name} installer."
         return "${int_code}"
       fi
 
-      log_stdout "Execution successful."
+      log_pass "Executed ${str_repo_name} installer."
       return 0
     }
 
@@ -81,16 +111,17 @@
   #
     function install_libvirt_hooks
     {
-      log_stdout "${0}: ${FUNCNAME}"
+      local -r str_repo_name="Libvirt Hooks"
 
-      print_output_to_log "Installing Libvirt Hooks..."
+      print_and_log_work "Installing ${str_repo_name}..."
 
       if ! execute_libvirt_hooks_installer "--install"; then
-        print_output_to_log "Failed."
+        print_and_log_fail "Could not install ${str_repo_name}."
         return 1
       fi
 
-      print_output_to_log "Successful."
+      print_and_log_pass "Installed ${str_repo_name}."
+      return 0
     }
 
   #
@@ -100,15 +131,15 @@
   #
     function uninstall_libvirt_hooks
     {
-      log_stdout "${0}: ${FUNCNAME}"
+      local -r str_repo_name="Libvirt Hooks"
 
-      print_output_to_log "Uninstalling Libvirt Hooks..."
+      print_and_log_work "Uninstalling ${str_repo_name}..."
 
       if ! execute_libvirt_hooks_installer "--uninstall"; then
-        print_output_to_log "Failed."
+        print_and_log_fail "Could not uninstall ${str_repo_name}."
         return 1
       fi
 
-      print_output_to_log "Successful."
+      print_and_log_pass "Uninstalled ${str_repo_name}"
       return 0
     }
