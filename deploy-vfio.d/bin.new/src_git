@@ -10,6 +10,7 @@
 #
 # TODO:
 # - [ ] test.
+# - [x] develop.
 #
 
 #
@@ -22,45 +23,35 @@
   source "${SRC_STR_SCRIPT_BIN_DIR}src_files"
 
 #
-# setter logic
-#
-  #
-  # DESC: globals
-  #
-    function set_globals
-    {
-      log_stdout "${0}: ${FUNCNAME}"
-
-      if [[ "${SRC_GIT_BOOL_SET_GLOBALS}" == true ]]; then
-        return 0
-      fi
-
-      declare -g SRC_GIT_BOOL_SET_GLOBALS=true
-
-      declare STR_GIT_STR_REPO_PARENT_PATH="${HOME}/git"
-    }
-
-#
 # logic
 #
   #
   # DESC:   Checks if the parent path for git repos exists.
-  # RETURN: If user is root return 0.
+  # RETURN: If parent path exists, return 0
   #         If false, return 1.
+  #         If any exception occurs, return 2.
   #
     function does_git_parent_path_exist
     {
-      log_stdout "${0}: ${FUNCNAME}"
-
+      local -r str_parent_path="${HOME}/git"
       local -r str_last_dir="$( pwd )"
 
-      if ! is_dir "${STR_GIT_STR_REPO_PARENT_PATH}"; then
-        print_error_to_log "Git directory missing. Attemping to create..."
+      if ! is_dir "${str_parent_path}"; then
+        print_and_log_warn "Git directory missing. Attemping to create..."
 
-        if ! mkdir --parent "${STR_GIT_STR_REPO_PARENT_PATH}" &> /dev/null; then
-          print_error_to_log "Failed to create Git directory."
+        if ! mkdir --parent "${str_parent_path}" &> /dev/null; then
+          print_and_log_warn "Failed to create Git directory."
+
+          if ! change_directory "${str_last_dir}"; then
+            return 2
+          fi
+
           return 1
         fi
+      fi
+
+      if ! change_directory "${str_last_dir}"; then
+        return 2
       fi
 
       return 0
@@ -70,89 +61,114 @@
   # DESC:   Checks if the provided git repo exists.
   # $1:     the git repo name
   # $2:     the git repo address
-  # RETURN: If user is root, return 0.
+  # $3:     do force download repo.
+  # RETURN: If git repo exists, return 0
   #         If false, return 1.
+  #         If any exception occurs, return 2.
   #
     function does_this_git_repo_exist
     {
-      log_stdout "${0}: ${FUNCNAME}"
-
       local str_git_repo_name="${1}"
       local str_git_repo_address="${2}"
-      local str_prompt="Download '${str_git_repo_name}'?"
+      local bool_do_force_download_repo="${3}"
+      local -r str_parent_path="${HOME}/git"
+      local -r str_prompt="Download '${str_git_repo_name}'?"
 
-      cd "${STR_GIT_STR_REPO_PARENT_PATH}"
+      log_output "Determining if repo exists..."
 
-      if ! "${BOOL_DO_DOWNLOAD_ALL_REPOS}"; then
-        ask_yes_or_no "${str_prompt}"
+      if ! is_bool "${bool_do_force_download_repo}"; then
+        log_invalid_parameter "bool_do_force_download_repo"
+        return 2
       fi
 
-      local -i int_code="$?"
+      if ! change_directory "${str_parent_path}"; then
+        return 2
+      fi
 
-      if [[ "${int_code}" -ne 0 ]]; then
-        log_stdout "Skipped."
-        return 0
+      if ! "${bool_do_force_download_repo}"; then
+        if ask_yes_or_no "${str_prompt}"; then
+          log_output "Skipped."
+          return 0
+        fi
       fi
 
       local str_git_repo_full_address="https://www.${str_git_repo_address}"
+      local str_git_repo_path="$( basename ${str_git_repo_address} )"
 
-      print "Cloning '${str_git_repo_name}'..."
+      print_and_log_work "Cloning '${str_git_repo_name}'..."
       git clone "${str_git_repo_full_address}" &> /dev/null
-      int_code="$?"
+
+      local -i int_code="$?"
 
       if [[ "${int_code}" -eq 0 ]]; then
-        log_stdout "Clone successful."
+        log_pass "Clone successful."
         return 0
       fi
 
-      local str_git_repo_path="$( basename ${str_git_repo_address} )"
-
       if [[ "${int_code}" -eq 128 ]]; then
-        log_stdout "Repo exists. Updating..."
-        cd "${str_git_repo_path}" || return 1
+        log_work "Repo exists. Updating..."
+
+        if ! change_directory "${str_git_repo_path}"; then
+          return 2
+        fi
 
         if ! git pull &> /dev/null; then
-          print_error_to_log "Update failed."
+          print_and_log_warn "Update failed."
           return 1
         fi
 
-        log_stdout "Update successful."
+        log_pass "Update successful."
         return 0
       fi
 
-      print_error_to_log "Clone failed."
+      print_and_log_warn "Clone failed."
       return 1
     }
 
   #
+  # DESC:   Go to the parent path.
+  # RETURN: If go to is successful, return 0.
+  #         If failed, return 1.
+  #         If any exception occurs, return 2.
+  #
+    function go_to_parent_path
+    {
+      local -r str_parent_path="${HOME}/git"
+
+      if ! does_git_parent_path_exist; then
+        return 2
+      fi
+
+      if ! change_directory "${str_parent_path}"; then
+        return 1
+      fi
+
+      return 0
+    }
+
+  #
   # DESC:   Checks if git command is installed. Installs if absent.
-  # RETURN: If user is root return 0.
+  # RETURN: If git is installed, return 0.
   #         If false, return 1.
   #
     function is_git_installed
     {
-      log_stdout "${0}: ${FUNCNAME}"
-
       local -lr str_command="git"
 
-      if command -v "${str_command}" &> /dev/null; then
-        log_stdout "'git' is installed."
+      log_work "Installing '${str_command}'..."
+
+      if is_package_installed "${str_command}" &> /dev/null; then
+        log_pass "'${str_command}' is installed."
         return 0
       fi
 
-      log_stdout "'git' is not installed. Attempting to install..."
+      log_work "'${str_command}' is not installed. Attempting to install..."
 
       if ! sudo apt install -y "${str_command}"; then
-        print_error_to_log "'git' is not installed."
+        print_and_log_warn "'${str_command}' is not installed."
         return 1
       fi
 
-      log_stdout "'git' is installed."
+      log_pass "'${str_command}' is installed."
       return 0
     }
-
-#
-# main logic
-#
-  set_globals
-  unset set_globals
