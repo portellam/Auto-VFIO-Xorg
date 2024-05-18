@@ -32,15 +32,21 @@
   #
     function set_globals
     {
-      log_stdout "${0}: ${FUNCNAME}"
-
       if [[ "${SRC_HUGEPAGES_BOOL_SET_GLOBALS}" == true ]]; then
         return 0
       fi
 
       declare -g SRC_HUGEPAGES_BOOL_SET_GLOBALS=true
 
+      declare -gA SRC_HUGEPAGES_DICT_HUGEPAGE_SIZE_AND_KIB=( )
+      SRC_HUGEPAGES_DICT_HUGEPAGE_SIZE_AND_KIB["4K"]=4
+      SRC_HUGEPAGES_DICT_HUGEPAGE_SIZE_AND_KIB["2M"]=2048                             # NOTE: 2 * 1024
+      SRC_HUGEPAGES_DICT_HUGEPAGE_SIZE_AND_KIB["1G"]=1048576                          # NOTE: 1 * 1024 * 1024
+
       declare -g SRC_HUGEPAGES_BOOL_DO_SETUP=false
+      declare -g SRC_HUGEPAGES_BOOL_DO_USE_FOUR_KIB_HUGEPAGES=false
+      declare -g SRC_HUGEPAGES_BOOL_DO_USE_TWO_MIB_HUGEPAGES=false
+      declare -g SRC_HUGEPAGES_BOOL_DO_USE_ONE_GIB_HUGEPAGES=true
       declare -g SRC_HUGEPAGES_BOOL_IS_COUNT_SET=false
       declare -g SRC_HUGEPAGES_BOOL_IS_SIZE_SET=false
 
@@ -72,6 +78,56 @@
       declare -g SRC_HUGEPAGES_STR_GRUB_CMDLINE=""
     }
 
+  #
+  # DESC:   Determine whether to use smaller or larger huge memory pages.
+  # RETURN: If set a valid page size return 0.
+  #         If false, return 1.
+  #
+    function set_huge_memory_page_size
+    {
+      if "${SRC_HUGEPAGES_BOOL_DO_USE_FOUR_KIB_HUGEPAGES}"; then
+        print_and_log_output "Set huge memory page size: 4 KiB"
+        return 0
+      fi
+
+      if "${SRC_HUGEPAGES_BOOL_DO_USE_TWO_MIB_HUGEPAGES}"; then
+        print_and_log_output "Set huge memory page size: 2 MiB"
+        return 0
+      fi
+
+      if "${SRC_HUGEPAGES_BOOL_DO_USE_ONE_GIB_HUGEPAGES}"; then
+        print_and_log_output "Set huge memory page size: 1 GiB"
+        return 0
+      fi
+
+      local -i int_quotient=$(( \
+        ${SRC_MEMORY_INT_MIN_FREE_MEMORY_BYTES} / \
+        ${SRC_MEMORY_INT_TWO_TO_POWER_OF_TEN} \
+      ))
+
+      if [[ ${int_quotient} -ge ${SRC_MEMORY_INT_FOUR_KIB_IN_KIB} ]] \
+        && [[ ${int_quotient} -lt ${SRC_MEMORY_INT_TWO_MIB_IN_KIB} ]]; then
+        SRC_HUGEPAGES_BOOL_DO_USE_FOUR_KIB_HUGEPAGES=true
+        print_and_log_output "Set huge memory page size: 4 KiB"
+        return 0
+
+      elif [[ ${int_quotient} -ge ${SRC_MEMORY_INT_TWO_MIB_IN_KIB} ]] \
+        && [[ ${int_quotient} -lt ${SRC_MEMORY_INT_ONE_GIB_IN_KIB} ]]; then
+        SRC_HUGEPAGES_BOOL_DO_USE_TWO_MIB_HUGEPAGES=true
+        print_and_log_output "Set huge memory page size: 2 MiB"
+        return 0
+
+      elif [[ ${int_quotient} -ge ${SRC_MEMORY_INT_ONE_GIB_IN_KIB} ]]; then
+        SRC_HUGEPAGES_BOOL_DO_USE_ONE_GIB_HUGEPAGES=true
+        print_and_log_output "Set huge memory page size: 1 GiB"
+        return 0
+
+      else
+        log_to_stderr "Failed to set huge memory page size."
+        return 1
+      fi
+    }
+
 #
 # logic
 #
@@ -85,11 +141,11 @@
       local -r output="Static Hugepages setup"
 
       if ! execute_hugepages_setup_main; then
-        pprint_fail_to_log "${output}"
+        pprint_and_log_fail "${output}"
         return 1
       fi
 
-      print_pass_to_log "${output}"
+      print_and_log_pass "${output}"
     }
 
   #
@@ -103,7 +159,7 @@
       fi
 
       if ! is_int "${MAX_MEMORY}" &> /dev/null; then
-        print_error_to_log "Could not parse system memory."
+        print_and_log_warn "Could not parse system memory."
         return 1
       fi
 
@@ -118,7 +174,7 @@
       fi
 
       get_hugepages_memory_allocated || return 1
-      is_host_memory_sufficient_for_hugepages || return 1
+      is_any_host_memory_available || return 1
       SRC_HUGEPAGES_STR_GRUB_CMDLINE="default_hugepagesz=${HUGEPAGES_BYTE_SUFFIX} hugepagesz=${HUGEPAGES_BYTE_SUFFIX} hugepages=${HUGEPAGES_COUNT}"
       PRE_SETUP_DO_EXECUTE_HUGEPAGES=true
     }
@@ -162,11 +218,11 @@
 
       case "${answer}" in
         "1G" | "2M" )
-          HUGEPAGES_BYTE_SUFFIX="${answer}"
-          IS_HUGEPAGES_SIZE_SET=true ;;
+          SRC_HUGEPAGES_STR_BYTE_SUFFIX="${answer}"
+          SRC_HUGEPAGES_BOOL_IS_SIZE_SET=true ;;
 
         * )
-          print_error_to_log "Please a enter valid Hugepages size, '2M' or '1G'."
+          print_and_log_warn "Please a enter valid Hugepages size, '2M' or '1G'."
           return 1 ;;
       esac
     }
@@ -182,7 +238,7 @@
         return 0
       fi
 
-      for counter in $( seq 0 2 ); do
+      for int_counter in $( seq 0 2 ); do
         read -r -p "Enter size of Hugepages [2M/1G]: " HUGEPAGES_BYTE_SUFFIX
         get_hugepages_byte_size "${HUGEPAGES_BYTE_SUFFIX}" && return 0
       done
@@ -198,7 +254,7 @@
     function get_hugepages_count
     {
       if [[ -z "${1}" ]]; then
-        print_error_to_log "Hugepages count is empty."
+        print_and_log_warn "Hugepages count is empty."
         return 1
       fi
 
@@ -207,7 +263,7 @@
       if ! is_int "${1}" &> /dev/null \
         || [[ "${1}" -lt "${HUGEPAGES_MIN_COUNT}" ]] \
         || [[ "${1}" -gt "${HUGEPAGES_MAX_COUNT}" ]]; then
-        print_error_to_log "Please enter a valid Hugepages amount, between ${HUGEPAGES_MIN_COUNT} or ${HUGEPAGES_MAX_COUNT}."
+        print_and_log_warn "Please enter a valid Hugepages amount, between ${HUGEPAGES_MIN_COUNT} or ${HUGEPAGES_MAX_COUNT}."
         return 1
       fi
 
@@ -225,7 +281,7 @@
         return 0
       fi
 
-      for counter in $( seq 0 2 ); do
+      for int_counter in $( seq 0 2 ); do
         read -r -p "Enter count of Hugepages [${HUGEPAGES_MIN_COUNT}-${HUGEPAGES_MAX_COUNT}]: " HUGEPAGES_COUNT
         get_hugepages_count "${HUGEPAGES_COUNT}" && return 0
       done
@@ -249,7 +305,7 @@
           HUGEPAGES_MIN_COUNT=1 ;;
 
         * )
-          print_error_to_log "Could not calculate minimum or maximum values for Hugepages."
+          print_and_log_warn "Could not calculate minimum or maximum values for Hugepages."
           return 1 ;;
       esac
 
@@ -258,28 +314,27 @@
     }
 
   #
-  # DESC:   
-  # RETURN: 
-  #
-    function is_host_memory_sufficient_for_hugepages
-    {
-      if ! get_free_memory; then
-        print_error_to_log "Insufficient Host memory for Hugepages."
-        return 1
-      fi
-    }
-
-  #
-  # DESC:   
-  # RETURN: 
+  # DESC:   If both Hugepages size and count set, set flag to execute setup.
+  # RETURN: If flag is set to true, return 0.
+  #         If flag is set to false, return 1.
   #
     function is_hugepages_setup
     {
-      if [[ "${HUGEPAGES_SIZE_IN_KIB}" -ge 1 ]] \
-        && ( [[ "${HUGEPAGES_COUNT}" -eq "${TWO_MIB_IN_KIB}" ]] \
-          || [[ "${HUGEPAGES_COUNT}" -eq "${ONE_GIB_IN_KIB}" ]] ); then
-        PRE_SETUP_DO_EXECUTE_HUGEPAGES=true
+      SRC_HUGEPAGES_BOOL_DO_SETUP=false
+
+      if ! "${SRC_HUGEPAGES_BOOL_IS_SIZE_SET}"; then
+        log_to_stderr "Hugepages size is not set."
+        return 1
       fi
+
+      if ! "${SRC_HUGEPAGES_BOOL_IS_COUNT_SET}"; then
+        log_to_stderr "Hugepages count is not set."
+        return 1
+      fi
+
+      log_to_stdout "Hugepages size and count are set."
+      SRC_HUGEPAGES_BOOL_DO_SETUP=true
+      return 0
     }
 
   #
