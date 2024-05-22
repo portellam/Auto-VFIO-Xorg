@@ -41,7 +41,7 @@
         return 1
       fi
 
-      log_to_stdout "One or more devices reserved for Host."
+      log_output "One or more devices reserved for Host."
       return 0
     }
 
@@ -60,7 +60,7 @@
         return 1
       fi
 
-      log_to_stdout "One or more devices reserved for VFIO."
+      log_output "One or more devices reserved for VFIO."
       return 0
     }
 
@@ -71,27 +71,32 @@
   # $3:     the IOMMU group ID as an int.
   # RETURN: If IOMMU group ID is valid, return 0.
   #         If not valid, return 1.
-  #         If an exception occurs, return 2.
   #
     function do_reserve_iommu_group_for_host
     {
-      local -n arr_iommu_groups_for_host="${1}"
-      local -n arr_iommu_groups_with_vga_for_host="${2}"
+      local -r str_warn="Could not reserve IOMMU group for Host."
       local -ir int_iommu_group_id="${3}"
 
       if ! is_iommu_group_id_valid "${int_iommu_group_id}"; then
         log_invalid_parameter "int_iommu_group_id"
-        return 2
+        log_warn "${str_warn}"
+        return 1
       fi
+
+      local -n arr_iommu_groups_with_vga_for_host="${2}"
 
       if ! is_array "${arr_iommu_groups_with_vga_for_host}"; then
         log_invalid_parameter "arr_iommu_groups_with_vga_for_host"
-        return 2
+        log_warn "${str_warn}"
+        return 1
       fi
+
+      local -n arr_iommu_groups_for_host="${1}"
 
       if ! is_array "${arr_iommu_groups_for_host}"; then
         log_invalid_parameter "arr_iommu_groups_for_host"
-        return 2
+        log_warn "${str_warn}"
+        return 1
       fi
 
       arr_iommu_groups_for_host+=( "${int_iommu_group_id}" )
@@ -106,7 +111,7 @@
         arr_iommu_groups_with_vga_for_host+=( "${int_iommu_group_id}" )
       fi
 
-      log_to_stdout "Reserved IOMMU group '${int_iommu_group_id}' for Host."
+      log_output "Reserved IOMMU group '${int_iommu_group_id}' for Host."
       return 0
     }
 
@@ -120,22 +125,28 @@
   #
     function do_reserve_iommu_group_for_vfio
     {
-      local -n arr_iommu_groups_for_vfio="${1}"
-      local -n arr_iommu_groups_with_vga_for_vfio="${2}"
+      local -r str_warn="Could not reserve IOMMU group for VFIO."
       local -ir int_iommu_group_id="${3}"
 
       if ! is_iommu_group_id_valid "${int_iommu_group_id}"; then
         log_invalid_parameter "int_iommu_group_id"
+        log_warn "${str_warn}"
         return 1
       fi
+
+      local -n arr_iommu_groups_with_vga_for_vfio="${2}"
 
       if ! is_array "${arr_iommu_groups_with_vga_for_vfio}"; then
         log_invalid_parameter "arr_iommu_groups_with_vga_for_vfio"
+        log_warn "${str_warn}"
         return 1
       fi
 
+      local -n arr_iommu_groups_for_vfio="${1}"
+
       if ! is_array "${arr_iommu_groups_for_vfio}"; then
         log_invalid_parameter "arr_iommu_groups_for_vfio"
+        log_warn "${str_warn}"
         return 1
       fi
 
@@ -156,30 +167,35 @@
   # $3:     the reserved IOMMU groups with VGA for Host as an array reference.
   # $4:     the reserved IOMMU groups for VFIO as an array reference.
   # $5:     the reserved IOMMU groups with VGA for VFIO as an array reference.
-  # RETURN: If one or more arrays are not valid, return 1.
-  #         If not, return 0.
-  #         If an exception occurs, return 2.
+  # RETURN: If arrays are valid, return 0.
+  #         If one or more collections are not valid, return 1.
   #
     function do_select_iommu_group_collection
     {
+      local -r str_warn="Could not print IOMMU group collection to select."
+
       if ! is_array "${4}"; then
         log_invalid_parameter "4"
-        return 2
+        log_warn "${str_warn}"
+        return 1
       fi
 
       if ! is_array "${3}"; then
         log_invalid_parameter "3"
-        return 2
+        log_warn "${str_warn}"
+        return 1
       fi
 
       if ! is_array "${2}"; then
         log_invalid_parameter "2"
-        return 2
+        log_warn "${str_warn}"
+        return 1
       fi
 
       if ! is_array "${1}"; then
         log_invalid_parameter "1"
-        return 2
+        log_warn "${str_warn}"
+        return 1
       fi
 
       local -n arr_iommu_group_id="${1}"
@@ -220,6 +236,7 @@
 
       if ! is_iommu_group_id_valid "${int_iommu_group_id}"; then
         log_invalid_parameter "int_iommu_group_id"
+        log_warn "Could not print IOMMU group to select."
         return 1
       fi
 
@@ -251,7 +268,6 @@
   # DESC:   Print all devices within an IOMMU group.
   # $1:     the IOMMU group ID as an int.
   # RETURN: If IOMMU group ID is valid, return 0.
-  #         If not valid, return 1.
   #         If an exception occurs, return 2.
   #
     function print_iommu_group
@@ -260,6 +276,7 @@
 
       if ! is_iommu_group_id_valid "${int_iommu_group_id}"; then
         log_invalid_parameter "int_iommu_group_id"
+        log_warn "Could not print IOMMU group."
         return 2
       fi
 
@@ -282,7 +299,7 @@
   # DESC:   Print all relevant info about a device.
   # $1:     the device slot ID as a string.
   # RETURN: If device info is not null, return 0.
-  #         If false, return 1.
+  #         If an exception occurs, return 2.
   #
     function print_iommu_group_device
     {
@@ -290,7 +307,8 @@
 
       if ! is_string "${str_device_slot_id}"; then
         log_invalid_parameter "str_device_slot_id"
-        return 1
+        log_warn "Could not print device."
+        return 2
       fi
 
       local str_device_class \
