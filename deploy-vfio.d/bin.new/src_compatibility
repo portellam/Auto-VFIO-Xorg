@@ -21,65 +21,6 @@
   source "${SRC_STR_SCRIPT_BIN_DIR}src_print"
 
 #
-# setter logic
-#
-  #
-  # DESC: globals
-  #
-    function set_globals
-    {
-      if [[ "${SRC_COMPATIBILITY_BOOL_SET_GLOBALS}" == true ]]; then
-        return 0
-      fi
-
-      declare -g SRC_COMPATIBILITY_BOOL_SET_GLOBALS=true
-
-      declare SRC_COMPATIBILITY_BOOL_DO_IGNORE_DISTRO=false
-    }
-
-#
-# Argument logic
-#
-  #
-  # DESC:   Set flag to true if argument is passed.
-  # $1:     the argument as a string.
-  # RETURN: If true, return 0.
-  #         If false, return 1.
-  #         If argument is invalid, return 2.
-  #
-    function is_option_ignore_distro
-    {
-      if [[ "${1}" != "--ignore-distro" ]]; then
-        SRC_COMPATIBILITY_BOOL_DO_IGNORE_DISTRO=false
-        log_output "Enabled system distribution check."
-        return 1
-      fi
-
-      if is_string "${1}"; then
-        print_and_log_warn "Invalid argument. Valid arguments: --ignore-distro"
-        return 2
-      fi
-
-      log_output "Disabled system distribution check."
-      SRC_COMPATIBILITY_BOOL_DO_IGNORE_DISTRO=true
-      return 0
-    }
-
-  #
-  # DESC:   Call option logic.
-  # RETURN: If true, return 0.
-  #         If false, return 1.
-  #
-    function is_option_of_compatibility
-    {
-      if ! is_option_ignore_distro; then
-        return 1
-      fi
-
-      return 0
-    }
-
-#
 # Logic
 #
   #
@@ -90,7 +31,7 @@
     function is_distribution_supported
     {
       if "${SRC_COMPATIBILITY_BOOL_DO_IGNORE_DISTRO}"; then
-        log_to_stdout "Skipped system distribution support check."
+        log_output "Skipped system distribution support check."
         return 0
       fi
 
