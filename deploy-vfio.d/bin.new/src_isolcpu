@@ -1,8 +1,8 @@
 #!/bin/false
 
 #
-# Filename:       src_pre_setup
-# Description:    Pre setup logic
+# Filename:       src_isolcpu
+# Description:    Set CPU threads to be isolated.
 # Author(s):      Alex Portell <github.com/portellam>
 # Maintainer(s):  Alex Portell <github.com/portellam>
 #

@@ -2,10 +2,11 @@
 
 #
 # Filename:       src_hugepages
-# Description:    Install/uninstall huge memory pages.
+# Description:    Set Hugepages count and size.
 # Author(s):      Alex Portell <github.com/portellam>
 # Maintainer(s):  Alex Portell <github.com/portellam>
 #
+
 
 #
 # TODO:
