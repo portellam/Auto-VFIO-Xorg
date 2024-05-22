@@ -411,7 +411,7 @@
 
       if sudo swapon --verbose | grep zram &> /dev/null \
         && ! sudo swapoff /dev/zram* &> /dev/null; then
-        log_to_stdout "Failed to disable ${str_repo_name} device(s)."
+        log_output "Failed to disable ${str_repo_name} device(s)."
         print_and_log_warn "${str_warn}"
         return 1
       fi
@@ -419,7 +419,7 @@
       log_pass "Disabled ${str_repo_name} device(s)."
 
       if ! sudo systemctl daemon-reload &> /dev/null; then
-        log_to_stdout "Could not update Systemd."
+        log_output "Could not update Systemd."
         print_and_log_warn "${str_warn}"
         return 1
       fi
@@ -427,7 +427,7 @@
       log_pass "Updated Systemd."
 
       if ! sudo systemctl restart zram-swap &> /dev/null; then
-        log_to_stdout "Could not restart ${str_repo_name} service."
+        log_output "Could not restart ${str_repo_name} service."
         print_and_log_warn "${str_warn}"
         return 1
       fi
