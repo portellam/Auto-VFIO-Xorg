@@ -123,7 +123,7 @@
         return 0
 
       else
-        log_to_stderr "Failed to set huge memory page size."
+        log_warn "Failed to set huge memory page size."
         return 1
       fi
     }
@@ -323,16 +323,16 @@
       SRC_HUGEPAGES_BOOL_DO_SETUP=false
 
       if ! "${SRC_HUGEPAGES_BOOL_IS_SIZE_SET}"; then
-        log_to_stderr "Hugepages size is not set."
+        log_warn "Hugepages size is not set."
         return 1
       fi
 
       if ! "${SRC_HUGEPAGES_BOOL_IS_COUNT_SET}"; then
-        log_to_stderr "Hugepages count is not set."
+        log_warn "Hugepages count is not set."
         return 1
       fi
 
-      log_to_stdout "Hugepages size and count are set."
+      log_output "Hugepages size and count are set."
       SRC_HUGEPAGES_BOOL_DO_SETUP=true
       return 0
     }
