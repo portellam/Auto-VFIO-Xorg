@@ -12,7 +12,11 @@
 # - [ ] create dicts for each source files args.
 # - [ ] maintain "high-level" execution here.
 # - [ ] maintain readability such that the user may create his own "deploy-vfio".
-# - [ ] create src_isolcpu
+# - [ ] pre-setup
+#   - [ ] create src_isolcpu.
+# - [ ] add repos
+#   - [ ] "Audio Loopback"  "github.com/portellam/audio-loopback"
+#   - [ ] "Scream"          "github.com/duncanthrax/scream"
 #
 
 #
@@ -28,9 +32,11 @@
   source "${SCRIPT_BIN_DIR}src_hugepages"
   source "${SCRIPT_BIN_DIR}src_vfio_setup"
   source "${SCRIPT_BIN_DIR}src_network"
+  #source "${SCRIPT_BIN_DIR}src_audio_loopback"
   source "${SCRIPT_BIN_DIR}src_auto_xorg"
   source "${SCRIPT_BIN_DIR}src_libvirt_hooks"
   source "${SCRIPT_BIN_DIR}src_looking_glass"
+  #source "${SCRIPT_BIN_DIR}src_scream"
   source "${SCRIPT_BIN_DIR}src_zram_swap"
 
 #
