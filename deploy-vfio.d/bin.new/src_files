@@ -34,15 +34,16 @@
     {
       if ! is_dir "${1}"; then
         log_invalid_parameter "1"
+        og_warn "Could not change directory."
         return 2
       fi
 
       if ! cd "${1}" &> /dev/null; then
-        log_to_stderr "Failed to change to directory '${1}'."
+        log_warn "Failed to change to directory '${1}'."
         return 1
       fi
 
-      log_to_stdout "Changed to directory '${1}'."
+      log_output "Changed to directory '${1}'."
       return 0
     }
 
@@ -55,21 +56,20 @@
   #
     function create_temp_file_of_file
     {
+      local -r str_warn="Could not create temp file."
       local -r str_file_name="${1}"
       local -r str_temp_file_name="${str_file_name}.tmp"
 
-      if ! is_string "${str_file_name}"; then
+      if ! is_string "${str_file_name}" \
+        || is_file "${str_temp_file_name}"\
+        || ! is_file "${str_file_name}"; then
         log_invalid_parameter "str_file_name"
+        log_warn "${str_warn}"
         return 2
       fi
 
       if is_file "${str_temp_file_name}"; then
-        log_to_stdout "Temp file '${str_temp_file_name}' exists."
-        return 0
-      fi
-
-      if ! is_file "${str_file_name}"; then
-        log_to_stdout "File '${str_file_name}' does not exist."
+        log_warn "${str_warn}"
         return 2
       fi
 
@@ -78,7 +78,7 @@
         return 1
       fi
 
-      log_to_stdout "Created temp file of '${str_file_name}'."
+      log_output "Created temp file of '${str_file_name}'."
       return 0
     }
 
@@ -91,17 +91,19 @@
   #
     function copy_temp_file_to_file
     {
+      local -r str_warn="Could not copy temp file."
       local -r str_file_name="${1}"
       local -r str_temp_file_name="${str_file_name}.tmp"
 
       if ! is_string "${str_file_name}"; then
         log_invalid_parameter "str_file_name"
+        log_warn "${str_warn}"
         return 2
       fi
 
       if ! is_file "${str_temp_file_name}"; then
-        log_to_stderr "No temp file exists."
-        return 0
+        log_warn "${str_warn}"
+        return 2
       fi
 
       if ! copy_this_file_to_other_file "${str_temp_file_name}" \
@@ -109,6 +111,7 @@
         return 1
       fi
 
+      log_output "Copied temp file to file."
       return 0
     }
 
@@ -122,32 +125,31 @@
   #
     function copy_this_file_to_other_file
     {
-      local -r str_file1_name="${1}"
+      local -r str_warn="Could not copy file."
       local -r str_file2_name="${2}"
 
       if ! is_string "${str_file2_name}"; then
         log_invalid_parameter "str_file2_name"
+        log_warn "${str_warn}"
         return 2
       fi
 
-      if ! is_string "${str_file1_name}"; then
+      local -r str_file1_name="${1}"
+
+      if ! is_file "${str_file1_name}"; then
         log_invalid_parameter "str_file1_name"
-        return 2
-      fi
-
-      if is_file "${str_file1_name}"; then
-        log_to_stderr "File '${str_file1_name}' does not exist."
+        log_warn "${str_warn}"
         return 2
       fi
 
       if cp --force "${str_file1_name}" "${str_file2_name}"; then
-        log_to_stderr "Failed to copy file '${str_file1_name}' to file "\
+        log_warn "Failed to copy file '${str_file1_name}' to file "\
           "'${str_file2_name}'."
 
         return 1
       fi
 
-      log_to_stdout "Copied file '${1}' to file '${2}'."
+      log_output "Copied file '${1}' to file '${2}'."
       return 0
     }
 
@@ -165,20 +167,21 @@
 
       if ! is_string "${str_file_name}"; then
         log_invalid_parameter "str_file_name"
+        log_warn "Cannot delete temp file."
         return 2
       fi
 
       if is_file "${str_temp_file_name}"; then
-        log_to_stdout "No temp file exists."
+        log_output "No temp file exists."
         return 0
       fi
 
       if ! rm --force --recursive "${str_temp_file_name}"; then
-        log_to_stderr "Could not delete temp file '${str_temp_file_name}'."
+        log_warn "Failed to delete temp file '${str_temp_file_name}'."
         return 1
       fi
 
-      log_to_stdout "Deleted temp file '${str_temp_file_name}'."
+      log_output "Deleted temp file '${str_temp_file_name}'."
       return 0
     }
 
@@ -195,15 +198,16 @@
 
       if ! is_string "${str_dir_name}"; then
         log_invalid_parameter "str_dir_name"
+        log_warn "Cannot determine if folder exists."
         return 2
       fi
 
       if [[ ! -d "${1}" ]]; then
-        log_to_stderr "Folder does not exist."
+        log_warn "Folder does not exist."
         return 1
       fi
 
-      log_to_stdout "Folder does not exist."
+      log_output "Folder does exist."
       return 0
     }
 
@@ -220,15 +224,16 @@
 
       if ! is_dir "${str_dir_name}"; then
         log_invalid_parameter "str_dir_name"
+        log_warn "Cannot determine if folder is empty."
         return 2
       fi
 
       if ! ls --almost-all "${str_dir_name}" | head --lines 1 &> /dev/null; then
-        log_to_stderr "Folder is empty."
+        log_warn "Folder is empty."
         return 1
       fi
 
-      log_to_stdout "Folder is not empty."
+      log_output "Folder is not empty."
       return 0
     }
 
@@ -243,17 +248,18 @@
     {
       local -r str_file_name="${1}"
 
-      if ! is_string "${str_file_name}"; the
+      if ! is_string "${str_file_name}"; then
         log_invalid_parameter "${str_file_name}"
+        log_warn "Cannot determine if file exists."
         return 2
       fi
 
       if [[ ! -e "${str_file_name}" ]]; then
-        log_to_stderr "File does not exist."
+        log_warn "File does not exist."
         return 1
       fi
 
-      log_to_stdout "File does exist."
+      log_output "File does exist."
       return 0
     }
 
@@ -268,17 +274,18 @@
     {
       local -r str_file_name="${1}"
 
-      if ! is_file "${str_file_name}"; the
+      if ! is_file "${str_file_name}"; then
         log_invalid_parameter "str_file_name"
+        log_warn "Cannot determine if file is empty."
         return 2
       fi
 
       if [[ ! -s "${str_file_name}" ]]; then
-        print_and_log_warn "File is empty."
+        log_warn "File '${str_file_name}' is empty."
         return 1
       fi
 
-      log_to_stdout "File is not empty."
+      log_output "File '${str_file_name}' is not empty."
       return 0
     }
 
@@ -288,28 +295,33 @@
   # $2:     the file name as a string.
   # RETURN: If enum is not empty and write is successful, return 0.
   #         If false, return 1.
+  #         If an exception occurs, return 2.
   #
     function overwrite_file
     {
-      local -n ref_enum_output="${1}"
+      local -r str_warn="Could not overwrite file."
       local -r str_file_name="${2}"
 
-      if ! is_file "${str_file_name}"; the
+      if ! is_file "${str_file_name}"; then
         log_invalid_parameter "str_file_name"
+        log_warn "${str_warn}"
         return 2
       fi
 
+      local -n ref_enum_output="${1}"
+
       if ! is_enum_not_empty "ref_enum_output"; then
         log_invalid_parameter "ref_enum_output"
+        log_warn "${str_warn}"
         return 2
       fi
 
       if ! sudo echo -e "${ref_enum_output[*]}" > "${str_file_name}"; then
-        print_and_log_warn "Could not overwrite file '${str_file_name}'."
+        print_and_log_warn "Failed to overwrite file '${str_file_name}'."
         return 1
       fi
 
-      log_to_stdout "Overwrote file '${str_file_name}'."
+      log_output "Overwrote file '${str_file_name}'."
       return 0
     }
 
@@ -319,29 +331,34 @@
   # $2:     the file name as a string.
   # RETURN: If enum is not empty and write is successful, return 0.
   #         If false, return 1.
+  #         If an exception occurs, return 2.
   #
     function write_file
     {
-      local -n ref_enum_output="${1}"
+      local -r str_warn="Could not write to file."
       local -r str_file_name="${2}"
 
       if ! is_file "${str_file_name}"; the
         log_invalid_parameter "str_file_name"
+        log_warn "${str_warn}"
         return 2
       fi
 
+      local -n ref_enum_output="${1}"
+
       if ! is_enum_not_empty "ref_enum_output"; then
         log_invalid_parameter "ref_enum_output"
+        log_warn "${str_warn}"
         return 2
       fi
 
       for str_line in ${ref_enum_output[*]}; do
         if ! sudo echo -e "${str_line}" >> "${str_file_name}"; then
-          print_and_log_warn "Could not write to file '${str_file_name}'."
+          print_and_log_warn "Failed to write to file '${str_file_name}'."
           return 1
         fi
       done
 
-      log_to_stdout "Wrote to file '${str_file_name}'."
+      log_output "Wrote to file '${str_file_name}'."
       return 0
     }
