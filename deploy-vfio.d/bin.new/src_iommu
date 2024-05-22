@@ -47,47 +47,58 @@
   #
     function parse_iommu_database
     {
-      local bool_do_parse_iommu_groups="${6}"
-      local str_xml_path="${7}"
+      local -r str_warn="Could not parse IOMMU groups."
       local bool_do_parse_iommu_groups_from_xml_file="${8}"
 
       if ! is_bool "${bool_do_parse_iommu_groups_from_xml_file}"; then
         log_invalid_parameter "bool_do_parse_iommu_groups_from_xml_file"
+        log_warn "${str_warn}"
         return 2
       fi
+
+      local str_xml_path="${7}"
 
       if ! is_string "${str_xml_path}"; then
         log_invalid_parameter "str_xml_path"
+        log_warn "${str_warn}"
         return 2
       fi
 
+      local bool_do_parse_iommu_groups="${6}"
+
       if ! is_bool "${bool_do_parse_iommu_groups}"; then
         log_invalid_parameter "bool_do_parse_iommu_groups"
+        log_warn "${str_warn}"
         return 2
       fi
 
       if ! is_array "${5}"; then
         log_invalid_parameter "5"
+        log_warn "${str_warn}"
         return 2
       fi
 
       if ! is_array "${4}"; then
         log_invalid_parameter "4"
+        log_warn "${str_warn}"
         return 2
       fi
 
       if ! is_array "${3}"; then
         log_invalid_parameter "3"
+        log_warn "${str_warn}"
         return 2
       fi
 
       if ! is_array "${2}"; then
         log_invalid_parameter "2"
+        log_warn "${str_warn}"
         return 2
       fi
 
       if ! is_array "${1}"; then
         log_invalid_parameter "1"
+        log_warn "${str_warn}"
         return 2
       fi
 
@@ -107,7 +118,7 @@
       fi
 
       cleanup_iommu_groups_xml_file
-      log_to_stdout "Parse of IOMMU groups successful."
+      log_output "Parse of IOMMU groups successful."
     }
 
   #
@@ -126,49 +137,62 @@
   #
     function try_to_parse_iommu_database
     {
-      local bool_do_parse_iommu_groups="${6}"
-      local str_xml_path="${7}"
+      local -r str_warn1="Could not attempt to parse IOMMU groups."
       local bool_do_parse_iommu_groups_from_xml_file="${8}"
 
       if ! is_bool "${bool_do_parse_iommu_groups_from_xml_file}"; then
         log_invalid_parameter "bool_do_parse_iommu_groups_from_xml_file"
+        print_and_log_warn "${str_warn1}"
         return 2
       fi
+
+      local str_xml_path="${7}"
 
       if ! is_string "${str_xml_path}"; then
         log_invalid_parameter "str_xml_path"
+        print_and_log_warn "${str_warn1}"
         return 2
       fi
 
+      local bool_do_parse_iommu_groups="${6}"
+
       if ! is_bool "${bool_do_parse_iommu_groups}"; then
         log_invalid_parameter "bool_do_parse_iommu_groups"
+        print_and_log_warn "${str_warn1}"
         return 2
       fi
 
       if ! is_array "${5}"; then
         log_invalid_parameter "5"
+        print_and_log_warn "${str_warn1}"
         return 2
       fi
 
       if ! is_array "${4}"; then
         log_invalid_parameter "4"
+        print_and_log_warn "${str_warn1}"
         return 2
       fi
 
       if ! is_array "${3}"; then
         log_invalid_parameter "3"
+        print_and_log_warn "${str_warn1}"
         return 2
       fi
 
       if ! is_array "${2}"; then
         log_invalid_parameter "2"
+        print_and_log_warn "${str_warn1}"
         return 2
       fi
 
       if ! is_array "${1}"; then
         log_invalid_parameter "1"
+        print_and_log_warn "${str_warn1}"
         return 2
       fi
+
+      local -r str_warn2="Attempt to parse IOMMU groups failed."
 
       if ! specify_iommu_groups_xml_file "${str_xml_path}"; then
         return 1
@@ -177,24 +201,29 @@
       if ! is_iommu_groups_xml_file_valid "${str_xml_path}"; then
         if ! does_host_not_have_existing_vfio_setup \
           || ! export_iommu_groups_to_xml_file "${str_xml_path}"; then
+          print_and_log_warn "${str_warn2}"
           return 1
         fi
 
       else
         if ! does_host_not_have_existing_vfio_setup; then
+          print_and_log_warn "${str_warn2}"
           return 1
         fi
 
         if "${bool_do_parse_iommu_groups_from_xml_file}" \
           || ! import_iommu_groups_from_xml_file; then
+          print_and_log_warn "${str_warn2}"
           return 1
         fi
       fi
 
       if ! do_select_iommu_group_collection "${1}" "${2}" "${3}" "${4}" "${5}"; then
+        print_and_log_warn "${str_warn2}"
         return 1
       fi
 
+      log_output "Attempt to parse IOMMU groups successful."
       return 0
     }
 
@@ -207,8 +236,10 @@
     function parse_iommu_database_prompt
     {
       if ! ask_yes_or_no "Parse IOMMU groups?"; then
+        log_warn "Did not parse IOMMU groups."
         return 1
       fi
 
+      log_output "Parsed IOMMU groups."
       return 0
     }
