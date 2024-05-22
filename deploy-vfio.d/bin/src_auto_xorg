@@ -10,7 +10,6 @@
 #
 # TODO:
 # - [ ] test.
-# - [ ] have this class only install/uninstall Auto X.Org?
 #
 
 #
@@ -82,8 +81,7 @@
       local -a arr_arguments="$@"
       local str_arguments
 
-      if ! src_auto_xorg_parse_arguments "$@" \
-        || ! get_delimited_string_from_array "arr_arguments" "str_arguments" " "; then
+      if ! get_delimited_string_from_array "arr_arguments" "str_arguments" " "; then
         print_and_log_fail "${str_fail}"
         return 1
       fi
@@ -111,29 +109,6 @@
     }
 
   #
-  # DESC:   Prompt to execute Auto X.Org.
-  # $*:     the command line arguments as a string.
-  # RETURN: If uninstall is successful, return 0.
-  #         If uninstall has failed, return 1.
-  #         If uninstall is skipped, return 2.
-  #
-    function src_auto_xorg_execute_prompt
-    {
-      local -r str_repo_name="Auto X.Org"
-
-      if ! ask_yes_no_question "Execute ${str_repo_name}?"; then
-        print_and_log_output "Skipped execution of ${str_repo_name}."
-        return 2
-      fi
-
-      if ! src_auto_xorg_execute "${str_arguments}"; then
-        return 1
-      fi
-
-      return 0
-    }
-
-  #
   # DESC:   Execute Auto X.Org installer.
   # $*:     the command line arguments as a string.
   # RETURN: If execution is successful, return 0.
@@ -152,8 +127,7 @@
       local -a arr_arguments="$@"
       local str_arguments
 
-      if ! src_auto_xorg_parse_installer_arguments "$@" \
-        || ! get_delimited_string_from_array "arr_arguments" "str_arguments" " "; then
+      if ! get_delimited_string_from_array "arr_arguments" "str_arguments" " "; then
         print_and_log_warn "${str_warn}"
         return 1
       fi
@@ -177,6 +151,29 @@
       fi
 
       log_pass "Executed ${str_repo_name} installer."
+      return 0
+    }
+
+  #
+  # DESC:   Prompt to execute Auto X.Org.
+  # $*:     the command line arguments as a string.
+  # RETURN: If uninstall is successful, return 0.
+  #         If uninstall has failed, return 1.
+  #         If uninstall is skipped, return 2.
+  #
+    function src_auto_xorg_execute_prompt
+    {
+      local -r str_repo_name="Auto X.Org"
+
+      if ! ask_yes_no_question "Execute ${str_repo_name}?"; then
+        print_and_log_output "Skipped execution of ${str_repo_name}."
+        return 2
+      fi
+
+      if ! src_auto_xorg_execute "${str_arguments}"; then
+        return 1
+      fi
+
       return 0
     }
 
@@ -226,131 +223,103 @@
     }
 
   #
-  # DESC:   Parse arguments for executable.
-  # $*:     the arguments as a string.
-  # RETURN: If parse is successful, return 0
+  # DESC:   Main execution.
+  # $1:     do skip.
+  # $2:     do force install.
+  # $3:     do force uninstall.
+  # $3:     do force update.
+  # $4:     the execute/install command line arguments as an array reference.
+  # RETURN: If successful, return 0.
   #         If not, return 1.
+  #         If any exceptions occur, return 2.
   #
-    function src_auto_xorg_parse_arguments
+    function src_auto_xorg_main
     {
-      while [[ ! -z "${1}" ]]; do
-        if ! src_auto_xorg_parse_argument "$@"; then
-          return 1
-        fi
+      local -n arr_arguments="${5}"
 
-        shift
-      done
+      if ! is_array "${arr_arguments}"; then
+        log_invalid_parameter "arr_arguments"
+        return 2
+      fi
 
-      return 0
-    }
+      local -r str_arguments=""
 
-  #
-  # DESC:   Parse argument for executable.
-  # $*:     the arguments as a string.
-  # RETURN: If argument is empty or valid, return 0.
-  #         If argument is not valid or there exists conflicting arguments, return 1.
-  #
-    function src_auto_xorg_parse_argument
-    {
-      if ! is_string "${1}"; then
-        log_output "No arguments."
+      if ! get_delimited_string_from_array "arr_arguments" "str_arguments" " "; then
+        log_invalid_parameter "str_arguments"
+        return 2
+      fi
+
+      local -r bool_do_force_update="${4}"
+
+      if ! is_bool "${bool_do_force_update}"; then
+        log_invalid_parameter "bool_do_force_update"
+        return 2
+      fi
+
+      local -r bool_do_force_uninstall="${3}"
+
+      if ! is_bool "${bool_do_force_uninstall}"; then
+        log_invalid_parameter "bool_do_force_uninstall"
+        return 2
+      fi
+
+      local -r bool_do_force_install="${2}"
+
+      if ! is_bool "${bool_do_force_install}l"; then
+        log_invalid_parameter "bool_do_force_install"
+        return 2
+      fi
+
+      local -r bool_do_force_skip="${1}"
+
+      if ! is_bool "${bool_do_force_skip}"; then
+        log_invalid_parameter "bool_do_force_skip"
+        return 2
+      fi
+
+      if "${bool_do_force_skip}"; then
+        print_and_log_output "Skipped Auto X.Org."
         return 0
       fi
 
-      local -ar arr_arguments=$@
-
-      if array_contains_value "arr_arguments" "--first" \
-        && array_contains_value "arr_arguments" "--last"; then
-        print_conflicting_options
-        return 1
+      if "${bool_do_force_update}"; then
+        if ! src_auto_xorg_does_repo_exist "true"; then
+          return 1
+        fi
       fi
 
-      if array_contains_value "arr_arguments" "--amd" \
-        && array_contains_value "arr_arguments" "--intel" \
-        && array_contains_value "arr_arguments" "--nvidia" \
-        && array_contains_value "arr_arguments" "--other"; then
-        print_conflicting_options
-        return 1
-      fi
-
-      if is_string "${1}"; then
-        print_and_log_invalid_argument "${1}"
-        return 1
-      fi
-
-      log_output "All arguments are valid."
-      return 0
-    }
-
-  #
-  # DESC:   Parse arguments for installer.
-  # $*:     the arguments as a string.
-  # RETURN: If parse is successful, return 0
-  #         If not, return 1.
-  #
-    function src_auto_xorg_parse_installer_arguments
-    {
-      while $( is_string "${1}" ); do
-        if ! src_auto_xorg_parse_installer_argument "$@"; then
+      if "${bool_do_force_install}"; then
+        if ! src_auto_xorg_install "${str_arguments}"; then
           return 1
         fi
 
-        shift
-      done
-
-      return 0
-    }
-
-  #
-  # DESC:   Parse argument for installer.
-  # $*:     the arguments as a string.
-  # RETURN: If argument is empty or valid, return 0.
-  #         If argument is not valid or there exists conflicting arguments, return 1.
-  #
-    function src_auto_xorg_parse_installer_argument
-    {
-      if ! is_string "${1}"; then
-        log_output "No arguments."
         return 0
       fi
 
-      local -ar arr_arguments=$@
+      if "${bool_do_force_uninstall}"; then
+        if ! src_auto_xorg_uninstall; then
+          return 1
+        fi
 
-      if array_contains_value "arr_arguments" "--install" \
-        && array_contains_value "arr_arguments" "--uninstall"; then
-        print_conflicting_options
+        return 0
+      fi
+
+      if ! src_auto_xorg_does_repo_exist "false"; then
         return 1
       fi
 
-      if ! src_auto_xorg_parse_argument "$@" \
-        || is_string "${1}"; then
-        print_and_log_invalid_argument "${1}"
+      if ! src_auto_xorg_install_prompt "${str_arguments}"; then
         return 1
       fi
 
-      log_output "All arguments are valid."
-      return 0
-    }
+      if ! src_auto_xorg_execute_prompt "${str_arguments}"; then
+        return 1
+      fi
 
-  #
-  # DESC:   Print usage for this source. Copied from Auto X.Org.
-  # RETURN: Always return 0.
-  #
-    function src_auto_xorg_print_usage
-    {
-      local -ar arr_output=(
-        "\nAuto X.Org:"
-        "\t--install\t\tInstall Auto X.Org."
-        "\t--uninstall\t\t\tUninstall Auto X.Org."
-        "\t--first\t\tFind the first valid VGA device."
-        "\t--last\t\tFind the last valid VGA device."
-        "\t--amd\t\tPrefer AMD or ATI."
-        "\t--intel\t\tPrefer Intel."
-        "\t--nvidia\t\tPrefer NVIDIA."
-        "\t--other\t\tPrefer any other brand."
-      )
+      if ! src_auto_xorg_uninstall_prompt; then
+        return 1
+      fi
 
-      echo -e "${arr_output[*]}"
       return 0
     }
 
