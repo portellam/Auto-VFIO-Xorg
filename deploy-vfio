@@ -42,66 +42,90 @@
 #
 # params
 #
-  BOOL_COMPATIBILITY_SKIP_CHECKS=false
-  BOOL_DO_NOT_CHECK_MY_PRIVILEGE=false
+  #
+  # DESC: Compatibility checks
+  #
+    BOOL_COMPATIBILITY_SKIP=false
 
-  declare -A DICT_HUGEPAGES_ARGS=(
-    ["COUNT"]="",
-    ["SIZE"]="",
-    ["SKIP"]=false,
-  )
+  #
+  # DESC: Pre setup
+  #
+    BOOL_PRE_SETUP_SKIP=false
 
-  # TODO: separate into PARSE and SETUP?
-  declare -A DICT_PARSE_ARGS=(
-    ["SELECT_ALL"]=true,
-    ["SELECT_ALL_NON_VGA"]=false,
-    ["SKIP"]=false,
-    ["USE_DEFAULT_XML"]="",
-    ["XML_FILE_NAME"]="",
-  )
+    declare -A DICT_HUGEPAGES_ARGS=(
+      ["COUNT"]="",
+      ["SIZE"]="",
+      ["SKIP"]=false,
+    )
 
-  declare -A DICT_VFIO_ARGS=(
-    ["CUSTOM_CMDLINE_STRING"]="",           # TODO: validate in src_vfio_setup for CMDLINE args (ex: hugepages, isolcpu, devices)
-    ["HUGEPAGES_COUNT"]="",
-    ["HUGEPAGES_SIZE"]="",
-    ["IOMMU_GROUPS"]="",
-    ["ISOLCPU_VALUES"]="",
-    ["MULTI_BOOT_SETUP"]=true
-    ["SKIP"]=false,
-    ["STATIC_SETUP"]=false
-  )
+    declare -A DICT_ISOLCPU_ARGS=(
+      ["SKIP"]=false,
+      ["THREAD_SETS"]="",
+    )
 
-  declare -A DICT_AUTO_XORG_ARGS=(
-    ["ARGS"]=""
-    ["INSTALL"]=false,
-    ["SKIP"]=false,
-    ["UPDATE"]=false,
-  )
+  #
+  # DESC: Main setup
+  #
+    BOOL_SKIP_MAIN_SETUP=false
 
-  declare -A DICT_LIBVIRT_HOOKS_ARGS=(
-    ["ARGS"]="",
-    ["INSTALL"]=false,
-    ["SKIP"]=false,
-    ["UPDATE"]=false,
-  )
+    declare -A DICT_PARSE_ARGS=(
+      ["SELECT_ALL"]=true,
+      ["SELECT_ALL_NON_VGA"]=false,
+      ["SKIP"]=false,
+      ["USE_DEFAULT_XML"]="",
+      ["XML_FILE_NAME"]="",
+    )
 
-  declare -A DICT_LOOKING_GLASS_ARGS=(
-    ["BUFFER_SIZE"]="",
-    ["INSTALL"]=false,
-    ["SKIP"]=false,
-    ["UPDATE"]=false,
-    ["USE_DEFAULTS"]=true,
-  )
+    declare -A DICT_VFIO_ARGS=(
+      ["CUSTOM_CMDLINE_STRING"]="",           # TODO: validate in src_vfio_setup for CMDLINE args (ex: hugepages, isolcpu, devices)
+      ["HUGEPAGES_COUNT"]="",
+      ["HUGEPAGES_SIZE"]="",
+      ["IOMMU_GROUPS"]="",
+      ["ISOLCPU_THREAD_SETS"]="",
+      ["MULTI_BOOT_SETUP"]=true
+      ["SKIP"]=false,
+      ["STATIC_SETUP"]=false
+    )
 
-  declare -A DICT_ZRAM_SWAP_ARGS=(
-    ["FORCE_RESTART"]=false,
-    ["FRACTION_VALUE"]="",
-    ["INSTALL"]=false,
-    ["SKIP"]=false,
-    ["UPDATE"]=false,
-    ["USE_CALCULATION"]=false,
-    ["USE_DEFAULTS"]=true,
-  )
+  #
+  # DESC: Post setup
+  #
+    BOOL_SKIP_POST_SETUP=false
+
+    declare -A DICT_AUTO_XORG_ARGS=(
+      ["ARGS"]=""
+      ["INSTALL"]=false,
+      ["SKIP"]=false,
+      ["UNINSTALL"]=false,
+      ["UPDATE"]=false,
+    )
+
+    declare -A DICT_LIBVIRT_HOOKS_ARGS=(
+      ["ARGS"]="",
+      ["INSTALL"]=false,
+      ["SKIP"]=false,
+      ["UPDATE"]=false,
+    )
+
+    declare -A DICT_LOOKING_GLASS_ARGS=(
+      ["BUFFER_SIZE"]="",
+      ["INSTALL"]=false,
+      ["SKIP"]=false,
+      ["UPDATE"]=false,
+      ["USE_DEFAULTS"]=true,
+    )
+
+    declare -A DICT_ZRAM_SWAP_ARGS=(
+      ["FORCE_RESTART"]=false,
+      ["FRACTION_OF_MEMORY_TOTAL"]="",
+      ["HUGEPAGES_COUNT"]="",
+      ["HUGEPAGES_SIZE"]="",
+      ["INSTALL"]=false,
+      ["SKIP"]=false,
+      ["UPDATE"]=false,
+      ["USE_CALCULATION"]=false,
+      ["USE_DEFAULTS"]=true,
+    )
 
 #
 # logic
@@ -117,14 +141,22 @@
       # TODO: develop!
       return 1
 
-      # print_and_log_work "Checking compatibility..."
+      if ! is_user_superuser \
+        || ! is_system_supported; then
+        return 1
+      fi
 
-      # if ! is_user_superuser \
-      #   || ! is_system_supported; then
-      #   print_and_log_fail "Compatibility checks failed."
-      #   return 1
-      # fi
+      # TODO: add pre setup.
 
+      # TODO: add main setup.
+
+      # TODO: add remaining.
+      if ! auto_xorg; then
+        print_and_log_fail "Post setup failed."
+        return 1
+      fi
+
+      print_and_log_pass "Post setup complete."
       print_and_log_pass
     }
 
@@ -140,6 +172,53 @@
       # TODO: develop!
       return 1
     }
+
+  #
+  # DESC: Call compatibility checks.
+  # RETURN: If successful, return 0.
+  #         If not, return 1.
+  #
+    function compatibility_checks
+    {
+      if ! is_user_superuser \
+        || ! is_system_supported; then
+        return 1
+      fi
+
+      return 0
+    }
+
+  #
+  # DESC: Pre setup
+  #
+
+  #
+  # DESC: Main setup
+  #
+
+  #
+  # DESC: Post setup
+  #
+    #
+    # DESC:   Call src_auto_xorg_main.
+    # RETURN: If successful, return 0.
+    #         If not, return 1.
+    #
+      function auto_xorg
+      {
+        local -a arr_args="${DICT_AUTO_XORG_ARGS["ARGS"]}"
+
+        if ! src_auto_xorg_main \
+            "${DICT_AUTO_XORG_ARGS["SKIP"]}" \
+            "${DICT_AUTO_XORG_ARGS["INSTALL"]}" \
+            "${DICT_AUTO_XORG_ARGS["UNINSTALL"]}" \
+            "${DICT_AUTO_XORG_ARGS["UPDATE"]}" \
+            "arr_args"; then
+          return 1
+        fi
+
+        return 0
+      }
 
 #
 # main logic
