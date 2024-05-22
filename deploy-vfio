@@ -174,21 +174,6 @@
     }
 
   #
-  # DESC: Call compatibility checks.
-  # RETURN: If successful, return 0.
-  #         If not, return 1.
-  #
-    function compatibility_checks
-    {
-      if ! is_user_superuser \
-        || ! is_system_supported; then
-        return 1
-      fi
-
-      return 0
-    }
-
-  #
   # DESC: Pre setup
   #
 
