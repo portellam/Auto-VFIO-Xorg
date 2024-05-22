@@ -79,12 +79,6 @@
     {
       local -r str_repo_name="Auto X.Org"
       local -r str_fail="Could not execute ${str_repo_name}."
-
-      if ! does_auto_xorg_repo_exist; then
-        print_and_log_fail "${str_fail}"
-        return 2
-      fi
-
       local -a arr_arguments="$@"
       local str_arguments
 
@@ -117,6 +111,29 @@
     }
 
   #
+  # DESC:   Prompt to execute Auto X.Org.
+  # $*:     the command line arguments as a string.
+  # RETURN: If uninstall is successful, return 0.
+  #         If uninstall has failed, return 1.
+  #         If uninstall is skipped, return 2.
+  #
+    function execute_auto_xorg_prompt
+    {
+      local -r str_repo_name="Auto X.Org"
+
+      if ! ask_yes_no_question "Execute ${str_repo_name}?"; then
+        print_and_log_output "Skipped execution of ${str_repo_name}."
+        return 2
+      fi
+
+      if ! execute_auto_xorg "${str_arguments}"; then
+        return 1
+      fi
+
+      return 0
+    }
+
+  #
   # DESC:   Execute Auto X.Org installer.
   # $*:     the command line arguments as a string.
   # RETURN: If execution is successful, return 0.
@@ -127,7 +144,7 @@
       local -r str_repo_name="Auto X.Org"
       local -r str_warn="Could not execute ${str_repo_name} installer."
 
-      if ! does_auto_xorg_repo_exist; then
+      if ! does_auto_xorg_repo_exist "false"; then
         print_and_log_warn "${str_warn}"
         return 1
       fi
@@ -164,13 +181,14 @@
     }
 
   #
-  # DESC:   Install of Auto X.Org, no added arguments.
+  # DESC:   Install of Auto X.Org.
   # $*:     the command line arguments as a string.
   # RETURN: If install is successful, return 0.
   #         If false, return 1.
   #
     function install_auto_xorg
     {
+      local -r str_arguments="${*}"
       local -r str_repo_name="Auto X.Org"
 
       print_and_log_work "Installing ${str_repo_name}..."
@@ -181,6 +199,29 @@
       fi
 
       print_and_log_pass "Installed ${str_repo_name}"
+      return 0
+    }
+
+  #
+  # DESC:   Prompt to install Auto X.Org.
+  # $*:     the command line arguments as a string.
+  # RETURN: If uninstall is successful, return 0.
+  #         If uninstall has failed, return 1.
+  #         If uninstall is skipped, return 2.
+  #
+    function install_auto_xorg_prompt
+    {
+      local -r str_repo_name="Auto X.Org"
+
+      if ! ask_yes_no_question "Install ${str_repo_name}?"; then
+        print_and_log_output "Skipped install of ${str_repo_name}."
+        return 2
+      fi
+
+      if ! install_auto_xorg "${str_arguments}"; then
+        return 1
+      fi
+
       return 0
     }
 
@@ -330,5 +371,27 @@
       fi
 
       print_and_log_pass "Uninstalled ${str_repo_name}"
+      return 0
+    }
+
+  #
+  # DESC:   Prompt to uninstall Auto X.Org.
+  # RETURN: If uninstall is successful, return 0.
+  #         If uninstall has failed, return 1.
+  #         If uninstall is skipped, return 2.
+  #
+    function uninstall_auto_xorg_prompt
+    {
+      local -r str_repo_name="Auto X.Org"
+
+      if ! ask_yes_no_question "Uninstall ${str_repo_name}?"; then
+        print_and_log_output "Skipped uninstall of ${str_repo_name}."
+        return 2
+      fi
+
+      if ! uninstall_auto_xorg; then
+        return 1
+      fi
+
       return 0
     }
