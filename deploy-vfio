@@ -7,34 +7,136 @@
 # Maintainer(s):  Alex Portell <github.com/portellam>
 #
 
-# <params>
+#
+# TODO:
+# - [ ] create dicts for each source files args.
+# - [ ] maintain "high-level" execution here.
+# - [ ] maintain readability such that the user may create his own "deploy-vfio".
+# - [ ] create src_isolcpu
+#
+
+#
+# sources
+#
   declare -g SCRIPT_DIR="/usr/local/bin/"
   declare -g SCRIPT_BIN_DIR="${SCRIPT_DIR}deploy-vfio.d/"
-# <params>
 
-# <sources>
-  source "${SCRIPT_BIN_DIR}sources"
-# </sources>
+  source "${SCRIPT_BIN_DIR}src_print" "${0}"
+  source "${SCRIPT_BIN_DIR}src_privileges"
+  source "${SCRIPT_BIN_DIR}src_compatibility"
+  #source "${SCRIPT_BIN_DIR}src_isolcpu"
+  source "${SCRIPT_BIN_DIR}src_hugepages"
+  source "${SCRIPT_BIN_DIR}src_vfio_setup"
+  source "${SCRIPT_BIN_DIR}src_network"
+  source "${SCRIPT_BIN_DIR}src_auto_xorg"
+  source "${SCRIPT_BIN_DIR}src_libvirt_hooks"
+  source "${SCRIPT_BIN_DIR}src_looking_glass"
+  source "${SCRIPT_BIN_DIR}src_zram_swap"
 
-# <functions>
-  function main
-  {
-    local has_skipped_main_setup=false
-    set_ifs_to_newline
-    is_user_superuser
-    get_options "$@"
-    is_system_supported
-    do_pre_setup
-    do_parse_database
-    do_main_setup || has_skipped_main_setup=true
-    # do_post_setup   # <note>Post setup is not complete at the moment. Saving for future release</note>
+#
+# params
+#
+  BOOL_COMPATIBILITY_SKIP_CHECKS=false
+  BOOL_DO_NOT_CHECK_MY_PRIVILEGE=false
 
-    if "${has_skipped_main_setup}"; then
-      exit 255
-    fi
-  }
-# </functions>
+  declare -A DICT_HUGEPAGES_ARGS=(
+    ["COUNT"]="",
+    ["SIZE"]="",
+    ["SKIP"]=false,
+  )
 
-# <code>
-  main "$@"
-# </code>
+  # TODO: separate into PARSE and SETUP?
+  declare -A DICT_PARSE_ARGS=(
+    ["SELECT_ALL"]=true,
+    ["SELECT_ALL_NON_VGA"]=false,
+    ["SKIP"]=false,
+    ["USE_DEFAULT_XML"]="",
+    ["XML_FILE_NAME"]="",
+  )
+
+  declare -A DICT_VFIO_ARGS=(
+    ["CUSTOM_CMDLINE_STRING"]="",           # TODO: validate in src_vfio_setup for CMDLINE args (ex: hugepages, isolcpu, devices)
+    ["HUGEPAGES_COUNT"]="",
+    ["HUGEPAGES_SIZE"]="",
+    ["IOMMU_GROUPS"]="",
+    ["ISOLCPU_VALUES"]="",
+    ["MULTI_BOOT_SETUP"]=true
+    ["SKIP"]=false,
+    ["STATIC_SETUP"]=false
+  )
+
+  declare -A DICT_AUTO_XORG_ARGS=(
+    ["ARGS"]=""
+    ["INSTALL"]=false,
+    ["SKIP"]=false,
+    ["UPDATE"]=false,
+  )
+
+  declare -A DICT_LIBVIRT_HOOKS_ARGS=(
+    ["ARGS"]="",
+    ["INSTALL"]=false,
+    ["SKIP"]=false,
+    ["UPDATE"]=false,
+  )
+
+  declare -A DICT_LOOKING_GLASS_ARGS=(
+    ["BUFFER_SIZE"]="",
+    ["INSTALL"]=false,
+    ["SKIP"]=false,
+    ["UPDATE"]=false,
+    ["USE_DEFAULTS"]=true,
+  )
+
+  declare -A DICT_ZRAM_SWAP_ARGS=(
+    ["FORCE_RESTART"]=false,
+    ["FRACTION_VALUE"]="",
+    ["INSTALL"]=false,
+    ["SKIP"]=false,
+    ["UPDATE"]=false,
+    ["USE_CALCULATION"]=false,
+    ["USE_DEFAULTS"]=true,
+  )
+
+#
+# logic
+#
+  #
+  # DESC:   Main function.
+  # $*:     the command line arguments as an array.
+  # RETURN: If script executes successfully, return 0.
+  #         If not, return 1.
+  #
+    function main
+    {
+      # TODO: develop!
+      return 1
+
+      # print_and_log_work "Checking compatibility..."
+
+      # if ! is_user_superuser \
+      #   || ! is_system_supported; then
+      #   print_and_log_fail "Compatibility checks failed."
+      #   return 1
+      # fi
+
+      print_and_log_pass
+    }
+
+  #
+  # DESC:   Parse arguments.
+  # $*:     the command line arguments as an array.
+  # RETURN: If all arguments are valid, or none are passed, return 0
+  #         If one or more arguments are not valid, return 1.
+  #         If an exception occurs, return 2.
+  #
+    function parse_args
+    {
+      # TODO: develop!
+      return 1
+    }
+
+#
+# main logic
+#
+  parse_args "$@"
+  main
