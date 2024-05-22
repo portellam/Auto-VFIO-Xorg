@@ -32,7 +32,7 @@
   #         If false, return 1.
   #         If any exception occurs, return 2.
   #
-    function does_auto_xorg_repo_exist
+    function src_auto_xorg_does_repo_exist
     {
       local -r str_repo_name="Auto X.Org"
       local -r str_warn="Could not determine if ${str_repo_name} repository exists."
@@ -75,7 +75,7 @@
   # RETURN: If execution is successful, return 0.
   #         If false, return 1.
   #
-    function execute_auto_xorg
+    function src_auto_xorg_execute
     {
       local -r str_repo_name="Auto X.Org"
       local -r str_fail="Could not execute ${str_repo_name}."
@@ -117,7 +117,7 @@
   #         If uninstall has failed, return 1.
   #         If uninstall is skipped, return 2.
   #
-    function execute_auto_xorg_prompt
+    function src_auto_xorg_execute_prompt
     {
       local -r str_repo_name="Auto X.Org"
 
@@ -126,7 +126,7 @@
         return 2
       fi
 
-      if ! execute_auto_xorg "${str_arguments}"; then
+      if ! src_auto_xorg_execute "${str_arguments}"; then
         return 1
       fi
 
@@ -139,12 +139,12 @@
   # RETURN: If execution is successful, return 0.
   #         If false, return 1.
   #
-    function execute_auto_xorg_installer
+    function src_auto_xorg_execute_installer
     {
       local -r str_repo_name="Auto X.Org"
       local -r str_warn="Could not execute ${str_repo_name} installer."
 
-      if ! does_auto_xorg_repo_exist "false"; then
+      if ! src_auto_xorg_does_repo_exist "false"; then
         print_and_log_warn "${str_warn}"
         return 1
       fi
@@ -186,14 +186,14 @@
   # RETURN: If install is successful, return 0.
   #         If false, return 1.
   #
-    function install_auto_xorg
+    function src_auto_xorg_install
     {
       local -r str_arguments="${*}"
       local -r str_repo_name="Auto X.Org"
 
       print_and_log_work "Installing ${str_repo_name}..."
 
-      if ! execute_auto_xorg_installer "--install ${str_arguments}"; then
+      if ! src_auto_xorg_execute_installer "--install ${str_arguments}"; then
         print_and_log_fail "Could not install ${str_repo_name}."
         return 1
       fi
@@ -209,7 +209,7 @@
   #         If uninstall has failed, return 1.
   #         If uninstall is skipped, return 2.
   #
-    function install_auto_xorg_prompt
+    function src_auto_xorg_install_prompt
     {
       local -r str_repo_name="Auto X.Org"
 
@@ -218,7 +218,7 @@
         return 2
       fi
 
-      if ! install_auto_xorg "${str_arguments}"; then
+      if ! src_auto_xorg_install "${str_arguments}"; then
         return 1
       fi
 
@@ -359,13 +359,13 @@
   # RETURN: If uninstall is successful, return 0.
   #         If false, return 1.
   #
-    function uninstall_auto_xorg
+    function src_auto_xorg_uninstall
     {
       local -r str_repo_name="Auto X.Org"
 
       print_and_log_work "Uninstalling ${str_repo_name}..."
 
-      if ! execute_auto_xorg_installer "--uninstall"; then
+      if ! src_auto_xorg_execute_installer "--uninstall"; then
         print_and_log_fail "Could not uninstall ${str_repo_name}."
         return 1
       fi
@@ -380,7 +380,7 @@
   #         If uninstall has failed, return 1.
   #         If uninstall is skipped, return 2.
   #
-    function uninstall_auto_xorg_prompt
+    function src_auto_xorg_uninstall_prompt
     {
       local -r str_repo_name="Auto X.Org"
 
@@ -389,7 +389,7 @@
         return 2
       fi
 
-      if ! uninstall_auto_xorg; then
+      if ! src_auto_xorg_uninstall; then
         return 1
       fi
 
