@@ -24,7 +24,9 @@
 # setter logic
 #
   #
-  # DESC: globals
+  # DESC:   globals
+  # $1:     the executable name as a string.
+  # RETURN: Always return 0.
   #
     function set_globals
     {
@@ -39,7 +41,14 @@
       #
       # DESC:   vanity
       #
-        declare -gr SRC_PRINT_STR_SCRIPT_NAME="deploy-vfio"
+        declare -g SRC_PRINT_STR_SCRIPT_NAME
+
+        if ! is_string "${1}"; then
+          declare -r SRC_PRINT_STR_SCRIPT_NAME="script"
+
+        else
+          declare -r SRC_PRINT_STR_SCRIPT_NAME="${1}"
+        fi
 
       #
       # DESC:   logger
@@ -98,6 +107,7 @@
     function catch_error
     {
       echo
+      print_and_log_fail "Script failed."
       print_and_log_warn_disclaimer
       exit 1
     }
@@ -109,7 +119,6 @@
     function catch_exit
     {
       local -ir int_return_code="${?}"
-      print_pass_or_fail_to_log
       print_help
       reset_ifs
       return "${int_return_code}"
@@ -441,5 +450,5 @@
 #
 # main logic
 #
-  set_globals
+  set_globals "$*"
   unset set_globals
