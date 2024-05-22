@@ -41,31 +41,37 @@
   #         If else, return 1.
   #         If an exception occurs, return 2.
   #
-    function add_all_iommu_groups_to_either_host_or_vfio_arrays
+    function add_all_iommu_groups_to_either_host_or_vfio_collections
     {
+      local -r str_warn="Could not add all IOMMU groups to Host or VFIO collection."
       local -ir int_iommu_group_id="${1}"
 
       if ! is_array "${5}"; then
         log_invalid_parameter "5"
-        return 1
+        log_warn "${str_warn}"
+        return 2
       fi
 
       if ! is_array "${4}"; then
         log_invalid_parameter "4"
-        return 1
+        log_warn "${str_warn}"
+        return 2
       fi
 
       if ! is_array "${3}"; then
         log_invalid_parameter "3"
-        return 1
+        log_warn "${str_warn}"
+        return 2
       fi
 
       if ! is_array "${2}"; then
         log_invalid_parameter "2"
-        return 1
+        log_warn "${str_warn}"
+        return 2
       fi
 
       if ! is_iommu_group_id_valid "${int_iommu_group_id}"; then
+        log_warn "${str_warn}"
         return 1
       fi
 
@@ -73,14 +79,14 @@
         sort --numeric-sort ); do
           if ! add_iommu_group_to_either_host_or_vfio_array \
             "${int_iommu_group_id}" "${2}" "${3}" "${4}" "${5}"; then
-            log_to_stderr "Could not add IOMMU group ID '${int_iommu_group_id}' to "\
-              "arrays."
+            log_warn "Could not add IOMMU group ID '${int_iommu_group_id}' to "\
+              "collections."
 
             return 1
           fi
       done
 
-      log_to_stdout "Added IOMMU group ID '${int_iommu_group_id}' to arrays."
+      log_output "Added IOMMU group ID '${int_iommu_group_id}' to collections."
       return 0
     }
 
@@ -98,52 +104,59 @@
   #
     function add_iommu_group_to_either_host_or_vfio_array
     {
+      local -r str_warn="Could not add IOMMU group to Host or VFIO collection."
+
       local -ir int_iommu_group_id="${1}"
 
       if ! is_array "${5}"; then
         log_invalid_parameter "5"
-        return 1
+        log_warn "${str_warn}"
+        return 2
       fi
 
       if ! is_array "${4}"; then
         log_invalid_parameter "4"
-        return 1
+        log_warn "${str_warn}"
+        return 2
       fi
 
       if ! is_array "${3}"; then
         log_invalid_parameter "3"
-        return 1
+        log_warn "${str_warn}"
+        return 2
       fi
 
       if ! is_array "${2}"; then
         log_invalid_parameter "2"
-        return 1
+        log_warn "${str_warn}"
+        return 2
       fi
 
       if ! is_iommu_group_id_valid "${int_iommu_group_id}"; then
-        return 1
+        log_warn "${str_warn}"
+        return 2
       fi
 
       if does_iommu_group_have_vga_device "${int_iommu_group_id}"; then
         if ! add_iommu_group_to_either_with_or_without_vga_array \
             "${int_iommu_group_id}" "${2}" "${3}"; then
-          log_to_stderr "Could not add IOMMU group ID '${int_iommu_group_id}' to Host "\
-            "arrays."
+          log_warn "Could not add IOMMU group ID '${int_iommu_group_id}' to Host "\
+            "collections."
 
           return 1
         fi
 
-        log_to_stdout "Added IOMMU group ID '${int_iommu_group_id}' to Host arrays."
+        log_output "Added IOMMU group ID '${int_iommu_group_id}' to Host collections."
       else
         if ! add_iommu_group_to_either_with_or_without_vga_array \
             "${int_iommu_group_id}" "${4}" "${5}"; then
-          log_to_stderr "Could not add IOMMU group ID '${int_iommu_group_id}' to VFIO "\
-            "arrays."
+          log_warn "Could not add IOMMU group ID '${int_iommu_group_id}' to VFIO "\
+            "collections."
 
           return 1
         fi
 
-        log_to_stdout "Added IOMMU group ID '${int_iommu_group_id}' to VFIO arrays."
+        log_output "Added IOMMU group ID '${int_iommu_group_id}' to VFIO collections."
       fi
 
       return 0
@@ -160,38 +173,44 @@
   #
     function add_iommu_group_to_either_with_or_without_vga_array
     {
-      local -ir int_iommu_group_id="${1}"
+      local -r str_warn="Could not add IOMMU group to collection."
 
       if ! is_array "${3}"; then
         log_invalid_parameter "3"
-        return 1
+        log_warn "${str_warn}"
+        return 2
       fi
 
       if ! is_array "${2}"; then
         log_invalid_parameter "2"
-        return 1
+        log_warn "${str_warn}"
+        return 2
       fi
 
+      local -ir int_iommu_group_id="${1}"
+
       if ! is_iommu_group_id_valid "${int_iommu_group_id}"; then
-        return 1
+        log_invalid_parameter "int_iommu_group_id"
+        log_warn "${str_warn}"
+        return 2
       fi
 
       if does_iommu_group_have_vga_device "${int_iommu_group_id}" \
-        && ! add_to_array"${2}" "${int_iommu_group_id}"; then
-        log_to_stderr "Could not add IOMMU group ID '${int_iommu_group_id}' to VGA "\
-          "array."
+        && ! add_to_array "${2}" "${int_iommu_group_id}"; then
+        log_warn "Could not add IOMMU group ID '${int_iommu_group_id}' to VGA "\
+          "collection."
 
         return 1
       fi
 
-      log_to_stdout "Added IOMMU group ID '${int_iommu_group_id}' to VGA array."
+      log_output "Added IOMMU group ID '${int_iommu_group_id}' to VGA collection."
 
       if ! add_to_array "${1}" "${int_iommu_group_id}"; then
-        log_to_stderr "Could not add IOMMU group ID '${int_iommu_group_id}' to array."
+        log_warn "Could not add IOMMU group ID '${int_iommu_group_id}' to collection."
         return 1
       fi
 
-      log_to_stdout "Added IOMMU group ID '${int_iommu_group_id}' to array."
+      log_output "Added IOMMU group ID '${int_iommu_group_id}' to collection."
       return 0
     }
 
@@ -209,37 +228,40 @@
   #
     function add_some_iommu_groups_to_array
     {
-      local -ir int_iommu_group_id="${1}"
+      local -r str_warn="Could not add IOMMU groups to collection."
 
       if ! is_array "${5}"; then
         log_invalid_parameter "5"
-        return 1
+        log_warn "${str_warn}"
+        return 2
       fi
 
       if ! is_array "${4}"; then
         log_invalid_parameter "4"
-        return 1
+        log_warn "${str_warn}"
+        return 2
       fi
 
       if ! is_array "${3}"; then
         log_invalid_parameter "3"
-        return 1
+        log_warn "${str_warn}"
+        return 2
       fi
 
       if ! is_array "${2}"; then
         log_invalid_parameter "2"
-        return 1
+        log_warn "${str_warn}"
+        return 2
       fi
 
-      if ! is_iommu_group_id_valid "${int_iommu_group_id}"; then
-        return 1
-      fi
-
+      local -ir int_iommu_group_id="${1}"
       local -a arr_iommu_groups_temp=( )
 
       if ! is_iommu_group_id_parsable "${int_iommu_group_id}" \
         "arr_iommu_groups_temp"; then
-        return 1
+        log_invalid_parameter "int_iommu_group_id"
+        log_warn "${str_warn}"
+        return 2
       fi
 
       arr_iommu_groups_temp=( \
@@ -249,12 +271,12 @@
       for int_iommu_group_id in ${arr_iommu_groups_temp[@]}; do
         if ! add_unspecified_iommu_group_to_either_host_or_vfio_array \
           "${int_iommu_group_id}" "${2}" "${3}" "${4}" "${5}"; then
-          log_to_stderr "Could not add IOMMU groups to array."
+          log_warn "Could not add IOMMU groups to collection."
           return 1
         fi
       done
 
-      log_to_stdout "Added IOMMU group IDs to array."
+      log_output "Added IOMMU group IDs to collection."
       return 0
     }
 
@@ -272,30 +294,38 @@
   #
     function add_unspecified_iommu_group_to_either_host_or_vfio_array
     {
-      local -ir int_iommu_group_id="${1}"
+      local -r str_warn="Could not add IOMMU group to collection."
 
       if ! is_array "${5}"; then
         log_invalid_parameter "5"
-        return 1
+        log_warn "${str_warn}"
+        return 2
       fi
 
       if ! is_array "${4}"; then
         log_invalid_parameter "4"
-        return 1
+        log_warn "${str_warn}"
+        return 2
       fi
 
       if ! is_array "${3}"; then
         log_invalid_parameter "3"
-        return 1
+        log_warn "${str_warn}"
+        return 2
       fi
 
       if ! is_array "${2}"; then
         log_invalid_parameter "2"
-        return 1
+        log_warn "${str_warn}"
+        return 2
       fi
 
+      local -ir int_iommu_group_id="${1}"
+
       if ! is_iommu_group_id_valid "${int_iommu_group_id}"; then
-        return 1
+        log_invalid_parameter "int_iommu_group_id"
+        log_warn "${str_warn}"
+        return 2
       fi
 
       for int_this_iommu_group_id in $( ls /sys/kernel/iommu_groups/ | \
@@ -303,23 +333,23 @@
         if [[ "${int_this_iommu_group_id}" -ne "${int_iommu_group_id}" ]]; then
           if ! add_iommu_group_to_either_with_or_without_vga_array \
             "${int_iommu_group_id}" "${2}" "${3}"; then
-            log_to_stderr "Could not add IOMMU group ID '${int_iommu_group_id}' to Host"\
-              "arrays."
+            log_warn "Could not add IOMMU group ID '${int_iommu_group_id}' to Host"\
+              "collections."
 
             return 1
           fi
 
-          log_to_stdout "Added IOMMU group ID '${int_iommu_group_id}' to Host arrays."
+          log_output "Added IOMMU group ID '${int_iommu_group_id}' to Host collections."
         else
           if ! add_iommu_group_to_either_with_or_without_vga_array \
             "${int_iommu_group_id}" "${4}" "${5}"; then
-            log_to_stderr "Could not add IOMMU group ID '${int_iommu_group_id}' to VFIO"\
-              "arrays."
+            log_warn "Could not add IOMMU group ID '${int_iommu_group_id}' to VFIO"\
+              "collections."
 
             return 1
           fi
 
-          log_to_stdout "Added IOMMU group ID '${int_iommu_group_id}' to VFIO arrays."
+          log_output "Added IOMMU group ID '${int_iommu_group_id}' to VFIO collections."
         fi
       done
 
@@ -341,7 +371,7 @@
         fi
       done
 
-      log_to_stdout "Host machine does not have an existing VFIO setup."
+      log_output "Host machine does not have an existing VFIO setup."
       return 0
     }
 
@@ -350,13 +380,16 @@
   # $1:     the IOMMU group ID as an int.
   # RETURN: If IOMMU group contains one or more external devices, return 0.
   #         If not, return 1.
+  #         If an exception occurs, return 2.
   #
     function does_iommu_group_have_external_devices
     {
+      local -r str_warn="Could not determine if IOMMU group has an external device."
       local -ir int_iommu_group_id="${1}"
 
       if ! is_iommu_group_id_valid "${int_iommu_group_id}"; then
         log_invalid_parameter "int_iommu_group_id"
+        log_warn "${str_warn}"
         return 2
       fi
 
@@ -366,12 +399,12 @@
 
       for str_device_slot_id in ${arr_device_slot_id[@]}; do
         if is_device_external "${str_device_slot_id}"; then
-          log_to_stdout "IOMMU group '${int_iommu_group_id}' contains external devices."
+          log_output "IOMMU group '${int_iommu_group_id}' contains external devices."
           return 0
         fi
       done
 
-      log_to_stderr "IOMMU group '${int_iommu_group_id}' does not contain external "\
+      log_warn "IOMMU group '${int_iommu_group_id}' does not contain external "\
         "devices."
 
       return 1
@@ -386,10 +419,12 @@
   #
     function does_iommu_group_have_vga_device
     {
+      local -r str_warn="Could not determine if IOMMU group has a VGA device."
       local -ir int_iommu_group_id="${1}"
 
       if ! is_iommu_group_id_valid "${int_iommu_group_id}"; then
         log_invalid_parameter "int_iommu_group_id"
+        log_warn "${str_warn}"
         return 2
       fi
 
@@ -403,8 +438,8 @@
         fi
       done
 
-      print_and_log_warn "Please enter a valid IOMMU group ID which contains one "\
-        "or more VGA devices."
+      log_warn "Please enter a valid IOMMU group ID which contains one or more VGA "\
+        "devices."
 
       return 1
     }
@@ -425,6 +460,7 @@
 
       if ! is_array "${ref_arr_iommu_group_id_parsable}"; then
         log_invalid_parameter "int_iommu_group_id"
+        log_warn "Cannot parse IOMMU group collection."
         return 2
       fi
 
@@ -449,24 +485,24 @@
 
         if ! is_iommu_group_id_valid "${int_range_start}" \
           || ! is_iommu_group_id_valid "${int_range_stop}"; then
-          log_to_stderr "Invalid IOMMU group ID range."
+          log_warn "Invalid IOMMU group ID range."
           return 1
         fi
 
         ref_arr_iommu_group_id_parsable+=( $( seq "${range_start}" "${range_stop}" ) )
-        log_to_stdout "Parsed IOMMU group ID range."
+        log_output "Parsed IOMMU group ID range."
 
       elif is_int "${int_iommu_group_id}"; then
         if ! is_iommu_group_id_valid "${int_iommu_group_id}"; then
-          log_to_stderr "Cannot parse IOMMU group ID '${int_iommu_group_id}'."
+          log_warn "Cannot parse IOMMU group ID '${int_iommu_group_id}'."
           return 1
         fi
 
         ref_arr_iommu_group_id_parsable+=( "${int_iommu_group_id}" )
-        log_to_stdout "Parsed IOMMU group ID."
+        log_output "Parsed IOMMU group ID."
 
       else
-        log_to_stderr "Invalid IOMMU group ID(s)."
+        log_warn "Invalid IOMMU group ID(s)."
         return 1
       fi
 
@@ -485,6 +521,8 @@
       local -ir int_iommu_group_id="${1}"
 
       if ! is_iommu_group_id_valid "${int_iommu_group_id}"; then
+        log_invalid_parameter "int_iommu_group_id"
+        log_warn "Could not determine if IOMMU group is binded to VFIO."
         return 2
       fi
 
@@ -494,10 +532,12 @@
 
       for str_device_slot_id in ${arr_device_slot_id[@]}; do
         if is_device_not_binded_to_vfio "${str_device_slot_id}"; then
+          log_warn "IOMMU group '${int_iommu_group_id}' is binded to VFIO."
           return 1
         fi
       done
 
+      log_output "IOMMU group '${int_iommu_group_id}' is not binded to VFIO."
       return 0
     }
 
@@ -514,8 +554,9 @@
 
       if ! is_int "${int_iommu_group_id}" \
         || [[ "${int_iommu_group_id}" -lt 0 ]]; then
-          log_invalid_parameter "int_iommu_group_id"
-          return 2
+        log_invalid_parameter "int_iommu_group_id"
+        log_warn "Value is not a valid IOMMU group ID."
+        return 2
       fi
 
       local -i int_last_iommu_group_id="$( \
@@ -523,13 +564,13 @@
       )"
 
       if [[ "${int_iommu_group_id}" -gt "${int_last_iommu_group_id}" ]]; then
-        log_to_stderr "Value '${int_iommu_group_id}' is not a valid IOMMU group "\
+        log_warn "Value '${int_iommu_group_id}' is not a valid IOMMU group "\
           "ID. Values must be between '0' and '${int_last_iommu_group_id}'."
 
         return 1
       fi
 
-      log_to_stdout "Value '${int_iommu_group_id}' is a valid IOMMU group ID."
+      log_output "Value '${int_iommu_group_id}' is a valid IOMMU group ID."
       return 0
     }
 
@@ -546,16 +587,17 @@
 
       if ! is_array "${ref_arr_iommu_group_id_valid}"; then
         log_invalid_parameter "ref_arr_iommu_group_id_valid"
+        log_warn "Cannot determine if IOMMU group collection is valid."
         return 2
       fi
 
       for var_iommu_group_id in ${ref_arr_iommu_group_id_valid[@]}; do
         if ! is_iommu_group_id_valid "${var_iommu_group_id}"; then
-          log_to_stderr "IOMMU group collection is not valid."
+          log_warn "IOMMU group collection is not valid."
           return 1
         fi
       done
 
-      log_to_stdout "IOMMU group collection is valid."
+      log_output "IOMMU group collection is valid."
       return 0
     }
