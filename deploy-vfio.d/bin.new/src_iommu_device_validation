@@ -47,11 +47,11 @@
       )
 
       if array_contains_value "arr_excluded_drivers" "${str_device_driver}"; then
-        log_to_stderr "Device is blacklisted."
+        log_warn "Device is blacklisted."
         return 1
       fi
 
-      log_to_stdout "Device is not blacklisted."
+      log_output "Device is not blacklisted."
       return 0
     }
 
@@ -74,11 +74,11 @@
 
       case "${str_device_driver}" in
         *"${str_matched_driver}"* )
-          log_to_stderr "Device is binded to '${str_matched_driver}'."
+          log_warn "Device is binded to '${str_matched_driver}'."
           return 1 ;;
       esac
 
-      log_to_stdout "Device is not binded to '${str_matched_driver}'."
+      log_output "Device is not binded to '${str_matched_driver}'."
       return 0
     }
 
@@ -107,11 +107,11 @@
 
       if ! echo "${str_domain_id}" | \
         grep --extended-regexp --quiet "${str_regex_get_domain_id}"; then
-        log_to_stderr "Device is not external."
+        log_warn "Device is not external."
         return 1
       fi
 
-      log_to_stdout "Device is external."
+      log_output "Device is external."
       return 0
     }
 
@@ -137,11 +137,11 @@
 
       case "${str_device_class}" in
         *"usb"* )
-          log_to_stdout "Device class is valid."
+          log_output "Device class is valid."
           return 0 ;;
       esac
 
-      log_to_stderr "Device class is not valid."
+      log_warn "Device class is not valid."
       return 1
     }
 
@@ -164,11 +164,11 @@
       local -r str_output="$( lspci -s "${str_device}" )"
 
       if ! is_string "${str_output}"; then
-        log_to_stderr "Device ID is not valid."
+        log_warn "Device ID is not valid."
         return 1
       fi
 
-      log_to_stdout "Device ID is valid."
+      log_output "Device ID is valid."
       return 0
     }
 
@@ -269,10 +269,10 @@
 
       case "${str_device_class_lowercase}" in
         *"vga"* | *"graphic"* | *"display"* )
-          log_to_stdout "Device is VGA."
+          log_output "Device is VGA."
           return 0 ;;
       esac
 
-      log_to_stderr "Device is not VGA."
+      log_warn "Device is not VGA."
       return 1
     }
