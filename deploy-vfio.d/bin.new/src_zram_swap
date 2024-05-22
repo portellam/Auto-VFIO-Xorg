@@ -20,6 +20,7 @@
   declare -g SRC_STR_SCRIPT_BIN_DIR="${SRC_STR_SCRIPT_DIR}deploy-vfio.d/"
 
   source "${SRC_STR_SCRIPT_BIN_DIR}src_print"
+  source "${SRC_STR_SCRIPT_BIN_DIR}src_git"
   source "${SRC_STR_SCRIPT_BIN_DIR}src_memory"
 
 #
