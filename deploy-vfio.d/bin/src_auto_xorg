@@ -226,10 +226,11 @@
   #
   # DESC:   Main execution.
   # $1:     do skip.
-  # $2:     do force install.
-  # $3:     do force uninstall.
-  # $3:     do force update.
-  # $4:     the execute/install command line arguments as an array reference.
+  # $2:     do force execute.
+  # $3:     do force install.
+  # $4:     do force uninstall.
+  # $5:     do force update.
+  # $6:     the execute/install command line arguments as an array reference.
   # RETURN: If successful, return 0.
   #         If not, return 1.
   #         If any exceptions occur, return 2.
@@ -237,7 +238,7 @@
     function src_auto_xorg_main
     {
       local -r str_repo_name="Auto X.Org"
-      local -n arr_arguments="${5}"
+      local -n arr_arguments="${6}"
 
       if ! is_array "${arr_arguments}"; then
         log_invalid_parameter "arr_arguments"
@@ -251,24 +252,31 @@
         return 2
       fi
 
-      local -r bool_do_force_update="${4}"
+      local -r bool_do_force_update="${5}"
 
       if ! is_bool "${bool_do_force_update}"; then
         log_invalid_parameter "bool_do_force_update"
         return 2
       fi
 
-      local -r bool_do_force_uninstall="${3}"
+      local -r bool_do_force_uninstall="${4}"
 
       if ! is_bool "${bool_do_force_uninstall}"; then
         log_invalid_parameter "bool_do_force_uninstall"
         return 2
       fi
 
-      local -r bool_do_force_install="${2}"
+      local -r bool_do_force_install="${3}"
 
       if ! is_bool "${bool_do_force_install}l"; then
         log_invalid_parameter "bool_do_force_install"
+        return 2
+      fi
+
+      local -r bool_do_force_execute="${2}"
+
+      if ! is_bool "${bool_do_force_execute}"; then
+        log_invalid_parameter "bool_do_force_execute"
         return 2
       fi
 
@@ -292,6 +300,14 @@
 
       if "${bool_do_force_install}"; then
         if ! src_auto_xorg_install "${str_arguments}"; then
+          return 1
+        fi
+
+        return 0
+      fi
+
+      if "${bool_do_force_execute}"; then
+        if ! src_auto_xorg_execute "${str_arguments}"; then
           return 1
         fi
 
