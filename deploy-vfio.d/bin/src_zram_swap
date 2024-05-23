@@ -27,6 +27,60 @@
 # logic
 #
   #
+  # DESC:   Get the calculated fraction.
+  # $1:     the fraction as a string reference.
+  # RETURN: If fraction is valid, return 0.
+  #         If not, return 1.
+  #         If an exception occurs, return 2.
+  #
+    function src_zram_calculate_fraction
+    {
+      log_work "Getting calculated fraction..."
+
+      local -n ref_alpha_str_fraction="${1}"
+
+      if ! is_string "${ref_alpha_str_fraction}"; then
+        log_invalid_parameter "ref_alpha_str_fraction"
+        print_and_log_warn "Could not get fraction."
+        return 2
+      fi
+
+      local -ir int_zram_swap_available_memory=$(( \
+        SRC_MEMORY_INT_CURRENT_FREE_MEMORY_BYTES / 2 \
+      ))
+
+        #
+        # NOTE: First evaluate the ratio of max system memory to the zram-swap
+        # available memory, as a decimal to the hundredths place.
+        # Then truncate the decimal and return an integer.
+        #
+        local -r str_max_and_available_memory_fraction=""\
+          "${SRC_MEMORY_INT_MAX_FREE_MEMORY_BYTES}/${int_zram_swap_available_memory}"
+
+        local -i int_denominator=$( printf "%.0f" \
+          $( echo "scale=2;${str_max_and_available_memory_fraction}" | bc ) \
+        )
+
+        #
+        # NOTE: If denominator is odd, subtract one.
+        #
+        if [[ $( expr ${int_denominator} % 2 ) -eq 1 ]]; then
+          (( int_denominator-- ))
+        fi
+
+        log_output "Denominator: ${int_denominator}"
+
+        if [[ "${int_denominator}" -le 1 ]]; then
+          print_and_log_warn "Denominator is less than or equal to one."
+          return 1
+        fi
+
+        ref_alpha_str_fraction="1/${int_denominator}"
+        log_pass "Fraction: ${ref_alpha_str_fraction}"
+        return 0
+    }
+
+  #
   # DESC:   Checks if git repo exists.
   # $1:     do force download repo.
   # RETURN: If repo exists, return 0.
@@ -67,6 +121,71 @@
       fi
 
       log_pass "${str_repo_name} repository exists."
+      return 0
+    }
+
+  #
+  # DESC:   Enable ZRAM Swap device.
+  # $1:     do force restart all ZRAM Swap devices.
+  # RETURN: If ZRAM Swap device is enabled, return 0.
+  #         If not, return 1.
+  #         If an exception occurs, return 2.
+  #
+    function src_zram_enable_device
+    {
+      local -r str_repo_name="ZRAM Swap"
+      log_work "Enabling ${str_repo_name} device(s)..."
+
+      local -r str_warn="Could not enable ${str_repo_name} device(s)."
+      local -r bool_do_force_restart="${1}"
+
+      if ! is_bool "${bool_do_force_restart}"; then
+        log_invalid_parameter "bool_do_force_restart"
+        print_and_log_warn "${str_warn}"
+        return 2
+      fi
+
+      if ! "${bool_do_force_restart}" \
+        && sudo swapon --verbose | grep zram &> /dev/null \
+        && sudo swapon --verbose | grep zram &> /dev/null \
+        && ! sudo swapon --verbose | grep zram | grep 0B &> /dev/null; then
+        print_and_log_output "Skipped enabling ${str_repo_name} device(s)\n"\
+          "${str_repo_name} device(s) already in use. Restart system to save changes."
+
+        return 0
+      fi
+
+      if sudo swapon --verbose | grep zram &> /dev/null \
+        && ! sudo swapoff /dev/zram* &> /dev/null; then
+        log_output "Failed to disable ${str_repo_name} device(s)."
+        print_and_log_warn "${str_warn}"
+        return 1
+      fi
+
+      log_pass "Disabled ${str_repo_name} device(s)."
+
+      if ! sudo systemctl daemon-reload &> /dev/null; then
+        log_output "Could not update Systemd."
+        print_and_log_warn "${str_warn}"
+        return 1
+      fi
+
+      log_pass "Updated Systemd."
+
+      if ! sudo systemctl restart zram-swap &> /dev/null; then
+        log_output "Could not restart ${str_repo_name} service."
+        print_and_log_warn "${str_warn}"
+        return 1
+      fi
+
+      log_pass "Restarted ${str_repo_name} service."
+
+      if ! sudo swapon --verbose | grep zram &> /dev/null; then
+        print_and_log_warn "${str_warn}"
+        return 1
+      fi
+
+      log_pass "Enabled ${str_repo_name} device(s)."
       return 0
     }
 
@@ -181,7 +300,7 @@
         return 1
       fi
 
-      if ! src_zram_modify_configuration \
+      if ! src_zram_swap_modify_configuration \
           "${bool_do_force_restart}" \
           "${bool_do_use_default_fraction}" \
           "${str_fraction}" \
@@ -224,6 +343,93 @@
     }
 
   #
+  # DESC:   Modify configuration files for ZRAM Swap.
+  # $1:     do force restart all ZRAM Swap devices.
+  # $2:     do use the default fraction value.
+  # $3:     do use calculated fraction value.
+  # $4:     the fraction as a string.
+  # RETURN: If output is valid and file is written, return 0.
+  #         If not, return 1.
+  #         If an exception occurs, return 2.
+  #
+    function src_zram_swap_modify_configuration
+    {
+      local -r str_repo_name="ZRAM Swap"
+      local -r str_warn="Could not modify ${str_repo_name} configuration."
+
+      log_work "Modifying ${str_repo_name} configuration..."
+
+      local str_fraction="${4}"
+
+      if is_string "${str_fraction}" \
+        && ! is_fraction "${str_fraction}"; then
+        log_invalid_parameter "str_fraction"
+        print_and_log_warn "${str_warn}"
+        return 2
+      fi
+
+      local bool_do_use_calculated_fraction="${3}"
+
+      if ! is_bool "${bool_do_use_calculated_fraction}"; then
+        log_invalid_parameter "bool_do_use_calculated_fraction"
+        print_and_log_warn "${str_warn}"
+        return 2
+      fi
+
+      local bool_do_use_default_fraction="${2}"
+
+      if ! is_bool "${bool_do_use_default_fraction}"; then
+        log_invalid_parameter "bool_do_use_default_fraction"
+        print_and_log_warn "${str_warn}"
+        return 2
+      fi
+
+      local bool_do_force_restart="${1}"
+
+      if ! is_bool "${bool_do_force_restart}"; then
+        log_invalid_parameter "bool_do_force_restart"
+        print_and_log_warn "${str_warn}"
+        return 2
+      fi
+
+      if ! is_fraction "${str_fraction}"; then
+        if "${bool_do_use_calculated_fraction}"; then
+          if ! src_zram_calculate_fraction "${str_fraction}"; then
+            print_and_log_warn "${str_warn}"
+            return 1
+          fi
+
+        else
+          if ! src_zram_swap_set_fraction_prompt \
+            "str_fraction" \
+            "${bool_do_use_default_fraction}"; then
+            print_and_log_warn "${str_warn}"
+            return 2
+          fi
+        fi
+
+      else
+        if ! is_absolute_value_of_fraction_less_than_one "${str_fraction}"; then
+          print_and_log_warn "${str_warn}"
+          return 2
+        fi
+      fi
+
+      local -r str_file_path="/etc/default/zram-swap"
+      local -r str_line_to_match="_zram_fraction="
+
+      if ! sed -i \
+        '/'${str_line_to_match}'"*"/c\'${str_line_to_match}'"'${str_fraction}'"' \
+        "${str_file_path}"; then
+        print_and_log_warn "${str_warn}"
+        return 1
+      fi
+
+      log_pass "Modified ${str_repo_name} configuration."
+      return 0
+    }
+
+  #
   # DESC:   Set ZRAM Swap fraction size.
   # $1:     the fraction as a string reference.
   # $2:     do use the default fraction value.
@@ -231,7 +437,7 @@
   #         If not, return 1.
   #         If an exception occurs, return 2.
   #
-    function src_zram_set_fraction
+    function src_zram_swap_set_fraction
     {
       local -r str_repo_name="ZRAM Swap"
       local -r str_warn="Could not set ${str_repo_name} fraction value."
@@ -285,7 +491,7 @@
   #         If not, return 1.
   #         If an exception occurs, return 2.
   #
-    function src_zram_set_fraction_prompt
+    function src_zram_swap_set_fraction_prompt
     {
       local -r str_repo_name="ZRAM Swap"
 
@@ -306,7 +512,7 @@
       local -r str_default_fraction="1/2"
 
       if "${bool_do_use_default}"; then
-        src_zram_set_fraction "${ref_alpha_str_fraction}" "${ref_alpha_str_fraction}"
+        src_zram_swap_set_fraction "${ref_alpha_str_fraction}" "${ref_alpha_str_fraction}"
         return 0
       fi
 
@@ -321,7 +527,7 @@
           bool_do_use_default=true
         fi
 
-        if src_zram_set_fraction "${ref_alpha_str_fraction}" \
+        if src_zram_swap_set_fraction "${ref_alpha_str_fraction}" \
           "${bool_do_use_default}"; then
           return 0
         fi
@@ -329,212 +535,6 @@
 
       print_and_log_warn "Not a fraction or invalid input."
       return 1
-    }
-
-  #
-  # DESC:   Modify configuration files for ZRAM Swap.
-  # $1:     do force restart all ZRAM Swap devices.
-  # $2:     do use the default fraction value.
-  # $3:     do use calculated fraction value.
-  # $4:     the fraction as a string.
-  # RETURN: If output is valid and file is written, return 0.
-  #         If not, return 1.
-  #         If an exception occurs, return 2.
-  #
-    function src_zram_modify_configuration
-    {
-      local -r str_repo_name="ZRAM Swap"
-      local -r str_warn="Could not modify ${str_repo_name} configuration."
-
-      log_work "Modifying ${str_repo_name} configuration..."
-
-      local str_fraction="${4}"
-
-      if is_string "${str_fraction}" \
-        && ! is_fraction "${str_fraction}"; then
-        log_invalid_parameter "str_fraction"
-        print_and_log_warn "${str_warn}"
-        return 2
-      fi
-
-      local bool_do_use_calculated_fraction="${3}"
-
-      if ! is_bool "${bool_do_use_calculated_fraction}"; then
-        log_invalid_parameter "bool_do_use_calculated_fraction"
-        print_and_log_warn "${str_warn}"
-        return 2
-      fi
-
-      local bool_do_use_default_fraction="${2}"
-
-      if ! is_bool "${bool_do_use_default_fraction}"; then
-        log_invalid_parameter "bool_do_use_default_fraction"
-        print_and_log_warn "${str_warn}"
-        return 2
-      fi
-
-      local bool_do_force_restart="${1}"
-
-      if ! is_bool "${bool_do_force_restart}"; then
-        log_invalid_parameter "bool_do_force_restart"
-        print_and_log_warn "${str_warn}"
-        return 2
-      fi
-
-      if ! is_fraction "${str_fraction}"; then
-        if "${bool_do_use_calculated_fraction}"; then
-          if ! src_zram_calculate_fraction "${str_fraction}"; then
-            print_and_log_warn "${str_warn}"
-            return 1
-          fi
-
-        else
-          if ! src_zram_set_fraction_prompt \
-            "str_fraction" \
-            "${bool_do_use_default_fraction}"; then
-            print_and_log_warn "${str_warn}"
-            return 2
-          fi
-        fi
-
-      else
-        if ! is_absolute_value_of_fraction_less_than_one "${str_fraction}"; then
-          print_and_log_warn "${str_warn}"
-          return 2
-        fi
-      fi
-
-      local -r str_file_path="/etc/default/zram-swap"
-      local -r str_line_to_match="_zram_fraction="
-
-      if ! sed -i \
-        '/'${str_line_to_match}'"*"/c\'${str_line_to_match}'"'${str_fraction}'"' \
-        "${str_file_path}"; then
-        print_and_log_warn "${str_warn}"
-        return 1
-      fi
-
-      log_pass "Modified ${str_repo_name} configuration."
-      return 0
-    }
-
-  #
-  # DESC:   Enable ZRAM Swap device.
-  # $1:     do force restart all ZRAM Swap devices.
-  # RETURN: If ZRAM Swap device is enabled, return 0.
-  #         If not, return 1.
-  #         If an exception occurs, return 2.
-  #
-    function src_zram_enable_device
-    {
-      local -r str_repo_name="ZRAM Swap"
-      log_work "Enabling ${str_repo_name} device(s)..."
-
-      local -r str_warn="Could not enable ${str_repo_name} device(s)."
-      local -r bool_do_force_restart="${1}"
-
-      if ! is_bool "${bool_do_force_restart}"; then
-        log_invalid_parameter "bool_do_force_restart"
-        print_and_log_warn "${str_warn}"
-        return 2
-      fi
-
-      if ! "${bool_do_force_restart}" \
-        && sudo swapon --verbose | grep zram &> /dev/null \
-        && sudo swapon --verbose | grep zram &> /dev/null \
-        && ! sudo swapon --verbose | grep zram | grep 0B &> /dev/null; then
-        print_and_log_output "Skipped enabling ${str_repo_name} device(s)\n"\
-          "${str_repo_name} device(s) already in use. Restart system to save changes."
-
-        return 0
-      fi
-
-      if sudo swapon --verbose | grep zram &> /dev/null \
-        && ! sudo swapoff /dev/zram* &> /dev/null; then
-        log_output "Failed to disable ${str_repo_name} device(s)."
-        print_and_log_warn "${str_warn}"
-        return 1
-      fi
-
-      log_pass "Disabled ${str_repo_name} device(s)."
-
-      if ! sudo systemctl daemon-reload &> /dev/null; then
-        log_output "Could not update Systemd."
-        print_and_log_warn "${str_warn}"
-        return 1
-      fi
-
-      log_pass "Updated Systemd."
-
-      if ! sudo systemctl restart zram-swap &> /dev/null; then
-        log_output "Could not restart ${str_repo_name} service."
-        print_and_log_warn "${str_warn}"
-        return 1
-      fi
-
-      log_pass "Restarted ${str_repo_name} service."
-
-      if ! sudo swapon --verbose | grep zram &> /dev/null; then
-        print_and_log_warn "${str_warn}"
-        return 1
-      fi
-
-      log_pass "Enabled ${str_repo_name} device(s)."
-      return 0
-    }
-
-  #
-  # DESC:   Get the calculated fraction.
-  # $1:     the fraction as a string reference.
-  # RETURN: If fraction is valid, return 0.
-  #         If not, return 1.
-  #         If an exception occurs, return 2.
-  #
-    function src_zram_calculate_fraction
-    {
-      log_work "Getting calculated fraction..."
-
-      local -n ref_alpha_str_fraction="${1}"
-
-      if ! is_string "${ref_alpha_str_fraction}"; then
-        log_invalid_parameter "ref_alpha_str_fraction"
-        print_and_log_warn "Could not get fraction."
-        return 2
-      fi
-
-      local -ir int_zram_swap_available_memory=$(( \
-        SRC_MEMORY_INT_CURRENT_FREE_MEMORY_BYTES / 2 \
-      ))
-
-        #
-        # NOTE: First evaluate the ratio of max system memory to the zram-swap
-        # available memory, as a decimal to the hundredths place.
-        # Then truncate the decimal and return an integer.
-        #
-        local -r str_max_and_available_memory_fraction=""\
-          "${SRC_MEMORY_INT_MAX_FREE_MEMORY_BYTES}/${int_zram_swap_available_memory}"
-
-        local -i int_denominator=$( printf "%.0f" \
-          $( echo "scale=2;${str_max_and_available_memory_fraction}" | bc ) \
-        )
-
-        #
-        # NOTE: If denominator is odd, subtract one.
-        #
-        if [[ $( expr ${int_denominator} % 2 ) -eq 1 ]]; then
-          (( int_denominator-- ))
-        fi
-
-        log_output "Denominator: ${int_denominator}"
-
-        if [[ "${int_denominator}" -le 1 ]]; then
-          print_and_log_warn "Denominator is less than or equal to one."
-          return 1
-        fi
-
-        ref_alpha_str_fraction="1/${int_denominator}"
-        log_pass "Fraction: ${ref_alpha_str_fraction}"
-        return 0
     }
 
   #
