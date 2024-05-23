@@ -117,11 +117,10 @@
 
     declare -A DICT_ZRAM_SWAP_ARGS=(
       ["FORCE_RESTART"]=false,
-      ["FRACTION_OF_MEMORY_TOTAL"]="",
-      ["HUGEPAGES_COUNT"]="",
-      ["HUGEPAGES_SIZE"]="",
+      ["HUGEPAGES_MEMORY_COUNT_BYTES"]="",
       ["INSTALL"]=false,
       ["SKIP"]=false,
+      ["TOTAL_MEMORY_FRACTION"]="",
       ["UPDATE"]=false,
       ["USE_CALCULATION"]=false,
       ["USE_DEFAULTS"]=true,
