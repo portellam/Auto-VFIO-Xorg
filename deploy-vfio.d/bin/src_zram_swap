@@ -33,7 +33,7 @@
   #         If false, return 1.
   #         If any exception occurs, return 2.
   #
-    function does_zram_swap_repo_exist
+    function src_zram_swap_does_repo_exist
     {
       local -r str_repo_name="ZRAM Swap"
       local -r str_warn="Could not determine if ${str_repo_name} repository exists."
@@ -72,15 +72,24 @@
 
   #
   # DESC:   Execute ZRAM Swap installer.
+  # $*:     the command line arguments as a string.
   # RETURN: If execution is successful, return 0.
   #         If false, return 1.
   #
-    function execute_zram_swap_installer
+    function src_zram_swap_execute_installer
     {
       local -r str_repo_name="ZRAM Swap"
       local -r str_warn="Could not execute ${str_repo_name} installer."
 
-      if ! does_zram_swap_repo_exist; then
+      if ! src_zram_swap_does_repo_exist "false"; then
+        print_and_log_warn "${str_warn}"
+        return 1
+      fi
+
+      local -a arr_arguments="$@"
+      local str_arguments
+
+      if ! get_delimited_string_from_array "arr_arguments" "str_arguments" " "; then
         print_and_log_warn "${str_warn}"
         return 1
       fi
@@ -92,7 +101,7 @@
       fi
 
       log_work "Executing ${str_repo_name} installer...\n"
-      sudo bash install.sh --install
+      sudo bash install.sh "${str_arguments}"
 
       local -i int_code="${?}"
 
@@ -118,7 +127,7 @@
   #         If not, return 1.
   #         If an exception occurs, return 2.
   #
-    function install_zram_swap
+    function src_zram_swap_install
     {
       local -r str_repo_name="ZRAM Swap"
       local -r str_fail="Could not install ${str_repo_name}."
@@ -167,22 +176,50 @@
       fi
 
       if ! "${bool_do_ignore_reinstall}" \
-        && ! execute_zram_swap_installer; then
+        && ! src_zram_swap_execute_installer "--install"; then
         print_and_log_fail "${str_fail}"
         return 1
       fi
 
-      if ! modify_zram_swap_configuration \
+      if ! src_zram_modify_configuration \
           "${bool_do_force_restart}" \
           "${bool_do_use_default_fraction}" \
           "${str_fraction}" \
-        || ! enable_zram_swap_device \
+        || ! src_zram_enable_device \
           "${bool_do_force_restart}"; then
         print_and_log_fail "${str_fail}"
         return "${?}"
       fi
 
       print_and_log_pass "Installed ${str_repo_name}."
+      return 0
+    }
+
+  #
+  # DESC:   Prompt to install ZRAM Swap.
+  # $1:     do ignore reinstall.
+  # $2:     do force restart all ZRAM Swap devices.
+  # $3:     do use the default fraction value.
+  # $4:     do use calculated fraction value.
+  # $5:     the fraction as a string.
+  # RETURN: If install is successful, return 0.
+  #         If install has failed, return 1.
+  #         If install is skipped, return 2.
+  #
+    function src_zram_swap_install_prompt
+    {
+      local -r str_arguments="${*}"
+      local -r str_repo_name="ZRAM Swap"
+
+      if ! ask_yes_no_question "Install ${str_repo_name}?"; then
+        print_and_log_output "Skipped install of ${str_repo_name}."
+        return 2
+      fi
+
+      if ! src_zram_swap_install "${1}" "${2}" "${3}" "${4}" "${5}"; then
+        return 1
+      fi
+
       return 0
     }
 
@@ -194,7 +231,7 @@
   #         If not, return 1.
   #         If an exception occurs, return 2.
   #
-    function set_zram_swap_fraction
+    function src_zram_set_fraction
     {
       local -r str_repo_name="ZRAM Swap"
       local -r str_warn="Could not set ${str_repo_name} fraction value."
@@ -248,7 +285,7 @@
   #         If not, return 1.
   #         If an exception occurs, return 2.
   #
-    function set_zram_swap_fraction_prompt
+    function src_zram_set_fraction_prompt
     {
       local -r str_repo_name="ZRAM Swap"
 
@@ -269,11 +306,13 @@
       local -r str_default_fraction="1/2"
 
       if "${bool_do_use_default}"; then
-        set_zram_swap_fraction "${ref_alpha_str_fraction}" "${ref_alpha_str_fraction}"
+        src_zram_set_fraction "${ref_alpha_str_fraction}" "${ref_alpha_str_fraction}"
         return 0
       fi
 
-      for int_counter in $( seq 0 2 ); do
+      local -i int_max_tries=2
+
+      for int_count in $( seq 0 "${int_max_tries}" ); do
         read -r -p "Set fraction of total memory for ${str_repo_name} to use " \
           "(to calculate default, enter 'default'): " \
           ref_alpha_str_fraction
@@ -282,7 +321,7 @@
           bool_do_use_default=true
         fi
 
-        if set_zram_swap_fraction "${ref_alpha_str_fraction}" \
+        if src_zram_set_fraction "${ref_alpha_str_fraction}" \
           "${bool_do_use_default}"; then
           return 0
         fi
@@ -302,7 +341,7 @@
   #         If not, return 1.
   #         If an exception occurs, return 2.
   #
-    function modify_zram_swap_configuration
+    function src_zram_modify_configuration
     {
       local -r str_repo_name="ZRAM Swap"
       local -r str_warn="Could not modify ${str_repo_name} configuration."
@@ -344,13 +383,13 @@
 
       if ! is_fraction "${str_fraction}"; then
         if "${bool_do_use_calculated_fraction}"; then
-          if ! get_calulated_fraction "${str_fraction}"; then
+          if ! src_zram_calculate_fraction "${str_fraction}"; then
             print_and_log_warn "${str_warn}"
             return 1
           fi
 
         else
-          if ! set_zram_swap_fraction_prompt \
+          if ! src_zram_set_fraction_prompt \
             "str_fraction" \
             "${bool_do_use_default_fraction}"; then
             print_and_log_warn "${str_warn}"
@@ -386,7 +425,7 @@
   #         If not, return 1.
   #         If an exception occurs, return 2.
   #
-    function enable_zram_swap_device
+    function src_zram_enable_device
     {
       local -r str_repo_name="ZRAM Swap"
       log_work "Enabling ${str_repo_name} device(s)..."
@@ -451,7 +490,7 @@
   #         If not, return 1.
   #         If an exception occurs, return 2.
   #
-    function get_calulated_fraction
+    function src_zram_calculate_fraction
     {
       log_work "Getting calculated fraction..."
 
@@ -496,4 +535,26 @@
         ref_alpha_str_fraction="1/${int_denominator}"
         log_pass "Fraction: ${ref_alpha_str_fraction}"
         return 0
+    }
+
+  #
+  # DESC:   Prompt to uninstall ZRAM Swap.
+  # RETURN: If uninstall is successful, return 0.
+  #         If uninstall has failed, return 1.
+  #         If uninstall is skipped, return 2.
+  #
+    function src_zram_swap_uninstall_prompt
+    {
+      local -r str_repo_name="ZRAM Swap"
+
+      if ! ask_yes_no_question "Uninstall ${str_repo_name}?"; then
+        print_and_log_output "Skipped uninstall of ${str_repo_name}."
+        return 2
+      fi
+
+      if ! src_zram_swap_execute_installer "--uninstall"; then
+        return 1
+      fi
+
+      return 0
     }
