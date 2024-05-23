@@ -9,7 +9,7 @@
 
 #
 # TODO:
-# - [X] develop.
+# - [x] develop.
 # - [ ] test.
 #
 
@@ -29,13 +29,23 @@
   #
   # DESC:   Get the calculated fraction.
   # $1:     the fraction as a string reference.
+  # $2:     the amount of reserved memory in bytes.
   # RETURN: If fraction is valid, return 0.
   #         If not, return 1.
   #         If an exception occurs, return 2.
   #
-    function src_zram_calculate_fraction
+    function src_zram_swap_calculate_fraction
     {
       log_work "Getting calculated fraction..."
+
+      local -r int_reserved_memory_count_bytes="${1}"
+
+      if ! src_zram_swap_is_reserved_memory_valid \
+        "${int_reserved_memory_count_bytes}"; then
+        log_invalid_parameter "int_reserved_memory_count_bytes"
+        print_and_log_warn "Reserve memory amount is not valid."
+        return 2
+      fi
 
       local -n ref_alpha_str_fraction="${1}"
 
@@ -45,39 +55,52 @@
         return 2
       fi
 
-      local -ir int_zram_swap_available_memory=$(( \
+      local -ir int_zram_swap_available_memory_bytes=$(( \
         SRC_MEMORY_INT_CURRENT_FREE_MEMORY_BYTES / 2 \
       ))
 
-        #
-        # NOTE: First evaluate the ratio of max system memory to the zram-swap
-        # available memory, as a decimal to the hundredths place.
-        # Then truncate the decimal and return an integer.
-        #
+      local int_sum_of_reserved_and_requested_memory_bytes=$(( \
+        int_reserved_memory_count_bytes + int_zram_swap_available_memory_bytes \
+      ))
+
+      if [[ \
+        "${int_sum_of_reserved_and_requested_memory_bytes}" -ge \
+        "${SRC_MEMORY_INT_CURRENT_FREE_MEMORY_BYTES}" \
+      ]]; then
+        log_invalid_parameter "int_sum_of_reserved_and_requested_memory_bytes"
+        print_and_log_warn "Total reserved memory count exceeds current free memory".
+        return 2
+      fi
+
+      #
+      # NOTE: First evaluate the ratio of max system memory to the zram-swap
+      # available memory, as a decimal to the hundredths place.
+      # Then truncate the decimal and return an integer.
+      #
         local -r str_max_and_available_memory_fraction=""\
-          "${SRC_MEMORY_INT_MAX_FREE_MEMORY_BYTES}/${int_zram_swap_available_memory}"
+          "${SRC_MEMORY_INT_MAX_FREE_MEMORY_BYTES}/${int_zram_swap_available_memory_bytes}"
 
         local -i int_denominator=$( printf "%.0f" \
           $( echo "scale=2;${str_max_and_available_memory_fraction}" | bc ) \
         )
 
-        #
-        # NOTE: If denominator is odd, subtract one.
-        #
+      #
+      # NOTE: If denominator is odd, subtract one.
+      #
         if [[ $( expr ${int_denominator} % 2 ) -eq 1 ]]; then
           (( int_denominator-- ))
         fi
 
-        log_output "Denominator: ${int_denominator}"
+      log_output "Denominator: ${int_denominator}"
 
-        if [[ "${int_denominator}" -le 1 ]]; then
-          print_and_log_warn "Denominator is less than or equal to one."
-          return 1
-        fi
+      if [[ "${int_denominator}" -le 1 ]]; then
+        print_and_log_warn "Denominator is less than or equal to one."
+        return 1
+      fi
 
-        ref_alpha_str_fraction="1/${int_denominator}"
-        log_pass "Fraction: ${ref_alpha_str_fraction}"
-        return 0
+      ref_alpha_str_fraction="1/${int_denominator}"
+      log_pass "Fraction: ${ref_alpha_str_fraction}"
+      return 0
     }
 
   #
@@ -131,7 +154,7 @@
   #         If not, return 1.
   #         If an exception occurs, return 2.
   #
-    function src_zram_enable_device
+    function src_zram_swap_enable_device
     {
       local -r str_repo_name="ZRAM Swap"
       log_work "Enabling ${str_repo_name} device(s)..."
@@ -190,6 +213,32 @@
     }
 
   #
+  # DESC:   Is reserved memory valid
+  # $1:     count of reserved memory in bytes as an int.
+  # RETURN: If amount is valid, return 0.
+  #         If not, return 1.
+  #
+    function src_zram_swap_is_reserved_memory_valid
+    {
+      local -r int_reserved_memory_count_bytes="${1}"
+
+      if ! is_int "${int_reserved_memory_count_bytes}" \
+        || [[ \
+          "${int_reserved_memory_count_bytes}" -lt \
+          "${SRC_MEMORY_INT_MAX_FREE_MEMORY_BYTES}" \
+        ]]; then
+        log_invalid_parameter "int_reserved_memory_count_bytes"
+
+        print_and_log_warn "Reserved memory count is not valid. "\
+          "Size must be less than maximum free memory "\
+          "(${SRC_MEMORY_INT_MAX_FREE_MEMORY_BYTES} bytes)."
+        return 1
+      fi
+
+      return 0
+    }
+
+  #
   # DESC:   Execute ZRAM Swap installer.
   # $*:     the command line arguments as a string.
   # RETURN: If execution is successful, return 0.
@@ -237,14 +286,14 @@
 
   #
   # DESC:   Install ZRAM Swap.
-  # $1:     do ignore reinstall.
-  # $2:     do force restart all ZRAM Swap devices.
-  # $3:     do use the default fraction value.
-  # $4:     do use calculated fraction value.
-  # $5:     the fraction as a string.
-  # RETURN: If ZRAM Swap installed successfully, return 0.
-  #         If not, return 1.
-  #         If an exception occurs, return 2.
+  # $1:     do force restart.
+  # $2:     do use calculated fraction.
+  # $3:     do use default fraction.
+  # $4:     the fraction as a string.
+  # $5:     amount of reserved memory in bytes as an int.
+  # RETURN: If install is successful, return 0.
+  #         If install has failed, return 1.
+  #         If install is skipped, return 2.
   #
     function src_zram_swap_install
     {
@@ -253,24 +302,23 @@
 
       print_and_log_work "Installing ${str_repo_name}..."
 
-      local str_fraction="${5}"
+      local -r int_reserved_memory_count_bytes="${5}"
 
-      if is_string "${str_fraction}" \
-        && ! is_fraction "${str_fraction}"; then
+      if ! is_int "${int_reserved_memory_count_bytes}"; then
+        log_invalid_parameter "int_reserved_memory_count_bytes"
+        print_and_log_fail "${str_fail}"
+        return 2
+      fi
+
+      local -r str_fraction="${4}"
+
+      if ! is_fraction "${str_fraction}"; then
         log_invalid_parameter "str_fraction"
         print_and_log_fail "${str_fail}"
         return 2
       fi
 
-      local bool_do_use_calculated_fraction="${4}"
-
-      if ! is_bool "${bool_do_use_calculated_fraction}"; then
-        log_invalid_parameter "bool_do_use_calculated_fraction"
-        print_and_log_fail "${str_fail}"
-        return 2
-      fi
-
-      local bool_do_use_default_fraction="${3}"
+      local -r bool_do_use_default_fraction="${3}"
 
       if ! is_bool "${bool_do_use_default_fraction}"; then
         log_invalid_parameter "bool_do_use_default_fraction"
@@ -278,7 +326,15 @@
         return 2
       fi
 
-      local bool_do_force_restart="${2}"
+      local -r bool_do_use_calculated_fraction="${2}"
+
+      if ! is_bool "${bool_do_use_calculated_fraction}"; then
+        log_invalid_parameter "bool_do_use_calculated_fraction"
+        print_and_log_fail "${str_fail}"
+        return 2
+      fi
+
+      local -r bool_do_force_restart="${1}"
 
       if ! is_bool "${bool_do_force_restart}"; then
         log_invalid_parameter "bool_do_force_restart"
@@ -286,25 +342,18 @@
         return 2
       fi
 
-      local bool_do_ignore_reinstall="${1}"
-
-      if ! is_bool "${bool_do_ignore_reinstall}"; then
-        log_invalid_parameter "bool_do_ignore_reinstall"
-        print_and_log_fail "${str_fail}"
-        return 2
-      fi
-
-      if ! "${bool_do_ignore_reinstall}" \
+      if "${bool_do_force_install}" \
         && ! src_zram_swap_execute_installer "--install"; then
         print_and_log_fail "${str_fail}"
         return 1
       fi
 
       if ! src_zram_swap_modify_configuration \
-          "${bool_do_force_restart}" \
           "${bool_do_use_default_fraction}" \
+          "${bool_do_use_calculated_fraction}" \
           "${str_fraction}" \
-        || ! src_zram_enable_device \
+          "${int_reserved_memory_count_bytes}" \
+        || ! src_zram_swap_enable_device \
           "${bool_do_force_restart}"; then
         print_and_log_fail "${str_fail}"
         return "${?}"
@@ -316,18 +365,17 @@
 
   #
   # DESC:   Prompt to install ZRAM Swap.
-  # $1:     do ignore reinstall.
-  # $2:     do force restart all ZRAM Swap devices.
-  # $3:     do use the default fraction value.
-  # $4:     do use calculated fraction value.
-  # $5:     the fraction as a string.
+  # $1:     do force restart.
+  # $2:     do use calculated fraction.
+  # $3:     do use default fraction.
+  # $4:     the fraction as a string.
+  # $5:     amount of reserved memory in bytes as an int.
   # RETURN: If install is successful, return 0.
   #         If install has failed, return 1.
   #         If install is skipped, return 2.
   #
     function src_zram_swap_install_prompt
     {
-      local -r str_arguments="${*}"
       local -r str_repo_name="ZRAM Swap"
 
       if ! ask_yes_no_question "Install ${str_repo_name}?"; then
@@ -343,11 +391,274 @@
     }
 
   #
-  # DESC:   Modify configuration files for ZRAM Swap.
-  # $1:     do force restart all ZRAM Swap devices.
-  # $2:     do use the default fraction value.
-  # $3:     do use calculated fraction value.
+  # DESC:   Main execution.
+  # $1:     do skip.
+  # $2:     do force modify.
+  # $3:     do force install.
+  # $4:     do force uninstall.
+  # $5:     do force update.
+  # $6:     do force restart.
+  # $7:     do use calculated fraction.
+  # $8:     do use default fraction.
+  # $9:     the fraction as a string.
+  # $10:    count of reserved memory in bytes as an int.
+  # RETURN: If successful, return 0.
+  #         If not, return 1.
+  #         If any exceptions occur, return 2.
+  #
+    function src_zram_swap_main
+    {
+      local -r str_repo_name="ZRAM Swap"
+      local -r int_reserved_memory_count_bytes="${10}"
+
+      if ! is_int "${int_reserved_memory_count_bytes}"; then
+        log_invalid_parameter "int_reserved_memory_count_bytes"
+        return 2
+      fi
+
+      local -r str_fraction="${9}"
+
+      if ! is_fraction "${str_fraction}"; then
+        log_invalid_parameter "str_fraction"
+        return 2
+      fi
+
+      local -r bool_do_use_default_fraction="${8}"
+
+      if ! is_bool "${bool_do_use_default_fraction}"; then
+        log_invalid_parameter "bool_do_use_default_fraction"
+        return 2
+      fi
+
+      local -r bool_do_use_calculated_fraction="${7}"
+
+      if ! is_bool "${bool_do_use_calculated_fraction}"; then
+        log_invalid_parameter "bool_do_use_calculated_fraction"
+        return 2
+      fi
+
+      local -r bool_do_force_restart="${5}"
+
+      if ! is_bool "${bool_do_force_restart}"; then
+        log_invalid_parameter "bool_do_force_restart"
+        return 2
+      fi
+
+      local -r bool_do_force_update="${5}"
+
+      if ! is_bool "${bool_do_force_modify}"; then
+        log_invalid_parameter "bool_do_force_update"
+        return 2
+      fi
+
+      local -r bool_do_force_uninstall="${4}"
+
+      if ! is_bool "${bool_do_force_uninstall}"; then
+        log_invalid_parameter "bool_do_force_uninstall"
+        return 2
+      fi
+
+      local -r bool_do_force_install="${3}"
+
+      if ! is_bool "${bool_do_force_install}l"; then
+        log_invalid_parameter "bool_do_force_install"
+        return 2
+      fi
+
+      local -r bool_do_force_modify="${2}"
+
+      if ! is_bool "${bool_do_force_modify}"; then
+        log_invalid_parameter "bool_do_force_modify"
+        return 2
+      fi
+
+      local -r bool_do_force_skip="${1}"
+
+      if ! is_bool "${bool_do_force_skip}"; then
+        log_invalid_parameter "bool_do_force_skip"
+        return 2
+      fi
+
+      if "${bool_do_force_skip}"; then
+        print_and_log_output "Skipped ${str_repo_name}."
+        return 0
+      fi
+
+      if "${bool_do_force_update}"; then
+        if ! src_zram_swap_does_repo_exist "true"; then
+          return 1
+        fi
+      fi
+
+      if "${bool_do_force_install}"; then
+        if ! src_zram_swap_install \
+          "${bool_do_force_restart}" \
+          "${bool_do_use_calculated_fraction}" \
+          "${bool_do_use_default_fraction}" \
+          "${str_fraction}" \
+          "${int_reserved_memory_count_bytes}"; then
+          return 1
+        fi
+
+        return 0
+      fi
+
+      if "${bool_do_force_modify}"; then
+        if ! src_zram_swap_modify \
+          "${bool_do_force_restart}" \
+          "${bool_do_use_calculated_fraction}" \
+          "${bool_do_use_default_fraction}" \
+          "${str_fraction}" \
+          "${int_reserved_memory_count_bytes}"; then
+          return 1
+        fi
+
+        return 0
+      fi
+
+      if "${bool_do_force_uninstall}"; then
+        if ! src_zram_swap_uninstall; then
+          return 1
+        fi
+
+        return 0
+      fi
+
+      if ! src_zram_swap_does_repo_exist "false"; then
+        return 1
+      fi
+
+      if ! src_zram_swap_install_prompt \
+          "${bool_do_force_restart}" \
+          "${bool_do_use_calculated_fraction}" \
+          "${bool_do_use_default_fraction}" \
+          "${str_fraction}" \
+          "${int_reserved_memory_count_bytes}"; then
+        return 1
+      fi
+
+      if ! src_zram_swap_modify_prompt \
+          "${bool_do_force_restart}" \
+          "${bool_do_use_calculated_fraction}" \
+          "${bool_do_use_default_fraction}" \
+          "${str_fraction}" \
+          "${int_reserved_memory_count_bytes}"; then
+        return 1
+      fi
+
+      if ! src_zram_swap_uninstall_prompt; then
+        return 1
+      fi
+
+      return 0
+    }
+
+  #
+  # DESC:   Modify ZRAM Swap.
+  # $1:     do force restart.
+  # $2:     do use calculated fraction.
+  # $3:     do use default fraction.
   # $4:     the fraction as a string.
+  # $5:     amount of reserved memory in bytes as an int.
+  # RETURN: If modification is successful, return 0.
+  #         If modification has failed, return 1.
+  #         If modification is skipped, return 2.
+  #
+    function src_zram_swap_modify
+    {
+      local -r str_repo_name="ZRAM Swap"
+      local -r str_fail="Could not modify ${str_repo_name}."
+
+      print_and_log_work "Modifying ${str_repo_name}..."
+
+      local -r int_reserved_memory_count_bytes="${5}"
+
+      if ! is_int "${int_reserved_memory_count_bytes}"; then
+        log_invalid_parameter "int_reserved_memory_count_bytes"
+        print_and_log_fail "${str_fail}"
+        return 2
+      fi
+
+      local -r str_fraction="${4}"
+
+      if ! is_fraction "${str_fraction}"; then
+        log_invalid_parameter "str_fraction"
+        print_and_log_fail "${str_fail}"
+        return 2
+      fi
+
+      local -r bool_do_use_default_fraction="${3}"
+
+      if ! is_bool "${bool_do_use_default_fraction}"; then
+        log_invalid_parameter "bool_do_use_default_fraction"
+        print_and_log_fail "${str_fail}"
+        return 2
+      fi
+
+      local -r bool_do_use_calculated_fraction="${2}"
+
+      if ! is_bool "${bool_do_use_calculated_fraction}"; then
+        log_invalid_parameter "bool_do_use_calculated_fraction"
+        print_and_log_fail "${str_fail}"
+        return 2
+      fi
+
+      local -r bool_do_force_restart="${1}"
+
+      if ! is_bool "${bool_do_force_restart}"; then
+        log_invalid_parameter "bool_do_force_restart"
+        print_and_log_fail "${str_fail}"
+        return 2
+      fi
+
+      if ! src_zram_swap_modify_configuration \
+          "${bool_do_use_default_fraction}" \
+          "${bool_do_use_calculated_fraction}" \
+          "${str_fraction}" \
+          "${int_reserved_memory_count_bytes}" \
+        || ! src_zram_swap_enable_device \
+          "${bool_do_force_restart}"; then
+        print_and_log_fail "${str_fail}"
+        return "${?}"
+      fi
+
+      print_and_log_pass "Modified ${str_repo_name}."
+      return 0
+    }
+
+  #
+  # DESC:   Prompt to modify ZRAM Swap.
+  # $1:     do force restart.
+  # $2:     do use calculated fraction.
+  # $3:     do use default fraction.
+  # $4:     the fraction as a string.
+  # $5:     amount of reserved memory in bytes as an int.
+  # RETURN: If modification is successful, return 0.
+  #         If modification has failed, return 1.
+  #         If modification is skipped, return 2.
+  #
+    function src_zram_swap_modify_prompt
+    {
+      local -r str_repo_name="ZRAM Swap"
+
+      if ! ask_yes_no_question "Modify ${str_repo_name}?"; then
+        print_and_log_output "Skipped modification of ${str_repo_name}."
+        return 2
+      fi
+
+      if ! src_zram_swap_modify "${1}" "${2}" "${3}" "${4}" "${5}"; then
+        return 1
+      fi
+
+      return 0
+    }
+
+  #
+  # DESC:   Modify configuration files for ZRAM Swap.
+  # $1:     do use the default fraction value.
+  # $2:     do use calculated fraction value.
+  # $3:     the fraction as a string.
+  # $4:     count of reserved memory in bytes as an int.
   # RETURN: If output is valid and file is written, return 0.
   #         If not, return 1.
   #         If an exception occurs, return 2.
@@ -359,7 +670,15 @@
 
       log_work "Modifying ${str_repo_name} configuration..."
 
-      local str_fraction="${4}"
+      local int_reserved_memory_count_bytes="${4}"
+
+      if ! is_int "${int_reserved_memory_count_bytes}"; then
+        log_invalid_parameter "int_reserved_memory_count_bytes"
+        print_and_log_warn "${str_warn}"
+        return 2
+      fi
+
+      local str_fraction="${3}"
 
       if is_string "${str_fraction}" \
         && ! is_fraction "${str_fraction}"; then
@@ -368,7 +687,7 @@
         return 2
       fi
 
-      local bool_do_use_calculated_fraction="${3}"
+      local bool_do_use_calculated_fraction="${2}"
 
       if ! is_bool "${bool_do_use_calculated_fraction}"; then
         log_invalid_parameter "bool_do_use_calculated_fraction"
@@ -376,7 +695,7 @@
         return 2
       fi
 
-      local bool_do_use_default_fraction="${2}"
+      local bool_do_use_default_fraction="${1}"
 
       if ! is_bool "${bool_do_use_default_fraction}"; then
         log_invalid_parameter "bool_do_use_default_fraction"
@@ -384,17 +703,10 @@
         return 2
       fi
 
-      local bool_do_force_restart="${1}"
-
-      if ! is_bool "${bool_do_force_restart}"; then
-        log_invalid_parameter "bool_do_force_restart"
-        print_and_log_warn "${str_warn}"
-        return 2
-      fi
-
       if ! is_fraction "${str_fraction}"; then
         if "${bool_do_use_calculated_fraction}"; then
-          if ! src_zram_calculate_fraction "${str_fraction}"; then
+          if ! src_zram_swap_calculate_fraction \
+            "${str_fraction}" "${int_reserved_memory_count_bytes}"; then
             print_and_log_warn "${str_warn}"
             return 1
           fi
@@ -512,7 +824,7 @@
       local -r str_default_fraction="1/2"
 
       if "${bool_do_use_default}"; then
-        src_zram_swap_set_fraction "${ref_alpha_str_fraction}" "${ref_alpha_str_fraction}"
+        src_zram_swap_set_fraction "${ref_alpha_str_fraction}" "${bool_do_use_default}"
         return 0
       fi
 
@@ -538,6 +850,21 @@
     }
 
   #
+  # DESC:   Uninstall ZRAM Swap.
+  # RETURN: If uninstall is successful, return 0.
+  #         If uninstall has failed, return 1.
+  #         If uninstall is skipped, return 2.
+  #
+    function src_zram_swap_uninstall
+    {
+      if ! src_zram_swap_execute_installer "--uninstall"; then
+        return 1
+      fi
+
+      return 0
+    }
+
+  #
   # DESC:   Prompt to uninstall ZRAM Swap.
   # RETURN: If uninstall is successful, return 0.
   #         If uninstall has failed, return 1.
@@ -552,7 +879,7 @@
         return 2
       fi
 
-      if ! src_zram_swap_execute_installer "--uninstall"; then
+      if ! src_zram_swap_uninstall; then
         return 1
       fi
 
