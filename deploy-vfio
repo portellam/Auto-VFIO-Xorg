@@ -28,15 +28,14 @@
   source "${SCRIPT_BIN_DIR}src_print" "${0}"
   source "${SCRIPT_BIN_DIR}src_privileges"
   source "${SCRIPT_BIN_DIR}src_compatibility"
-  #source "${SCRIPT_BIN_DIR}src_isolcpu"
+  source "${SCRIPT_BIN_DIR}src_isolcpu"
   source "${SCRIPT_BIN_DIR}src_hugepages"
   source "${SCRIPT_BIN_DIR}src_vfio_setup"
   source "${SCRIPT_BIN_DIR}src_network"
-  #source "${SCRIPT_BIN_DIR}src_audio_loopback"
   source "${SCRIPT_BIN_DIR}src_auto_xorg"
   source "${SCRIPT_BIN_DIR}src_libvirt_hooks"
   source "${SCRIPT_BIN_DIR}src_looking_glass"
-  #source "${SCRIPT_BIN_DIR}src_scream"
+  source "${SCRIPT_BIN_DIR}src_scream"
   source "${SCRIPT_BIN_DIR}src_zram_swap"
 
 #
