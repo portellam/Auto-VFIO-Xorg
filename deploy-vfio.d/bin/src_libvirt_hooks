@@ -165,7 +165,7 @@
   # $1:     do skip.
   # $2:     do force install.
   # $3:     do force uninstall.
-  # $3:     do force update.
+  # $4:     do force update.
   # RETURN: If successful, return 0.
   #         If not, return 1.
   #         If any exceptions occur, return 2.
