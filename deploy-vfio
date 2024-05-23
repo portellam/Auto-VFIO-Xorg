@@ -101,9 +101,9 @@
     )
 
     declare -A DICT_LIBVIRT_HOOKS_ARGS=(
-      ["ARGS"]="",
       ["INSTALL"]=false,
       ["SKIP"]=false,
+      ["UNINSTALL"]=false,
       ["UPDATE"]=false,
     )
 
@@ -148,27 +148,35 @@
       fi
 
       # TODO: add pre setup.
-      print_and_log_work "Executing pre setup..."
+      # print_and_log_work "Executing pre setup..."
 
-      if false; then
-        print_and_log_fail "Pre setup failed."
-        return 1
-      fi
+      # if ! hugepages \
+      #   || ! isolcpu; then
+      #   print_and_log_fail "Pre setup failed."
+      #   return 1
+      # fi
 
-      print_and_log_pass "Pre setup complete."
-      print_and_log_work "Executing main setup..."
+      # print_and_log_pass "Pre setup complete."
+      # print_and_log_work "Executing main setup..."
 
       # TODO: add main setup.
-      if ! false; then
-        print_and_log_fail "Main setup failed."
-        return 1
-      fi
+      # if ! iommu \
+      #   || ! vfio_setup; then
+      #   print_and_log_fail "Main setup failed."
+      #   return 1
+      # fi
 
-      print_and_log_pass "Main setup complete."
+      # print_and_log_pass "Main setup complete."
       print_and_log_work "Executing post setup..."
 
       # TODO: add remaining.
+      # if ! auto_xorg \
+      #   || ! libvirt_hooks \
+      #   || ! looking_glass \
+      #   || ! scream \
+      #   || ! zram_swap; then
       if ! auto_xorg \
+        || ! libvirt_hooks \
         || ! zram_swap; then
         print_and_log_fail "Post setup failed."
         return 1
@@ -212,6 +220,19 @@
           "${DICT_AUTO_XORG_ARGS["UNINSTALL"]}" \
           "${DICT_AUTO_XORG_ARGS["UPDATE"]}" \
           "arr_args"; then
+        return 1
+      fi
+
+      return 0
+    }
+
+    function libvirt_hooks
+    {
+      if ! src_libvirt_hooks_main \
+          "${DICT_LIBVIRT_HOOKS_ARGS["SKIP"]}" \
+          "${DICT_LIBVIRT_HOOKS_ARGS["INSTALL"]}" \
+          "${DICT_LIBVIRT_HOOKS_ARGS["UNINSTALL"]}" \
+          "${DICT_LIBVIRT_HOOKS_ARGS["UPDATE"]}"; then
         return 1
       fi
 
