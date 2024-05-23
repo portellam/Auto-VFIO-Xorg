@@ -239,7 +239,9 @@
         return 0
       fi
 
-      for int_counter in $( seq 0 2 ); do
+      local -i int_max_tries=2
+
+      for int_count in $( seq 0 "${int_max_tries}" ); do
         read -r -p "Enter size of Hugepages [2M/1G]: " HUGEPAGES_BYTE_SUFFIX
         get_hugepages_byte_size "${HUGEPAGES_BYTE_SUFFIX}" && return 0
       done
@@ -282,7 +284,9 @@
         return 0
       fi
 
-      for int_counter in $( seq 0 2 ); do
+      local -i int_max_tries=2
+
+      for int_count in $( seq 0 "${int_max_tries}" ); do
         read -r -p "Enter count of Hugepages [${HUGEPAGES_MIN_COUNT}-${HUGEPAGES_MAX_COUNT}]: " HUGEPAGES_COUNT
         get_hugepages_count "${HUGEPAGES_COUNT}" && return 0
       done
