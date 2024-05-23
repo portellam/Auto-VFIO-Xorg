@@ -10,7 +10,7 @@
 #
 # TODO:
 # - [ ] create dicts for each source files args.
-# - [ ] maintain "high-level" execution here.
+# - [ ] create "high-level" execution here.
 # - [ ] maintain readability such that the user may create his own "deploy-vfio".
 # - [ ] pre-setup
 #   - [ ] create src_isolcpu.
@@ -77,11 +77,11 @@
     )
 
     declare -A DICT_VFIO_ARGS=(
-      ["CUSTOM_CMDLINE_STRING"]="",           # TODO: validate in src_vfio_setup for CMDLINE args (ex: hugepages, isolcpu, devices)
-      ["HUGEPAGES_COUNT"]="",
-      ["HUGEPAGES_SIZE"]="",
-      ["IOMMU_GROUPS"]="",
-      ["ISOLCPU_THREAD_SETS"]="",
+      ["CUSTOM_CMDLINE_STRING"]="",   # TODO: validate in src_vfio_setup for CMDLINE args (ex: hugepages, isolcpu, devices)
+      ["HUGEPAGES_COUNT"]="",         # TODO: how to get this value from other dict?
+      ["HUGEPAGES_SIZE"]="",          # TODO: how to get this value from other dict?
+      ["IOMMU_GROUPS"]="",            # TODO: how to get this value from other dict?
+      ["ISOLCPU_THREAD_SETS"]="",     # TODO: how to get this value from other dict?
       ["MULTI_BOOT_SETUP"]=true
       ["SKIP"]=false,
       ["STATIC_SETUP"]=false
@@ -117,10 +117,12 @@
 
     declare -A DICT_ZRAM_SWAP_ARGS=(
       ["FORCE_RESTART"]=false,
-      ["HUGEPAGES_MEMORY_COUNT_BYTES"]="",
+      ["HUGEPAGES_MEMORY_COUNT_BYTES"]="",      # TODO: how to get this value from other dict?
       ["INSTALL"]=false,
+      ["MODIFY"]=false,
+      ["RESERVED_MEMORY_FRACTION"]="",
+      ["RESTART"]=false,
       ["SKIP"]=false,
-      ["TOTAL_MEMORY_FRACTION"]="",
       ["UPDATE"]=false,
       ["USE_CALCULATION"]=false,
       ["USE_DEFAULTS"]=true,
@@ -146,11 +148,28 @@
       fi
 
       # TODO: add pre setup.
+      print_and_log_work "Executing pre setup..."
+
+      if false; then
+        print_and_log_fail "Pre setup failed."
+        return 1
+      fi
+
+      print_and_log_pass "Pre setup complete."
+      print_and_log_work "Executing main setup..."
 
       # TODO: add main setup.
+      if ! false; then
+        print_and_log_fail "Main setup failed."
+        return 1
+      fi
+
+      print_and_log_pass "Main setup complete."
+      print_and_log_work "Executing post setup..."
 
       # TODO: add remaining.
-      if ! auto_xorg; then
+      if ! auto_xorg \
+        || ! zram_swap; then
         print_and_log_fail "Post setup failed."
         return 1
       fi
@@ -183,26 +202,40 @@
   #
   # DESC: Post setup
   #
-    #
-    # DESC:   Call src_auto_xorg_main.
-    # RETURN: If successful, return 0.
-    #         If not, return 1.
-    #
-      function auto_xorg
-      {
-        local -a arr_args="${DICT_AUTO_XORG_ARGS["ARGS"]}"
+    function auto_xorg
+    {
+      local -a arr_args="${DICT_AUTO_XORG_ARGS["ARGS"]}"
 
-        if ! src_auto_xorg_main \
-            "${DICT_AUTO_XORG_ARGS["SKIP"]}" \
-            "${DICT_AUTO_XORG_ARGS["INSTALL"]}" \
-            "${DICT_AUTO_XORG_ARGS["UNINSTALL"]}" \
-            "${DICT_AUTO_XORG_ARGS["UPDATE"]}" \
-            "arr_args"; then
-          return 1
-        fi
+      if ! src_auto_xorg_main \
+          "${DICT_AUTO_XORG_ARGS["SKIP"]}" \
+          "${DICT_AUTO_XORG_ARGS["INSTALL"]}" \
+          "${DICT_AUTO_XORG_ARGS["UNINSTALL"]}" \
+          "${DICT_AUTO_XORG_ARGS["UPDATE"]}" \
+          "arr_args"; then
+        return 1
+      fi
 
-        return 0
-      }
+      return 0
+    }
+
+    function zram_swap
+    {
+      if ! src_zram_swap_main \
+          "${DICT_ZRAM_SWAP_ARGS["SKIP"]}" \
+          "${DICT_ZRAM_SWAP_ARGS["MODIFY"]}" \
+          "${DICT_ZRAM_SWAP_ARGS["INSTALL"]}" \
+          "${DICT_ZRAM_SWAP_ARGS["UNINSTALL"]}" \
+          "${DICT_ZRAM_SWAP_ARGS["UPDATE"]}" \
+          "${DICT_ZRAM_SWAP_ARGS["RESTART"]}" \
+          "${DICT_ZRAM_SWAP_ARGS["USE_CALCULATION"]}" \
+          "${DICT_ZRAM_SWAP_ARGS["USE_DEFAULTS"]}" \
+          "${DICT_ZRAM_SWAP_ARGS["RESERVED_MEMORY_FRACTION"]}" \
+          "${DICT_ZRAM_SWAP_ARGS["HUGEPAGES_MEMORY_COUNT_BYTES"]}"; then
+        return 1
+      fi
+
+      return 0
+    }
 
 #
 # main logic
