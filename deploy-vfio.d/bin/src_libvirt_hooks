@@ -139,9 +139,9 @@
   #
   # DESC:   Prompt to install Libvirt Hooks.
   # $*:     the command line arguments as a string.
-  # RETURN: If uninstall is successful, return 0.
-  #         If uninstall has failed, return 1.
-  #         If uninstall is skipped, return 2.
+  # RETURN: If install is successful, return 0.
+  #         If install has failed, return 1.
+  #         If install is skipped, return 2.
   #
     function src_libvirt_hooks_install_prompt
     {

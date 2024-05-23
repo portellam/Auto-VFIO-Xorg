@@ -157,9 +157,9 @@
   #
   # DESC:   Prompt to execute Auto X.Org.
   # $*:     the command line arguments as a string.
-  # RETURN: If uninstall is successful, return 0.
-  #         If uninstall has failed, return 1.
-  #         If uninstall is skipped, return 2.
+  # RETURN: If execution is successful, return 0.
+  #         If execution has failed, return 1.
+  #         If execution is skipped, return 2.
   #
     function src_auto_xorg_execute_prompt
     {
@@ -202,9 +202,9 @@
   #
   # DESC:   Prompt to install Auto X.Org.
   # $*:     the command line arguments as a string.
-  # RETURN: If uninstall is successful, return 0.
-  #         If uninstall has failed, return 1.
-  #         If uninstall is skipped, return 2.
+  # RETURN: If install is successful, return 0.
+  #         If install has failed, return 1.
+  #         If install is skipped, return 2.
   #
     function src_auto_xorg_install_prompt
     {
