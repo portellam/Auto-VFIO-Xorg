@@ -235,6 +235,7 @@
   #
     function src_auto_xorg_main
     {
+      local -r str_repo_name="Auto X.Org"
       local -n arr_arguments="${5}"
 
       if ! is_array "${arr_arguments}"; then
@@ -278,7 +279,7 @@
       fi
 
       if "${bool_do_force_skip}"; then
-        print_and_log_output "Skipped Auto X.Org."
+        print_and_log_output "Skipped ${str_repo_name}."
         return 0
       fi
 
