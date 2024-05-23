@@ -145,6 +145,7 @@
   #
     function src_libvirt_hooks_install_prompt
     {
+      local -r str_arguments="${*}"
       local -r str_repo_name="Libvirt Hooks"
 
       if ! ask_yes_no_question "Install ${str_repo_name}?"; then

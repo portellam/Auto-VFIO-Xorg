@@ -208,6 +208,7 @@
   #
     function src_auto_xorg_install_prompt
     {
+      local -r str_arguments="${*}"
       local -r str_repo_name="Auto X.Org"
 
       if ! ask_yes_no_question "Install ${str_repo_name}?"; then
