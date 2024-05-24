@@ -23,7 +23,7 @@
   # RETURN: If user is root, return 0.
   #         If false, return 1.
   #
-    function is_user_superuser
+    function src_privileges_is_user_superuser
     {
       if [[ $( whoami ) != "root" ]]; then
         print_and_log_warn "User is not sudo or root."

@@ -141,7 +141,7 @@
       # TODO: develop!
       return 1
 
-      if ! is_user_superuser \
+      if ! src_privileges_is_user_superuser \
         || ! is_system_supported; then
         return 1
       fi
