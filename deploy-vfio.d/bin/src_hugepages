@@ -138,10 +138,10 @@
   #
     function execute_hugepages_setup
     {
-      execute_hugepages_setup_prompt || return 0
+      src_hugepages_install_prompt || return 0
       local -r output="Static Hugepages setup"
 
-      if ! execute_hugepages_setup_main; then
+      if ! src_hugepages_install; then
         pprint_and_log_fail "${output}"
         return 1
       fi
@@ -150,10 +150,14 @@
     }
 
   #
-  # DESC:   
-  # RETURN: 
+  # DESC:   Install Hugepages.
+  # $1:     the hugepages count as an int.
+  # $2:     the hugepages size as an int.
+  # RETURN: If install is successful, return 0.
+  #         If install is not successful, return 1.
+  #         If any exception occurs, return 2.
   #
-    function execute_hugepages_setup_main
+    function src_hugepages_install
     {
       if ! "${PRE_SETUP_DO_EXECUTE_HUGEPAGES}"; then
         return 0
@@ -181,22 +185,40 @@
     }
 
   #
-  # DESC:   
-  # RETURN: 
+  # DESC:   Prompt to install Hugepages.
+  # $1:     the hugepages count as an int.
+  # $2:     the hugepages size as an int.
+  # RETURN: If answer is yes and install is successful, return 0.
+  #         If answer is no or install is not successful, return 1.
   #
-    function execute_hugepages_setup_prompt
+    function src_hugepages_install_prompt
     {
-      if "${PRE_SETUP_DO_EXECUTE_HUGEPAGES}"; then
-        return 0
-      fi
-
       echo
 
       if ! "${COMMON_ARGS_IS_EXECUTION_QUIET}"; then
-        echo -e "${SET_COLOR_YELLOW}Hugepages${RESET_COLOR} is a feature which statically allocates system memory to pagefiles.\nGuest(s) can use Hugepages to a peformance benefit.\nThe greater the Hugepage size, the less fragmentation of memory, and the less latency/overhead of system memory-access.\n${SET_COLOR_YELLOW}NOTE:${RESET_COLOR} It is recommended to use a size which is a multiple of an individual memory channel/stick.\n${SET_COLOR_YELLOW}Example:${RESET_COLOR} Four (4) channels of 8 GB each, use 1x, 2x, or 3x (8 GB, 16 GB, or 24 GB).\n${SET_COLOR_YELLOW}NOTE:${RESET_COLOR} If this is skipped, the equivalent Libvirt hook for dynamic allocation will be installed.\n"
+        echo -e "${SET_COLOR_YELLOW}Hugepages${RESET_COLOR} is a feature which "\
+        "statically allocates system memory to pagefiles."\
+        "\nGuest(s) can use Hugepages to a peformance benefit."\
+        "\nThe greater the Hugepage size, the less fragmentation of memory, and the "\
+        "less latency/overhead of system memory-access."\
+        "\n${SET_COLOR_YELLOW}NOTE:${RESET_COLOR} It is recommended to use a size "\
+        "which is a multiple of an individual memory channel/stick."\
+        "\n${SET_COLOR_YELLOW}Example:${RESET_COLOR} Four (4) channels of 8 GB each,"\
+        " use 1x, 2x, or 3x (8 GB, 16 GB, or 24 GB)."\
+        "\n${SET_COLOR_YELLOW}NOTE:${RESET_COLOR} If this is skipped, the "\
+        "equivalent Libvirt hook for dynamic allocation will be installed.\n"
       fi
 
-      execute_or_skip_prompt "Setup ${SET_COLOR_YELLOW}Static Hugepages${RESET_COLOR}?" && PRE_SETUP_DO_EXECUTE_HUGEPAGES=true
+      if ! ask_yes_or_no \
+        "Setup ${SET_COLOR_YELLOW}Static Hugepages${RESET_COLOR}?"; then
+        return 1
+      fi
+
+      if ! src_hugepages_install "${1}" "${2}"; then
+        return 1
+      fi
+
+      return 0
     }
 
   #
