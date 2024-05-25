@@ -828,7 +828,7 @@
         return 0
       fi
 
-      local -i int_max_tries=2
+      local -ir int_max_tries=2
 
       for int_count in $( seq 0 "${int_max_tries}" ); do
         read -r -p "Set fraction of total memory for ${str_repo_name} to use " \
