@@ -10,13 +10,7 @@
 #
 # TODO:
 # - [ ] create dicts for each source files args.
-# - [ ] create "high-level" execution here.
-# - [ ] maintain readability such that the user may create his own "deploy-vfio".
-# - [ ] pre-setup
-#   - [ ] create src_isolcpu.
-# - [ ] add repos
-#   - [ ] "Audio Loopback"  "github.com/portellam/audio-loopback"
-#   - [ ] "Scream"          "github.com/duncanthrax/scream"
+# - [ ] create functions to call main functions for each source.
 #
 
 #
@@ -149,7 +143,6 @@
   #
     function main
     {
-      # TODO: develop!
       return 1
 
       if ! src_privileges_is_user_superuser \
@@ -157,41 +150,30 @@
         return 1
       fi
 
-      # TODO: add pre setup.
       print_and_log_work "Executing pre setup..."
 
-      # if ! hugepages \
-      #   || ! isolcpu; then
-      #   print_and_log_fail "Pre setup failed."
-      #   return 1
-      # fi
-
-      if ! hugepages; then
+      if ! hugepages \
+        || ! isolcpu; then
         print_and_log_fail "Pre setup failed."
         return 1
       fi
 
       print_and_log_pass "Pre setup complete."
-      # print_and_log_work "Executing main setup..."
+      print_and_log_work "Executing main setup..."
 
-      # TODO: add main setup.
-      # if ! iommu \
-      #   || ! vfio_setup; then
-      #   print_and_log_fail "Main setup failed."
-      #   return 1
-      # fi
+      if ! iommu \
+        || ! vfio_setup; then
+        print_and_log_fail "Main setup failed."
+        return 1
+      fi
 
-      # print_and_log_pass "Main setup complete."
+      print_and_log_pass "Main setup complete."
       print_and_log_work "Executing post setup..."
 
-      # TODO: add remaining.
-      # if ! auto_xorg \
-      #   || ! libvirt_hooks \
-      #   || ! looking_glass \
-      #   || ! scream \
-      #   || ! zram_swap; then
       if ! auto_xorg \
         || ! libvirt_hooks \
+        || ! looking_glass \
+        || ! scream \
         || ! zram_swap; then
         print_and_log_fail "Post setup failed."
         return 1
@@ -211,6 +193,7 @@
     function parse_args
     {
       # TODO: develop!
+      # NOTE: dicts will be populated here.
       return 1
     }
 
@@ -233,12 +216,21 @@
       return 0
     }
 
+    function isolcpu
+    {
+      # if ! src_isolcpu_main; then
+      #   return 1
+      # fi
+
+      return 0
+    }
+
   #
   # DESC: Main setup
   #
     function iommu
     {
-      # if ! src_iommu; then
+      # if ! src_iommu_main; then
       #   return 1
       # fi
 
@@ -252,7 +244,7 @@
       DICT_VFIO_ARGS["ISOLCPU_THREAD_SETS"]="${DICT_ISOLCPU_ARGS["THREAD_SETS"]}"
       DICT_VFIO_ARGS["IOMMU_GROUPS"]="${DICT_IOMMU_ARGS["IOMMU_GROUPS"]}"
 
-      # if ! src_vfio_setup; then
+      # if ! src_vfio_setup_main; then
       #   return 1
       # fi
 
@@ -285,6 +277,24 @@
           "${DICT_LIBVIRT_HOOKS_ARGS["UPDATE"]}"; then
         return 1
       fi
+
+      return 0
+    }
+
+    function looking_glass
+    {
+      # if ! src_looking_glass_main; then
+      #   return 1
+      # fi
+
+      return 0
+    }
+
+    function scream
+    {
+      # if ! src_scream_main; then
+      #   return 1
+      # fi
 
       return 0
     }
