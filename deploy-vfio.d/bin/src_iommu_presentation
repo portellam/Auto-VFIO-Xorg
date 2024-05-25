@@ -245,7 +245,7 @@
       if ! is_bool "${6}" &> /dev/null; then
         if ! ask_yes_or_no "Select IOMMU group "\
           "${SRC_PRINT_STR_SET_COLOR_YELLOW}${int_iommu_group_id}"\
-          "${SRC_PRINT_STR_RESET_COLOR}?"; then
+          "${SRC_PRINT_STR_SET_ESCAPE}?"; then
           bool_do_select=false
         else
           bool_do_select=true
