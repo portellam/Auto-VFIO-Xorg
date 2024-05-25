@@ -25,6 +25,124 @@
 # logic
 #
   #
+  # DESC:   Main execution.
+  # $1:     do skip.
+  # $2:     do force execute.
+  # $3:     do force install.
+  # $4:     do force uninstall.
+  # $5:     do force update.
+  # $6:     the execute/install command line arguments as an array reference.
+  # RETURN: If successful, return 0.
+  #         If not, return 1.
+  #         If any exceptions occur, return 2.
+  #
+    function src_auto_xorg_main
+    {
+      local -r str_repo_name="Auto X.Org"
+      local -n arr_arguments="${6}"
+
+      if ! is_array "${arr_arguments}"; then
+        log_invalid_parameter "arr_arguments"
+        return 2
+      fi
+
+      local -r str_arguments=""
+
+      if ! get_delimited_string_from_array "arr_arguments" "str_arguments" " "; then
+        log_invalid_parameter "str_arguments"
+        return 2
+      fi
+
+      local -r bool_do_force_update="${5}"
+
+      if ! is_bool "${bool_do_force_update}"; then
+        log_invalid_parameter "bool_do_force_update"
+        return 2
+      fi
+
+      local -r bool_do_force_uninstall="${4}"
+
+      if ! is_bool "${bool_do_force_uninstall}"; then
+        log_invalid_parameter "bool_do_force_uninstall"
+        return 2
+      fi
+
+      local -r bool_do_force_install="${3}"
+
+      if ! is_bool "${bool_do_force_install}l"; then
+        log_invalid_parameter "bool_do_force_install"
+        return 2
+      fi
+
+      local -r bool_do_force_execute="${2}"
+
+      if ! is_bool "${bool_do_force_execute}"; then
+        log_invalid_parameter "bool_do_force_execute"
+        return 2
+      fi
+
+      local -r bool_do_force_skip="${1}"
+
+      if ! is_bool "${bool_do_force_skip}"; then
+        log_invalid_parameter "bool_do_force_skip"
+        return 2
+      fi
+
+      if "${bool_do_force_skip}"; then
+        print_and_log_output "Skipped ${str_repo_name}."
+        return 0
+      fi
+
+      if "${bool_do_force_update}"; then
+        if ! src_auto_xorg_does_repo_exist "true"; then
+          return 1
+        fi
+      fi
+
+      if "${bool_do_force_install}"; then
+        if ! src_auto_xorg_install "${str_arguments}"; then
+          return 1
+        fi
+
+        return 0
+      fi
+
+      if "${bool_do_force_execute}"; then
+        if ! src_auto_xorg_execute "${str_arguments}"; then
+          return 1
+        fi
+
+        return 0
+      fi
+
+      if "${bool_do_force_uninstall}"; then
+        if ! src_auto_xorg_uninstall; then
+          return 1
+        fi
+
+        return 0
+      fi
+
+      if ! src_auto_xorg_does_repo_exist "false"; then
+        return 1
+      fi
+
+      if ! src_auto_xorg_install_prompt "${str_arguments}"; then
+        return 1
+      fi
+
+      if ! src_auto_xorg_execute_prompt "${str_arguments}"; then
+        return 1
+      fi
+
+      if ! src_auto_xorg_uninstall_prompt; then
+        return 1
+      fi
+
+      return 0
+    }
+
+  #
   # DESC:   Checks if git repo exists.
   # $1:     do force download repo.
   # RETURN: If repo exists, return 0.
@@ -217,124 +335,6 @@
       fi
 
       if ! src_auto_xorg_install "${str_arguments}"; then
-        return 1
-      fi
-
-      return 0
-    }
-
-  #
-  # DESC:   Main execution.
-  # $1:     do skip.
-  # $2:     do force execute.
-  # $3:     do force install.
-  # $4:     do force uninstall.
-  # $5:     do force update.
-  # $6:     the execute/install command line arguments as an array reference.
-  # RETURN: If successful, return 0.
-  #         If not, return 1.
-  #         If any exceptions occur, return 2.
-  #
-    function src_auto_xorg_main
-    {
-      local -r str_repo_name="Auto X.Org"
-      local -n arr_arguments="${6}"
-
-      if ! is_array "${arr_arguments}"; then
-        log_invalid_parameter "arr_arguments"
-        return 2
-      fi
-
-      local -r str_arguments=""
-
-      if ! get_delimited_string_from_array "arr_arguments" "str_arguments" " "; then
-        log_invalid_parameter "str_arguments"
-        return 2
-      fi
-
-      local -r bool_do_force_update="${5}"
-
-      if ! is_bool "${bool_do_force_update}"; then
-        log_invalid_parameter "bool_do_force_update"
-        return 2
-      fi
-
-      local -r bool_do_force_uninstall="${4}"
-
-      if ! is_bool "${bool_do_force_uninstall}"; then
-        log_invalid_parameter "bool_do_force_uninstall"
-        return 2
-      fi
-
-      local -r bool_do_force_install="${3}"
-
-      if ! is_bool "${bool_do_force_install}l"; then
-        log_invalid_parameter "bool_do_force_install"
-        return 2
-      fi
-
-      local -r bool_do_force_execute="${2}"
-
-      if ! is_bool "${bool_do_force_execute}"; then
-        log_invalid_parameter "bool_do_force_execute"
-        return 2
-      fi
-
-      local -r bool_do_force_skip="${1}"
-
-      if ! is_bool "${bool_do_force_skip}"; then
-        log_invalid_parameter "bool_do_force_skip"
-        return 2
-      fi
-
-      if "${bool_do_force_skip}"; then
-        print_and_log_output "Skipped ${str_repo_name}."
-        return 0
-      fi
-
-      if "${bool_do_force_update}"; then
-        if ! src_auto_xorg_does_repo_exist "true"; then
-          return 1
-        fi
-      fi
-
-      if "${bool_do_force_install}"; then
-        if ! src_auto_xorg_install "${str_arguments}"; then
-          return 1
-        fi
-
-        return 0
-      fi
-
-      if "${bool_do_force_execute}"; then
-        if ! src_auto_xorg_execute "${str_arguments}"; then
-          return 1
-        fi
-
-        return 0
-      fi
-
-      if "${bool_do_force_uninstall}"; then
-        if ! src_auto_xorg_uninstall; then
-          return 1
-        fi
-
-        return 0
-      fi
-
-      if ! src_auto_xorg_does_repo_exist "false"; then
-        return 1
-      fi
-
-      if ! src_auto_xorg_install_prompt "${str_arguments}"; then
-        return 1
-      fi
-
-      if ! src_auto_xorg_execute_prompt "${str_arguments}"; then
-        return 1
-      fi
-
-      if ! src_auto_xorg_uninstall_prompt; then
         return 1
       fi
 
