@@ -11,6 +11,8 @@
 # TODO:
 # - [x] develop.
 # - [ ] test.
+# - [ ] for non-references place declaration after validation!
+#       Do this for all other source files!
 #
 
 #
@@ -26,10 +28,13 @@
 #
   #
   # DESC:   Main execution.
-  # $1:     the Hugepage size as a string.
-  # $2:     the Hugepage count size in kilobytes as an int reference.
-  # $3:     the Hugepage count as an int reference.
-  # $4:     the maximum free memory in kilobytes as an int.
+  # $1:     do skip.
+  # $2:     the Hugepage size as a string.
+  # $3:     the Hugepage size in kilobytes as an int reference.
+  # $4:     the Hugepage count as an int reference.
+  # $5:     the Hugepage count in kilobytes as an int reference.
+  # $6:     the free maximum memory in kilobytes as an int.
+  # $7:     the Hugepage maximum count in kilobytes as an int reference.
   # RETURN: If install is successful, return 0.
   #         If install is not successful, return 1.
   #         If any exception occurs, return 2.
@@ -54,16 +59,23 @@
         " is skipped, the equivalent Libvirt hook for dynamic allocation will be "\
         "installed.\n"
 
-      local -ir int_maximum_free_memory_in_kib="${4}"
+      local -n ref_int_hugepages_maximum_count_in_kilobytes="${7}"
 
-      if ! is_int "${int_maximum_free_memory_in_kib}" \
-        || [[ "${int_maximum_free_memory_in_kib}" -le 0 ]]; then
-        log_invalid_parameter "int_maximum_free_memory_in_kib"
+      if ! is_reference "${ref_int_hugepages_maximum_count_in_kilobytes}"; then
+        log_invalid_parameter "ref_int_hugepages_maximum_count_in_kilobytes"
+        print_and_log_warn "Maximum Hugepage count is not valid."
+        return 2
+      fi
+
+      if ! is_int "${6}" \
+        || [[ "${6}" -le 0 ]]; then
+        log_invalid_parameter "int_free_maximum_memory_in_kilobytes"
         print_and_log_warn "Maximum free memory value is not valid."
         return 2
       fi
 
-      local -n ref_int_hugepages_count="${3}"
+      local -ir int_free_maximum_memory_in_kilobytes="${6}"
+      local -n ref_int_hugepages_count="${5}"
 
       if ! is_reference "${ref_int_hugepages_count}"; then
         log_invalid_parameter "ref_int_hugepages_count"
@@ -71,37 +83,56 @@
         return 2
       fi
 
-      local -n ref_int_hugepages_count_size_in_kib="${2}"
+      local -n ref_int_hugepages_count_in_kilobytes="${4}"
 
-      if ! is_reference "${ref_int_hugepages_count_size_in_kib}"; then
-        log_invalid_parameter "ref_int_hugepages_count_size_in_kib"
+      if ! is_reference "${ref_int_hugepages_count_in_kilobytes}"; then
+        log_invalid_parameter "ref_int_hugepages_count_in_kilobytes"
         print_and_log_warn "${str_warn}"
         return 2
       fi
 
-      local -ir str_hugepages_size="${1}"
+      local -n ref_int_hugepages_size_in_kilobytes="${3}"
 
-      if ! is_string "${str_hugepages_size}"; then
+      if ! is_reference "${ref_int_hugepages_size_in_kilobytes}"; then
+        log_invalid_parameter "ref_int_hugepages_size_in_kilobytes"
+        print_and_log_warn "${str_warn}"
+        return 2
+      fi
+
+      if ! is_string "${2}"; then
         log_invalid_parameter "str_hugepages_size"
         print_and_log_warn "${str_warn}"
         return 2
       fi
 
-      if ! ask_yes_or_no \
-        "Setup ${SET_COLOR_YELLOW}${str_setup_name}${SRC_PRINT_STR_SET_ESCAPE}?"; then
+      local -ir str_hugepages_size="${2}"
+
+      if ! is_bool "${1}"; then
+        log_invalid_parameter "bool_skip"
+        print_and_log_warn "${str_warn}"
+        return 2
+      fi
+
+      local -ir bool_skip="${1}"
+
+      if "${bool_skip}" \
+        || ! ask_yes_or_no "Setup ${SET_COLOR_YELLOW}${str_setup_name}"\
+          "${SRC_PRINT_STR_SET_ESCAPE}?"; then
         print_and_log_output "Skipped ${str_setup_name} setup."
         return 1
       fi
 
       print_and_log_work "Executing ${str_setup_name} setup."
 
-      if ! src_hugepages_get_kilobytes_size_prompt \
+      if ! src_hugepages_get_in_kilobytes_size_prompt \
           "${str_hugepages_size}" \
-          "ref_int_hugepages_count_size_in_kib" \
+          "ref_int_hugepages_size_in_kilobytes" \
         || ! src_hugepages_get_count_prompt \
-          "ref_int_hugepages_count_size_in_kib" \
-          "ref_int_hugepages_count" \
-          "${int_maximum_free_memory_in_kib}"; then
+          "ref_int_hugepages_count"
+          "ref_int_hugepages_count_in_kilobytes" \
+          "${ref_int_hugepages_size_in_kilobytes}" \
+          "${int_free_maximum_memory_in_kilobytes}" \
+          "ref_int_hugepages_maximum_count_in_kilobytes"; then
         print_and_log_fail "${str_fail}"
       fi
 
@@ -111,9 +142,10 @@
 
   #
   # DESC:   Is the Hugepage count valid.
-  # $1:     the Hugepage count size in kilobytes as an int.
-  # $2:     the Hugepage count as an int.
-  # $3:     the maximum free memory in kilobytes as an int.
+  # $1:     the Hugepage count as an int.
+  # $2:     the Hugepage size in kilobytes as an int.
+  # $3:     the free maximum memory in kilobytes as an int.
+  # $4:     the Hugepage count in kilobytes as an int reference.
   # RETURN: If Hugepage count is valid, return 0.
   #         If Hugepage count is not valid, return 1.
   #         If any exceptions occur, return 2.
@@ -121,39 +153,47 @@
     function src_hugepages_get_count
     {
       local -r str_warn="Cannot validate Hugepage count."
-      local -r int_maximum_free_memory_in_kib="${3}"
+      local -n ref_int_get_hugepages_count_in_kilobytes="${4}"
 
-      if ! is_int "${int_maximum_free_memory_in_kib}" \
-        || [[ "${int_maximum_free_memory_in_kib}" -le 0 ]]; then
-        log_invalid_parameter "int_maximum_free_memory_in_kib"
+      if ! is_reference "${ref_int_get_hugepages_count_in_kilobytes}"; then
+        log_invalid_parameter "ref_int_get_hugepages_count_in_kilobytes"
+        print_and_log_warn "${str_warn}"
+        return 2
+      fi
+
+      if ! is_int "${3}" \
+        || [[ "${3}" -le 0 ]]; then
+        log_invalid_parameter "int_free_maximum_memory_in_kilobytes"
         print_and_log_warn "Maximum free memory value is not valid."
         return 2
       fi
 
-      local -ir int_hugepages_count="${2}"
+      local -ir int_free_maximum_memory_in_kilobytes="${3}"
 
-      if ! is_int "${int_hugepages_count}"; then
+      if ! is_int "${2}" \
+        || [[ "${2}" -le 0 ]]; then
+        log_invalid_parameter "int_hugepages_size_in_kilobytes"
+        print_and_log_warn "${str_warn}"
+        return 2
+      fi
+
+      local -ir int_hugepages_size_in_kilobytes="${2}"
+
+      if ! is_int "${1}"; then
         log_invalid_parameter "int_hugepages_count"
         print_and_log_warn "${str_warn}"
         return 2
       fi
 
-      local -ir int_hugepages_size_in_kib="${1}"
+      local -ir int_hugepages_count="${1}"
 
-      if ! is_int "${int_hugepages_size_in_kib}" \
-        || [[ "${int_maximum_free_memory_in_kib}" -le 0 ]]; then
-        log_invalid_parameter "int_hugepages_size_in_kib"
-        print_and_log_warn "${str_warn}"
-        return 2
-      fi
-
-      local -ir int_total_hugepages_size_in_kib=$(( \
-        int_hugepages_count * int_hugepages_size_in_kib \
+      local -ir ref_int_get_hugepages_count_in_kilobytes=$(( \
+        int_hugepages_count * int_hugepages_size_in_kilobytes \
       ))
 
-      if [[ "${int_total_hugepages_size_in_kib}" -ge \
-        "${int_maximum_free_memory_in_kib}" ]]; then
-        log_invalid_parameter "int_total_hugepages_size_in_kib"
+      if [[ "${ref_int_get_hugepages_count_in_kilobytes}" -ge \
+        "${int_free_maximum_memory_in_kilobytes}" ]]; then
+        log_invalid_parameter "ref_int_get_hugepages_count_in_kilobytes"
         print_and_log_warn "Hugepage count is exceeds free memory."
         return 1
       fi
@@ -164,9 +204,11 @@
 
   #
   # DESC:   Prompt to set the Hugepage count.
-  # $1:     the Hugepage count size in kilobytes as an int reference.
-  # $2:     the Hugepage count as an int reference.
-  # $3:     the maximum free memory in kilobytes as an int.
+  # $1:     the Hugepage count as an int reference.
+  # $2:     the Hugepage count in kilobytes as an int reference.
+  # $3:     the Hugepage size in kilobytes as an int.
+  # $4:     the free maximum memory in kilobytes as an int.
+  # $5:     the Hugepage maximum count in kilobytes as an int reference.
   # RETURN: If Hugepage count is valid, return 0.
   #         If Hugepage count is not valid, return 1.
   #         If any exceptions occur, return 2.
@@ -174,16 +216,40 @@
     function src_hugepages_get_count_prompt
     {
       local -r str_warn="Cannot validate Hugepage count."
-      local -r int_maximum_free_memory_in_kib="${3}"
+      local -n ref_int_prompt_hugepages_maximum_count_in_kilobytes="${5}"
 
-      if ! is_int "${int_maximum_free_memory_in_kib}" \
-        || [[ "${int_maximum_free_memory_in_kib}" -le 0 ]]; then
-        log_invalid_parameter "int_maximum_free_memory_in_kib"
-        print_and_log_warn "Maximum free memory value is not valid."
+      if ! is_reference "${ref_int_prompt_hugepages_maximum_count_in_kilobytes}"; then
+        log_invalid_parameter "ref_int_prompt_hugepages_maximum_count_in_kilobytes"
+        print_and_log_warn "Maximum Hugepage count is not valid."
         return 2
       fi
 
-      local -n ref_int_prompt_hugepages_count="${2}"
+      if ! is_int "${4}" \
+        || [[ "${4}" -le 0 ]]; then
+        log_invalid_parameter "int_free_maximum_memory_in_kilobytes"
+        print_and_log_warn "Free maxmium memory value is not valid."
+        return 2
+      fi
+
+      local -ir int_free_maximum_memory_in_kilobytes="${4}"
+
+      if ! is_int "${3}" \
+        || [[ "${3}" -le 0 ]]; then
+        log_invalid_parameter "int_hugepages_size_in_kilobytes"
+        print_and_log_warn "${str_warn}"
+        return 2
+      fi
+
+      local -i int_hugepages_size_in_kilobytes="${3}"
+      local -n ref_int_hugepages_count_in_kilobytes="${2}"
+
+      if ! is_reference "${ref_int_hugepages_count_in_kilobytes}"; then
+        log_invalid_parameter "ref_int_hugepages_count_in_kilobytes"
+        print_and_log_warn "${str_warn}"
+        return 2
+      fi
+
+      local -n ref_int_prompt_hugepages_count="${1}"
 
       if ! is_reference "${ref_int_prompt_hugepages_count}"; then
         log_invalid_parameter "ref_int_prompt_hugepages_count"
@@ -191,28 +257,25 @@
         return 2
       fi
 
-      local -n ref_int_prompt_hugepage_count_size_in_kib="${1}"
+      # NOTE: get the nearest integer of the fraction.
+      local -ir int_hugepages_maximum_count=$( \
+        printf "%.0f" $( \
+          echo "scale=2;${int_free_maximum_memory_in_kilobytes}/"\
+            "${int_hugepages_size_in_kilobytes}" | bc \
+        )
+      )
 
-      if ! is_reference "${ref_int_prompt_hugepage_count_size_in_kib}"; then
-        log_invalid_parameter "ref_int_prompt_hugepage_count_size_in_kib"
-        print_and_log_warn "${str_warn}"
-        return 2
-      fi
-
-      local str_answer=0
-
-      if is_int "${ref_int_prompt_hugepage_count_size_in_kib}"; then
-        if [[ "${ref_int_prompt_hugepage_count_size_in_kib}" -le 0 ]]; then
-          log_invalid_parameter "ref_int_prompt_hugepage_count_size_in_kib"
-          print_and_log_warn "${str_warn}"
-          return 2
-        fi
-
+      if src_hugepages_get_count \
+          "${ref_int_prompt_hugepages_count}" \
+          "${int_hugepages_size_in_kilobytes}" \
+          "${int_free_maximum_memory_in_kilobytes}" \
+          "ref_int_hugepages_count_in_kilobytes"; then
         if ! src_hugepages_get_count \
-            "${str_answer}" \
-            "${ref_int_prompt_hugepages_count}" \
-            "${int_maximum_free_memory_in_kib}"; then
-          log_invalid_parameter "ref_int_prompt_hugepages_count"
+            "${int_hugepages_maximum_count}" \
+            "${int_hugepages_size_in_kilobytes}" \
+            "${int_free_maximum_memory_in_kilobytes}" \
+            "ref_int_prompt_hugepages_maximum_count_in_kilobytes"; then
+          log_invalid_parameter "ref_int_prompt_hugepages_maximum_count_in_kilobytes"
           print_and_log_warn "${str_warn}"
           return 2
         fi
@@ -222,33 +285,28 @@
         return 0
       fi
 
-      local -ir int_maximum_hugepage_count=$( \
-        printf "%.0f" $( \
-          echo "scale=2;${int_maximum_free_memory_in_kib}/"\
-            "${ref_int_prompt_hugepages_size_in_kib} | bc" \
-        ) \
-      )
-
-      if ! is_int "${int_maximum_hugepage_count}"; then
-        log_invalid_parameter "int_max_hugepage_count"
-        print_and_log_warn "${str_warn}"
-        return 2
-      fi
-
       local -ir int_max_tries=2
 
       for int_counter in $( seq 0 "${int_max_tries}" ); do
-        read -r -p "Enter Hugepage count [1-${int_maximum_hugepage_count}]: " \
-          str_answer
+        local str_hugepages_count=0
+
+        read -r -p "Enter Hugepage count [1-${int_hugepages_maximum_count}]: " \
+          str_hugepages_count
 
         if ! src_hugepages_get_count \
-          "${str_answer}" \
-          "${ref_int_prompt_hugepages_count}" \
-          "${int_maximum_free_memory_in_kib}"; then
+              "${str_hugepages_count}" \
+              "${int_hugepages_size_in_kilobytes}" \
+              "${int_free_maximum_memory_in_kilobytes}" \
+              "ref_int_hugepages_count_in_kilobytes" \
+          || ! src_hugepages_get_count \
+              "${int_hugepages_maximum_count}" \
+              "${int_hugepages_size_in_kilobytes}" \
+              "${int_free_maximum_memory_in_kilobytes}" \
+              "ref_int_prompt_hugepages_maximum_count_in_kilobytes"; then
           continue
         fi
 
-        ref_int_prompt_hugepages_count="${str_answer}"
+        ref_int_prompt_hugepages_count="${str_hugepages_count}"
         log_output "Hugepage count is valid."
         return 0
       done
@@ -266,14 +324,14 @@
   #         If Hugepage size is not valid, return 1.
   #         If any exceptions occur, return 2.
   #
-    function src_hugepages_get_kilobytes_size
+    function src_hugepages_get_in_kilobytes_size
     {
       local -r str_warn="Cannot validate Hugepage size."
       local -ir int_two_by_exponent_of_ten=$(( 2 ** 10 ))
-      local -n ref_int_hugepages_size_in_kib="${2}"
+      local -n ref_int_get_hugepages_size_in_kilobytes="${2}"
 
-      if ! is_reference "${ref_int_hugepages_size_in_kib}"; then
-        log_invalid_parameter "int_hugepages_size_in_kib"
+      if ! is_reference "${ref_int_get_hugepages_size_in_kilobytes}"; then
+        log_invalid_parameter "ref_int_get_hugepages_size_in_kilobytes"
         print_and_log_warn "${str_warn}"
         return 2
       fi
@@ -282,20 +340,29 @@
 
       case "${str_hugepages_size}" in
         "4K" )
-          ref_int_hugepages_size_in_kib="${int_two_by_exponent_of_ten}"
+          ref_int_get_hugepages_size_in_kilobytes="${int_two_by_exponent_of_ten}"
           print_and_log_output "Set Hugepage size to four kilobytes."
           return 0
           ;;
 
         "2M" )
-          ref_int_hugepages_size_in_kib=$(( int_two_by_exponent_of_ten ** 2 ))
-          ref_int_hugepages_size_in_kib=$(( ref_int_hugepages_size_in_kib * 2 ))
+          ref_int_get_hugepages_size_in_kilobytes=$(( \
+            int_two_by_exponent_of_ten ** 2 \
+          ))
+
+          ref_int_get_hugepages_size_in_kilobytes=$(( \
+            ref_int_hugepages_size_in_kilobytes * 2 \
+          ))
+
           print_and_log_output "Set Hugepage size to two megabytes."
           return 0
           ;;
 
         "1G" )
-          ref_int_hugepages_size_in_kib=$(( int_two_by_exponent_of_ten ** 3 ))
+          ref_int_get_hugepages_size_in_kilobytes=$(( \
+            int_two_by_exponent_of_ten ** 3 \
+          ))
+
           print_and_log_output "Set Hugepage size to one gigabyte."
           return 0
           ;;
@@ -310,19 +377,19 @@
 
   #
   # DESC:   Prompt to get the Hugepage size in kilobytes.
-  # $1:     the Hugepage size as a string.
+  # $1:     the Hugepage size as a string reference.
   # $2:     the Hugepage size in kilobytes as an int reference.
   # RETURN: If Hugepage size is valid, return 0.
   #         If Hugepage size is not valid, return 1.
   #         If any exceptions occur, return 2.
   #
-    function src_hugepages_get_kilobytes_size_prompt
+    function src_hugepages_get_in_kilobytes_size_prompt
     {
       local -r str_warn="Cannot set Hugepage size."
-      local -n ref_int_prompt_hugepages_size_in_kib="${2}"
+      local -n ref_int_prompt_hugepages_size_in_kilobytes="${2}"
 
-      if ! is_reference "${ref_int_prompt_hugepages_size_in_kib}"; then
-        log_invalid_parameter "ref_int_prompt_hugepages_size_in_kib"
+      if ! is_reference "${ref_int_prompt_hugepages_size_in_kilobytes}"; then
+        log_invalid_parameter "ref_int_prompt_hugepages_size_in_kilobytes"
         print_and_log_warn "${str_warn}"
         return 2
       fi
@@ -336,10 +403,10 @@
       fi
 
       if is_string "${ref_str_prompt_hugepages_size}"; then
-        if ! src_hugepages_get_kilobytes_size \
+        if ! src_hugepages_get_in_kilobytes_size \
           "${ref_str_prompt_hugepages_size}" \
-          "ref_int_prompt_hugepages_size_in_kib"; then
-          log_invalid_parameter "ref_int_prompt_hugepages_size_in_kib"
+          "ref_int_prompt_hugepages_size_in_kilobytes"; then
+          log_invalid_parameter "ref_int_prompt_hugepages_size_in_kilobytes"
           return 1
         fi
 
@@ -349,19 +416,21 @@
       local -ir int_max_tries=2
 
       for int_counter in $( seq 0 "${int_max_tries}" ); do
+        local str_hugepages_size
         read -r -p "Enter Hugepage size [4K/2M/1G]: " \
-          ref_str_prompt_hugepages_size
+          str_hugepages_size
 
-        if ! src_hugepages_get_kilobytes_size \
+        if ! src_hugepages_get_in_kilobytes_size \
           "${ref_str_prompt_hugepages_size}" \
-          "ref_int_hugepages_size_in_kib"; then
+          "ref_int_prompt_hugepages_size_in_kilobytes"; then
           continue
         fi
 
+        ref_str_prompt_hugepages_size="${str_hugepages_size}"
         return 0
       done
 
-      log_invalid_parameter "ref_int_hugepages_size_in_kib"
+      log_invalid_parameter "ref_int_prompt_hugepages_size_in_kilobytes"
       print_and_log_warn "${str_warn}"
       return 1
     }
