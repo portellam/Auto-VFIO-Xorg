@@ -50,8 +50,8 @@
       declare -gi SRC_MEMORY_INT_CURRENT_FREE_MEMORY_BYTES=0
       declare -gi SRC_MEMORY_INT_MIN_FREE_MEMORY_BYTES=0
 
-      declare -gir SRC_MEMORY_INT_MAX_FREE_MEMORY_BYTES=$( cat /proc/meminfo | \
-        grep --ignore-case MemTotal | \
+      declare -gir SRC_MEMORY_INT_MAX_FREE_MEMORY_BYTES=$( \
+        cat /proc/meminfo | grep --ignore-case MemTotal | \
         cut --delimiter ":" --fields 2 | awk 'END {print $1}' \
       )
 
@@ -170,22 +170,34 @@
 
       case "${str_memory_channel_size}" in
           "K" | "KB" | "KIB" )
-            ref_int_memory_channel_bytes=$(( ${SRC_MEMORY_INT_TWO_TO_POWER_OF_TEN} ** 1 ))
+            ref_int_memory_channel_bytes=$(( \
+              ${SRC_MEMORY_INT_TWO_TO_POWER_OF_TEN} ** 1 \
+            ))
+
             log_output "Selected KIB."
             ;;
 
           "M" | "MB" | "MIB" )
-            ref_int_memory_channel_bytes=$(( ${SRC_MEMORY_INT_TWO_TO_POWER_OF_TEN} ** 2 ))
+            ref_int_memory_channel_bytes=$(( \
+              ${SRC_MEMORY_INT_TWO_TO_POWER_OF_TEN} ** 2 \
+            ))
+
             log_output "Selected MIB."
             ;;
 
           "G" | "GB" | "GIB" )
-            ref_int_memory_channel_bytes=$(( ${SRC_MEMORY_INT_TWO_TO_POWER_OF_TEN} ** 3 ))
+            ref_int_memory_channel_bytes=$(( \
+              ${SRC_MEMORY_INT_TWO_TO_POWER_OF_TEN} ** 3 \
+            ))
+
             log_output "Selected GIB."
             ;;
 
           "T" | "TB" | "TIB" )
-            ref_int_memory_channel_bytes=$(( ${SRC_MEMORY_INT_TWO_TO_POWER_OF_TEN} ** 4 ))
+            ref_int_memory_channel_bytes=$(( \
+              ${SRC_MEMORY_INT_TWO_TO_POWER_OF_TEN} ** 4 \
+            ))
+
             log_output "Selected TIB."
             ;;
 
