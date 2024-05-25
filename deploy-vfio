@@ -41,6 +41,11 @@
 #
 # params
 #
+  declare -ir INT_MAX_FREE_MEMORY_KILOBYTES=$( \
+    cat /proc/meminfo | grep --ignore-case MemTotal | \
+    cut --delimiter ":" --fields 2 | awk 'END {print $1}' \
+  )
+
   #
   # DESC: Compatibility checks
   #
@@ -53,6 +58,9 @@
 
     declare -A DICT_HUGEPAGES_ARGS=(
       ["COUNT"]="",
+      ["COUNT_SIZE_KILOBYTES"]="",
+      ["MAX_COUNT_SIZE_KILOBYTES"]=""
+      ["MAX_FREE_MEMORY_KILOBYTES"]="${INT_MAX_FREE_MEMORY_KILOBYTES}"
       ["SIZE"]="",
       ["SKIP"]=false,
     )
@@ -67,7 +75,8 @@
   #
     BOOL_SKIP_MAIN_SETUP=false
 
-    declare -A DICT_PARSE_ARGS=(
+    declare -A DICT_IOMMU_ARGS=(
+      ["IOMMU_GROUPS"]="",
       ["SELECT_ALL"]=true,
       ["SELECT_ALL_NON_VGA"]=false,
       ["SKIP"]=false,
@@ -76,11 +85,12 @@
     )
 
     declare -A DICT_VFIO_ARGS=(
-      ["CUSTOM_CMDLINE_STRING"]="",   # TODO: validate in src_vfio_setup for CMDLINE args (ex: hugepages, isolcpu, devices)
-      ["HUGEPAGES_COUNT"]="",         # TODO: how to get this value from other dict?
-      ["HUGEPAGES_SIZE"]="",          # TODO: how to get this value from other dict?
-      ["IOMMU_GROUPS"]="",            # TODO: how to get this value from other dict?
-      ["ISOLCPU_THREAD_SETS"]="",     # TODO: how to get this value from other dict?
+      # TODO: validate in src_vfio_setup for CMDLINE args (ex: hugepages, isolcpu, devices)
+      ["CUSTOM_CMDLINE_STRING"]="",
+      ["HUGEPAGES_COUNT"]="",
+      ["HUGEPAGES_SIZE"]="",
+      ["IOMMU_GROUPS"]="",
+      ["ISOLCPU_THREAD_SETS"]="",
       ["MULTI_BOOT_SETUP"]=true
       ["SKIP"]=false,
       ["STATIC_SETUP"]=false
@@ -116,7 +126,7 @@
 
     declare -A DICT_ZRAM_SWAP_ARGS=(
       ["FORCE_RESTART"]=false,
-      ["HUGEPAGES_MEMORY_COUNT_BYTES"]="",      # TODO: how to get this value from other dict?
+      ["HUGEPAGES_MAX_COUNT_SIZE_KILOBYTES"]="",
       ["INSTALL"]=false,
       ["MODIFY"]=false,
       ["RESERVED_MEMORY_FRACTION"]="",
@@ -147,7 +157,7 @@
       fi
 
       # TODO: add pre setup.
-      # print_and_log_work "Executing pre setup..."
+      print_and_log_work "Executing pre setup..."
 
       # if ! hugepages \
       #   || ! isolcpu; then
@@ -155,7 +165,12 @@
       #   return 1
       # fi
 
-      # print_and_log_pass "Pre setup complete."
+      if ! hugepages; then
+        print_and_log_fail "Pre setup failed."
+        return 1
+      fi
+
+      print_and_log_pass "Pre setup complete."
       # print_and_log_work "Executing main setup..."
 
       # TODO: add main setup.
@@ -201,24 +216,58 @@
   #
   # DESC: Pre setup
   #
+    function hugepages
+    {
+      if ! src_hugepages_main \
+          "${DICT_HUGEPAGES_ARGS["SKIP"]}" \
+          "${DICT_HUGEPAGES_ARGS["SIZE"]}" \
+          "DICT_HUGEPAGES_ARGS[\"COUNT_SIZE_KILOBYTES\"]" \
+          "DICT_HUGEPAGES_ARGS[\"COUNT\"]" \
+          "${DICT_HUGEPAGES_ARGS["MAX_FREE_MEMORY_KILOBYTES"]}"
+          "DICT_HUGEPAGES_ARGS[\"MAX_COUNT_SIZE_KILOBYTES\"]"; then
+        return 1
+      fi
+
+      return 0
+    }
 
   #
   # DESC: Main setup
   #
+    function iommu
+    {
+      # if ! src_iommu; then
+      #   return 1
+      # fi
+
+      return 0
+    }
+
+    function vfio_setup
+    {
+      DICT_VFIO_ARGS["HUGEPAGES_COUNT"]="${DICT_HUGEPAGES_ARGS["COUNT"]}"
+      DICT_VFIO_ARGS["HUGEPAGES_SIZE"]="${DICT_HUGEPAGES_ARGS["SIZE"]}"
+      DICT_VFIO_ARGS["ISOLCPU_THREAD_SETS"]="${DICT_ISOLCPU_ARGS["THREAD_SETS"]}"
+      DICT_VFIO_ARGS["IOMMU_GROUPS"]="${DICT_IOMMU_ARGS["IOMMU_GROUPS"]}"
+
+      # if ! src_vfio_setup; then
+      #   return 1
+      # fi
+
+      return 0
+    }
 
   #
   # DESC: Post setup
   #
     function auto_xorg
     {
-      local -a arr_args="${DICT_AUTO_XORG_ARGS["ARGS"]}"
-
       if ! src_auto_xorg_main \
           "${DICT_AUTO_XORG_ARGS["SKIP"]}" \
           "${DICT_AUTO_XORG_ARGS["INSTALL"]}" \
           "${DICT_AUTO_XORG_ARGS["UNINSTALL"]}" \
           "${DICT_AUTO_XORG_ARGS["UPDATE"]}" \
-          "arr_args"; then
+          "DICT_AUTO_XORG_ARGS[\"ARGS\"]"; then
         return 1
       fi
 
@@ -240,6 +289,8 @@
 
     function zram_swap
     {
+      DICT_ZRAM_SWAP_ARGS["HUGEPAGES_MEMORY_COUNT_BYTES"]=""
+
       if ! src_zram_swap_main \
           "${DICT_ZRAM_SWAP_ARGS["SKIP"]}" \
           "${DICT_ZRAM_SWAP_ARGS["MODIFY"]}" \
