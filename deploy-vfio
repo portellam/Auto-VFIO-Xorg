@@ -41,7 +41,7 @@
 #
 # params
 #
-  declare -ir INT_MAX_FREE_MEMORY_KILOBYTES=$( \
+  declare -ir INT_FREE_MAX_MEMORY_KILOBYTES=$( \
     cat /proc/meminfo | grep --ignore-case MemTotal | \
     cut --delimiter ":" --fields 2 | awk 'END {print $1}' \
   )
@@ -58,10 +58,11 @@
 
     declare -A DICT_HUGEPAGES_ARGS=(
       ["COUNT"]="",
-      ["COUNT_SIZE_KILOBYTES"]="",
-      ["MAX_COUNT_SIZE_KILOBYTES"]=""
-      ["MAX_FREE_MEMORY_KILOBYTES"]="${INT_MAX_FREE_MEMORY_KILOBYTES}"
+      ["COUNT_MAX_KILOBYTES"]=""
+      ["COUNT_KILOBYTES"]="",
+      ["FREE_MAX_MEMORY_KILOBYTES"]="${INT_FREE_MAX_MEMORY_KILOBYTES}"
       ["SIZE"]="",
+      ["SIZE_KILOBYTES"]="",
       ["SKIP"]=false,
     )
 
@@ -126,7 +127,7 @@
 
     declare -A DICT_ZRAM_SWAP_ARGS=(
       ["FORCE_RESTART"]=false,
-      ["HUGEPAGES_MAX_COUNT_SIZE_KILOBYTES"]="",
+      ["HUGEPAGES_COUNT_MAX_KILOBYTES"]="",
       ["INSTALL"]=false,
       ["MODIFY"]=false,
       ["RESERVED_MEMORY_FRACTION"]="",
@@ -221,10 +222,11 @@
       if ! src_hugepages_main \
           "${DICT_HUGEPAGES_ARGS["SKIP"]}" \
           "${DICT_HUGEPAGES_ARGS["SIZE"]}" \
-          "DICT_HUGEPAGES_ARGS[\"COUNT_SIZE_KILOBYTES\"]" \
+          "DICT_HUGEPAGES_ARGS[\"SIZE_KILOBYTES\"]" \
           "DICT_HUGEPAGES_ARGS[\"COUNT\"]" \
-          "${DICT_HUGEPAGES_ARGS["MAX_FREE_MEMORY_KILOBYTES"]}"
-          "DICT_HUGEPAGES_ARGS[\"MAX_COUNT_SIZE_KILOBYTES\"]"; then
+          "DICT_HUGEPAGES_ARGS[\"COUNT_KILOBYTES\"]" \
+          "${DICT_HUGEPAGES_ARGS["FREE_MAX_MEMORY_KILOBYTES"]}"
+          "DICT_HUGEPAGES_ARGS[\"COUNT_MAX_KILOBYTES\"]"; then
         return 1
       fi
 
@@ -289,7 +291,7 @@
 
     function zram_swap
     {
-      DICT_ZRAM_SWAP_ARGS["HUGEPAGES_MEMORY_COUNT_BYTES"]=""
+      DICT_ZRAM_SWAP_ARGS["HUGEPAGES_COUNT_MAX_KILOBYTES"]="${DICT_HUGEPAGES_ARGS["COUNT_MAX_KILOBYTES"]}"
 
       if ! src_zram_swap_main \
           "${DICT_ZRAM_SWAP_ARGS["SKIP"]}" \
@@ -301,7 +303,7 @@
           "${DICT_ZRAM_SWAP_ARGS["USE_CALCULATION"]}" \
           "${DICT_ZRAM_SWAP_ARGS["USE_DEFAULTS"]}" \
           "${DICT_ZRAM_SWAP_ARGS["RESERVED_MEMORY_FRACTION"]}" \
-          "${DICT_ZRAM_SWAP_ARGS["HUGEPAGES_MEMORY_COUNT_BYTES"]}"; then
+          "${DICT_ZRAM_SWAP_ARGS["HUGEPAGES_COUNT_MAX_KILOBYTES"]}"; then
         return 1
       fi
 
