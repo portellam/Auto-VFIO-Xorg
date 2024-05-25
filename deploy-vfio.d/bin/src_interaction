@@ -30,7 +30,7 @@
         str_output="${1} "
       fi
 
-      local -i int_max_tries=2
+      local -ir int_max_tries=2
 
       for int_count in $( seq 0 "${int_max_tries}" ); do
         local str_answer=""
