@@ -25,7 +25,7 @@
 # logic
 #
   #
-  # DESC:   Execute Static Hugepages setup.
+  # DESC:   Main execution.
   # $1:     the Hugepage size as a string.
   # $2:     the Hugepage count size in kilobytes as an int reference.
   # $3:     the Hugepage count as an int reference.
@@ -95,10 +95,10 @@
 
       print_and_log_work "Executing ${str_setup_name} setup."
 
-      if ! get_hugepage_size_in_kilobytes_prompt \
+      if ! src_hugepages_get_kilobytes_size_prompt \
           "${str_hugepages_size}" \
           "ref_int_hugepages_count_size_in_kib" \
-        || ! get_hugepage_count_prompt \
+        || ! src_hugepages_get_count_prompt \
           "ref_int_hugepages_count_size_in_kib" \
           "ref_int_hugepages_count" \
           "${int_maximum_free_memory_in_kib}"; then
@@ -118,7 +118,7 @@
   #         If Hugepage count is not valid, return 1.
   #         If any exceptions occur, return 2.
   #
-    function get_hugepage_count
+    function src_hugepages_get_count
     {
       local -r str_warn="Cannot validate Hugepage count."
       local -r int_maximum_free_memory_in_kib="${3}"
@@ -171,7 +171,7 @@
   #         If Hugepage count is not valid, return 1.
   #         If any exceptions occur, return 2.
   #
-    function get_hugepage_count_prompt
+    function src_hugepages_get_count_prompt
     {
       local -r str_warn="Cannot validate Hugepage count."
       local -r int_maximum_free_memory_in_kib="${3}"
@@ -208,7 +208,7 @@
           return 2
         fi
 
-        if ! get_hugepage_count \
+        if ! src_hugepages_get_count \
             "${str_answer}" \
             "${ref_int_prompt_hugepages_count}" \
             "${int_maximum_free_memory_in_kib}"; then
@@ -241,7 +241,7 @@
         read -r -p "Enter Hugepage count [1-${int_maximum_hugepage_count}]: " \
           str_answer
 
-        if ! get_hugepage_count \
+        if ! src_hugepages_get_count \
           "${str_answer}" \
           "${ref_int_prompt_hugepages_count}" \
           "${int_maximum_free_memory_in_kib}"; then
@@ -266,7 +266,7 @@
   #         If Hugepage size is not valid, return 1.
   #         If any exceptions occur, return 2.
   #
-    function get_hugepage_size_in_kilobytes
+    function src_hugepages_get_kilobytes_size
     {
       local -r str_warn="Cannot validate Hugepage size."
       local -ir int_two_by_exponent_of_ten=$(( 2 ** 10 ))
@@ -316,7 +316,7 @@
   #         If Hugepage size is not valid, return 1.
   #         If any exceptions occur, return 2.
   #
-    function get_hugepage_size_in_kilobytes_prompt
+    function src_hugepages_get_kilobytes_size_prompt
     {
       local -r str_warn="Cannot set Hugepage size."
       local -n ref_int_prompt_hugepages_size_in_kib="${2}"
@@ -336,7 +336,7 @@
       fi
 
       if is_string "${ref_str_prompt_hugepages_size}"; then
-        if ! get_hugepage_size_in_kilobytes \
+        if ! src_hugepages_get_kilobytes_size \
           "${ref_str_prompt_hugepages_size}" \
           "ref_int_prompt_hugepages_size_in_kib"; then
           log_invalid_parameter "ref_int_prompt_hugepages_size_in_kib"
@@ -352,7 +352,7 @@
         read -r -p "Enter Hugepage size [4K/2M/1G]: " \
           ref_str_prompt_hugepages_size
 
-        if ! get_hugepage_size_in_kilobytes \
+        if ! src_hugepages_get_kilobytes_size \
           "${ref_str_prompt_hugepages_size}" \
           "ref_int_hugepages_size_in_kib"; then
           continue
