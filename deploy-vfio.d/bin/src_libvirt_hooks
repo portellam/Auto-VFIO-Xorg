@@ -189,7 +189,7 @@
 
       local -r bool_do_force_install="${2}"
 
-      if ! is_bool "${bool_do_force_install}l"; then
+      if ! is_bool "${bool_do_force_install}"; then
         log_invalid_parameter "bool_do_force_install"
         return 2
       fi
