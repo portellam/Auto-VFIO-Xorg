@@ -104,6 +104,15 @@
       ["UPDATE"]=false,
     )
 
+    declare -A DICT_GENERATE_EVDEV_ARGS=(
+      ["ARGS"]=""
+      ["HUGEPAGES_ENABLED"]=false
+      ["INSTALL"]=false,
+      ["SKIP"]=false,
+      ["UNINSTALL"]=false,
+      ["UPDATE"]=false,
+    )
+
     declare -A DICT_LIBVIRT_HOOKS_ARGS=(
       ["INSTALL"]=false,
       ["SKIP"]=false,
@@ -210,9 +219,11 @@
           "DICT_HUGEPAGES_ARGS[\"COUNT_KILOBYTES\"]" \
           "${DICT_HUGEPAGES_ARGS["FREE_MAX_MEMORY_KILOBYTES"]}"
           "DICT_HUGEPAGES_ARGS[\"COUNT_MAX_KILOBYTES\"]"; then
+        DICT_GENERATE_EVDEV_ARGS["HUGEPAGES_ENABLED"]=false
         return 1
       fi
 
+      DICT_GENERATE_EVDEV_ARGS["HUGEPAGES_ENABLED"]=true
       return 0
     }
 
@@ -262,6 +273,29 @@
           "${DICT_AUTO_XORG_ARGS["UNINSTALL"]}" \
           "${DICT_AUTO_XORG_ARGS["UPDATE"]}" \
           "DICT_AUTO_XORG_ARGS[\"ARGS\"]"; then
+        return 1
+      fi
+
+      return 0
+    }
+
+    function generate_evdev
+    {
+      local -r str_hugepages_argument=" --hugepages "
+
+      if DICT_GENERATE_EVDEV_ARGS["HUGEPAGES_ENABLED"] \
+        && ! array_contains_value \
+          "DICT_GENERATE_EVDEV_ARGS[\"ARGS\"]" \
+          "${str_hugepages_argument}"; then
+        DICT_GENERATE_EVDEV_ARGS["ARGS"]+="${str_hugepages_argument}"
+      fi
+
+      if ! src_generate_evdev_main \
+          "${DICT_GENERATE_EVDEV_ARGS["SKIP"]}" \
+          "${DICT_GENERATE_EVDEV_ARGS["INSTALL"]}" \
+          "${DICT_GENERATE_EVDEV_ARGS["UNINSTALL"]}" \
+          "${DICT_GENERATE_EVDEV_ARGS["UPDATE"]}" \
+          "DICT_GENERATE_EVDEV_ARGS[\"ARGS\"]"; then    # TODO: test if this will work!
         return 1
       fi
 
