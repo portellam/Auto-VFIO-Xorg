@@ -295,7 +295,7 @@
           "${DICT_GENERATE_EVDEV_ARGS["INSTALL"]}" \
           "${DICT_GENERATE_EVDEV_ARGS["UNINSTALL"]}" \
           "${DICT_GENERATE_EVDEV_ARGS["UPDATE"]}" \
-          "DICT_GENERATE_EVDEV_ARGS[\"ARGS\"]"; then    # TODO: test if this will work!
+          "DICT_GENERATE_EVDEV_ARGS[\"ARGS\"]"; then
         return 1
       fi
 
