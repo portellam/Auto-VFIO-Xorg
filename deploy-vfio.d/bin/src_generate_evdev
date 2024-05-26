@@ -1,0 +1,384 @@
+#!/bin/false
+
+#
+# Filename:       src_generate_evdev
+# Description:    Logic to update and install Generate Evdev.
+# Author(s):      Alex Portell <github.com/portellam>
+# Maintainer(s):  Alex Portell <github.com/portellam>
+#
+
+#
+# TODO:
+# - [ ] test.
+#
+
+#
+# sources
+#
+  declare -g SRC_STR_SCRIPT_DIR="/usr/local/bin/"
+  declare -g SRC_STR_SCRIPT_BIN_DIR="${SRC_STR_SCRIPT_DIR}deploy-vfio.d/"
+
+  source "${SRC_STR_SCRIPT_BIN_DIR}src_print"
+  source "${SRC_STR_SCRIPT_BIN_DIR}src_git"
+
+#
+# logic
+#
+  #
+  # DESC:   Main execution.
+  # $1:     do skip.
+  # $2:     do force execute.
+  # $3:     do force install.
+  # $4:     do force uninstall.
+  # $5:     do force update.
+  # $6:     the execute/install command line arguments as an array reference.
+  # RETURN: If successful, return 0.
+  #         If not, return 1.
+  #         If any exceptions occur, return 2.
+  #
+    function src_generate_evdev_main
+    {
+      local -r str_repo_name="Generate Evdev"
+      local -n arr_arguments="${6}"
+
+      if ! is_array "${arr_arguments}"; then
+        log_invalid_parameter "arr_arguments"
+        return 2
+      fi
+
+      local -r str_arguments=""
+
+      if ! get_delimited_string_from_array "arr_arguments" "str_arguments" " "; then
+        log_invalid_parameter "str_arguments"
+        return 2
+      fi
+
+      local -r bool_do_force_update="${5}"
+
+      if ! is_bool "${bool_do_force_update}"; then
+        log_invalid_parameter "bool_do_force_update"
+        return 2
+      fi
+
+      local -r bool_do_force_uninstall="${4}"
+
+      if ! is_bool "${bool_do_force_uninstall}"; then
+        log_invalid_parameter "bool_do_force_uninstall"
+        return 2
+      fi
+
+      local -r bool_do_force_install="${3}"
+
+      if ! is_bool "${bool_do_force_install}"; then
+        log_invalid_parameter "bool_do_force_install"
+        return 2
+      fi
+
+      local -r bool_do_force_execute="${2}"
+
+      if ! is_bool "${bool_do_force_execute}"; then
+        log_invalid_parameter "bool_do_force_execute"
+        return 2
+      fi
+
+      local -r bool_do_force_skip="${1}"
+
+      if ! is_bool "${bool_do_force_skip}"; then
+        log_invalid_parameter "bool_do_force_skip"
+        return 2
+      fi
+
+      if "${bool_do_force_skip}"; then
+        print_and_log_output "Skipped ${str_repo_name}."
+        return 0
+      fi
+
+      if "${bool_do_force_update}"; then
+        if ! src_generate_evdev_does_repo_exist "true"; then
+          return 1
+        fi
+      fi
+
+      if "${bool_do_force_install}"; then
+        if ! src_generate_evdev_install "${str_arguments}"; then
+          return 1
+        fi
+
+        return 0
+      fi
+
+      if "${bool_do_force_execute}"; then
+        if ! src_generate_evdev_execute "${str_arguments}"; then
+          return 1
+        fi
+
+        return 0
+      fi
+
+      if "${bool_do_force_uninstall}"; then
+        if ! src_generate_evdev_uninstall; then
+          return 1
+        fi
+
+        return 0
+      fi
+
+      if ! src_generate_evdev_does_repo_exist "false"; then
+        return 1
+      fi
+
+      if ! src_generate_evdev_install_prompt "${str_arguments}"; then
+        return 1
+      fi
+
+      if ! src_generate_evdev_execute_prompt "${str_arguments}"; then
+        return 1
+      fi
+
+      if ! src_generate_evdev_uninstall_prompt; then
+        return 1
+      fi
+
+      return 0
+    }
+
+  #
+  # DESC:   Checks if git repo exists.
+  # $1:     do force download repo.
+  # RETURN: If repo exists, return 0.
+  #         If false, return 1.
+  #         If any exception occurs, return 2.
+  #
+    function src_generate_evdev_does_repo_exist
+    {
+      local -r str_repo_name="Generate Evdev"
+      local -r str_warn="Could not determine if ${str_repo_name} repository exists."
+
+      log_work "Determining if ${str_repo_name} repository exists..."
+
+      local -r str_last_dir="$( pwd )"
+      local -r bool_do_force_download="${1}"
+
+      if ! is_bool "${bool_do_force_download_repo}"; then
+        log_invalid_parameter "bool_do_force_download_repo"
+        print_and_log_warn "${str_warn}"
+        return 2
+      fi
+
+      does_this_git_repo_exist \
+        "${str_repo_name}" \
+        "github.com/portellam/generate-evdev" \
+        "${bool_do_force_download}"
+
+      local -ir int_return_code="${?}"
+
+      if ! change_directory "${str_last_dir}"; then
+        print_and_log_warn "${str_warn}"
+        return 2
+      fi
+
+      if [[ "${int_return_code}" -ne 0 ]]; then
+        print_and_log_warn "${str_warn}"
+        return "${int_return_code}"
+      fi
+
+      log_pass "${str_repo_name} repository exists."
+      return 0
+    }
+
+  #
+  # DESC:   Execute Generate Evdev.
+  # $*:     the command line arguments as a string.
+  # RETURN: If execution is successful, return 0.
+  #         If false, return 1.
+  #
+    function src_generate_evdev_execute
+    {
+      local -r str_repo_name="Generate Evdev"
+      local -r str_fail="Could not execute ${str_repo_name}."
+      local -a arr_arguments="$@"
+      local str_arguments
+
+      if ! get_delimited_string_from_array "arr_arguments" "str_arguments" " "; then
+        print_and_log_fail "${str_fail}"
+        return 1
+      fi
+
+      if ! go_to_parent_path \
+        || ! change_directory "generate-evdev"; then
+        print_and_log_fail "${str_fail}"
+        return 2
+      fi
+
+      log_work "Executing ${str_repo_name}...\n"
+      sudo bash generate-evdev "${str_arguments}"
+
+      local -i int_code="${?}"
+
+      echo
+
+      if [[ "${int_code}" -ne 0 ]]; then
+        print_and_log_fail "${str_fail}"
+        return "${int_code}"
+      fi
+
+      log_pass "Executed ${str_repo_name}."
+      return 0
+    }
+
+  #
+  # DESC:   Execute Generate Evdev installer.
+  # $*:     the command line arguments as a string.
+  # RETURN: If execution is successful, return 0.
+  #         If false, return 1.
+  #
+    function src_generate_evdev_execute_installer
+    {
+      local -r str_repo_name="Generate Evdev"
+      local -r str_warn="Could not execute ${str_repo_name} installer."
+
+      if ! src_generate_evdev_does_repo_exist "false"; then
+        print_and_log_warn "${str_warn}"
+        return 1
+      fi
+
+      local -a arr_arguments="$@"
+      local str_arguments
+
+      if ! get_delimited_string_from_array "arr_arguments" "str_arguments" " "; then
+        print_and_log_warn "${str_warn}"
+        return 1
+      fi
+
+      if ! go_to_parent_path \
+        || ! change_directory "generate-evdev"; then
+        print_and_log_warn "${str_warn}"
+        return 2
+      fi
+
+      log_work "Executing ${str_repo_name} installer...\n"
+      sudo bash installer.bash "${str_arguments}"
+
+      local -i int_code="${?}"
+
+      echo
+
+      if [[ "${int_code}" -ne 0 ]]; then
+        print_and_log_warn "${str_warn}"
+        return "${int_code}"
+      fi
+
+      log_pass "Executed ${str_repo_name} installer."
+      return 0
+    }
+
+  #
+  # DESC:   Prompt to execute Generate Evdev.
+  # $*:     the command line arguments as a string.
+  # RETURN: If execution is successful, return 0.
+  #         If execution has failed, return 1.
+  #         If execution is skipped, return 2.
+  #
+    function src_generate_evdev_execute_prompt
+    {
+      local -r str_repo_name="Generate Evdev"
+
+      if ! ask_yes_no_question "Execute ${str_repo_name}?"; then
+        print_and_log_output "Skipped execution of ${str_repo_name}."
+        return 2
+      fi
+
+      if ! src_generate_evdev_execute "${str_arguments}"; then
+        return 1
+      fi
+
+      return 0
+    }
+
+  #
+  # DESC:   Install of Generate Evdev.
+  # $*:     the command line arguments as a string.
+  # RETURN: If install is successful, return 0.
+  #         If false, return 1.
+  #
+    function src_generate_evdev_install
+    {
+      local -r str_arguments="${*}"
+      local -r str_repo_name="Generate Evdev"
+
+      print_and_log_work "Installing ${str_repo_name}..."
+
+      if ! src_generate_evdev_execute_installer "--install ${str_arguments}"; then
+        print_and_log_fail "Could not install ${str_repo_name}."
+        return 1
+      fi
+
+      print_and_log_pass "Installed ${str_repo_name}"
+      return 0
+    }
+
+  #
+  # DESC:   Prompt to install Generate Evdev.
+  # $*:     the command line arguments as a string.
+  # RETURN: If install is successful, return 0.
+  #         If install has failed, return 1.
+  #         If install is skipped, return 2.
+  #
+    function src_generate_evdev_install_prompt
+    {
+      local -r str_arguments="${*}"
+      local -r str_repo_name="Generate Evdev"
+
+      if ! ask_yes_no_question "Install ${str_repo_name}?"; then
+        print_and_log_output "Skipped install of ${str_repo_name}."
+        return 2
+      fi
+
+      if ! src_generate_evdev_install "${str_arguments}"; then
+        return 1
+      fi
+
+      return 0
+    }
+
+  #
+  # DESC:   Uninstall Generate Evdev.
+  # RETURN: If uninstall is successful, return 0.
+  #         If false, return 1.
+  #
+    function src_generate_evdev_uninstall
+    {
+      local -r str_repo_name="Generate Evdev"
+
+      print_and_log_work "Uninstalling ${str_repo_name}..."
+
+      if ! src_generate_evdev_execute_installer "--uninstall"; then
+        print_and_log_fail "Could not uninstall ${str_repo_name}."
+        return 1
+      fi
+
+      print_and_log_pass "Uninstalled ${str_repo_name}"
+      return 0
+    }
+
+  #
+  # DESC:   Prompt to uninstall Generate Evdev.
+  # RETURN: If uninstall is successful, return 0.
+  #         If uninstall has failed, return 1.
+  #         If uninstall is skipped, return 2.
+  #
+    function src_generate_evdev_uninstall_prompt
+    {
+      local -r str_repo_name="Generate Evdev"
+
+      if ! ask_yes_no_question "Uninstall ${str_repo_name}?"; then
+        print_and_log_output "Skipped uninstall of ${str_repo_name}."
+        return 2
+      fi
+
+      if ! src_generate_evdev_uninstall; then
+        return 1
+      fi
+
+      return 0
+    }
