@@ -93,9 +93,9 @@
           return 2
         fi
 
-        local -n ref_arr="${1}"
+        local -n ref_arr_add_to="${1}"
         local str_val="${2}"
-        ref_arr+=( "${str_val}" )
+        ref_arr_add_to+=( "${str_val}" )
 
         if [[ "${?}" -ne 0 ]]; then
           log_to_stderr "Could not add value to array."
@@ -121,10 +121,10 @@
           return 2
         fi
 
-        local -I ref_arr="${1}"
+        local -n ref_arr_contains_value="${1}"
         local str_val="${2}"
 
-        if ! [[ ${ref_arr[@]} =~ "${str_val}" ]]; then
+        if ! [[ ${ref_arr_contains_value[@]} =~ "${str_val}" ]]; then
           log_to_stderr "Array does not contain value."
           return 1
         fi
@@ -159,10 +159,10 @@
           return 2
         fi
 
-        local -n ref_dict="${1}"
+        local -n ref_dict_add_to="${1}"
         local -r str_key="${2}"
         local -r str_value="${3}"
-        ref_dict+=( ["${str_key}"]="${str_element}" )
+        ref_dict_add_to+=( ["${str_key}"]="${str_element}" )
 
         if [[ "${?}" -ne 0 ]]; then
           log_to_stderr "Could not remove value from array."
@@ -198,16 +198,16 @@
           return 2
         fi
 
-        local -n ref_dict="${1}"
+        local -n ref_dict_contains="${1}"
         local -r str_key="${2}"
         local -r str_value="${3}"
 
-        if ! $( -v "${ref_arr["${str_key}"]}" &> /dev/null ); then
+        if ! $( -v "${ref_dict_contains["${str_key}"]}" &> /dev/null ); then
           log_to_stderr "Dictionary does not contain key."
           return 1
         fi
 
-        if [[ ${ref_arr["${str_key}"]} != "${str_value}" ]]; then
+        if [[ ${ref_dict_contains["${str_key}"]} != "${str_value}" ]]; then
           log_to_stderr "Dictionary key does not contain value."
           return 1
         fi
@@ -244,10 +244,10 @@
           return 2
         fi
 
-        local -n ref_arr="${1}"
+        local -n ref_arr_get_delimited="${1}"
         local -n ref_str_delimited="${2}"
 
-        for var_value in ${ref_arr[@]}; do
+        for var_value in ${ref_arr_get_delimited[@]}; do
           ref_str_delimited+="${var_value}${str_delimiter}"
         done
 
@@ -350,9 +350,9 @@
             return 0
         esac
 
-        local -n ref_enum="${1}"
+        local -n ref_enum_not_empty="${1}"
 
-        for var_value in "${ref_enum[@]}"; do
+        for var_value in "${ref_enum_not_empty[@]}"; do
           if is_string "${var_value}" &> /dev/null; then
             log_to_stdout "Not empty enum."
             return 0
@@ -378,13 +378,13 @@
           return 2
         fi
 
-        local -n ref_arr="${1}"
+        local -n ref_arr_remove_from="${1}"
         local str_val="${2}"
         local -i int_return_code=1
 
-        for int_key in "${!ref_arr[@]}"; do
-          if [[ "${ref_arr["${int_key}"]}" == "${str_val}" ]]; then
-            unset ref_arr[$int_key]
+        for int_key in "${!ref_arr_remove_from[@]}"; do
+          if [[ "${ref_arr_remove_from["${int_key}"]}" == "${str_val}" ]]; then
+            unset ref_arr_remove_from[$int_key]
             int_return_code="${?}"
             break
           fi
@@ -419,10 +419,10 @@
           return 2
         fi
 
-        local -n ref_dict="${1}"
+        local -n ref_dict_remove_from="${1}"
         local -r str_key="${2}"
 
-        if ! unset ref_dict["${str_key}"]; then
+        if ! unset ref_dict_remove_from["${str_key}"]; then
           log_to_stderr "Could not remove key from dictionary."
           return 1
         fi
