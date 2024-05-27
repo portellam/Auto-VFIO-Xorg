@@ -580,7 +580,7 @@
         local -A dict_selected_arguments \
           dict_selected_options
 
-        if ! src_zram_swap_parse_usage_parse \
+        if ! src_zram_swap_parse_usage \
             "dict_selected_arguments" \
             "dict_selected_options" \
             "${str_arguments}"; then

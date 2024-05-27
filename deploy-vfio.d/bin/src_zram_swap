@@ -926,7 +926,7 @@
         local str_child_value=""
         shift
 
-        if ! src_zram_swap_parse_usage_options \
+        if ! src_zram_swap_usage_parse_options \
             "${str_parent}" \
             "str_child_key" \
             "str_child_value"; then
@@ -970,7 +970,7 @@
   # RETURN: If none or all option are valid, return 0.
   #         If any option is not valid, return 1.
   #
-    function src_zram_swap_parse_usage_options
+    function src_zram_swap_usage_parse_options
     {
       local -r str_parent="${1}"
       local -n ref_child_key="${2}"
@@ -984,7 +984,7 @@
 
       case "${str_parent}" in
         "install"| "modify" )
-          if ! src_zram_swap_parse_usage_nested_options \
+          if ! src_zram_swap_usage_parse_nested_options \
               "${str_parent}" \
               "ref_child_key" \
               "ref_child_value"; then
@@ -1012,7 +1012,7 @@
   # RETURN: If none or all option are valid, return 0.
   #         If any option is not valid, return 1.
   #
-    function src_zram_swap_parse_usage_nested_options
+    function src_zram_swap_usage_parse_nested_options
     {
       local -r str_parent="${1}"
       local -n ref_nested_child_key="${2}"
@@ -1023,8 +1023,8 @@
       fi
 
       shift
-      local ref_nested_child_key="$( echo "${*}" | cut --delimiter '=' --fields 2 )"
-      local ref_nested_child_value="$( echo "${*}" | cut --delimiter '=' --fields 2 )"
+      local str_child_key="$( echo "${*}" | cut --delimiter '=' --fields 2 )"
+      local str_child_value="$( echo "${*}" | cut --delimiter '=' --fields 2 )"
 
       case "${str_parent}" in
         "restart" )
@@ -1032,21 +1032,21 @@
           ;;
 
         "fraction="* )
-          if ! is_fraction "${ref_nested_child_value}" \
-            && [[ "${ref_nested_child_value}" == "default" ]]; then
+          if ! is_fraction "${str_child_value}" \
+            && [[ "${str_child_value}" == "default" ]]; then
             return 1
           fi
           ;;
 
         "hugepages-count="* )
-          if ! is_int "${ref_nested_child_value}"; then
+          if ! is_int "${str_child_value}"; then
             return 1
           fi
           ;;
 
         "hugepages-size="* )
           if ! src_hugepages_get_kilobytes_size \
-              "${ref_nested_child_value}" \
+              "${str_child_value}" \
               "ref"; then
             return 1
           fi
