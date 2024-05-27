@@ -75,6 +75,34 @@
         log_to_stdout "Valid bool."
         return 0
       }
+
+    #
+    # DESC:   Is XOR; is either bool true, but neither the same.
+    # $1:     the input as a bool.
+    # $2:     the input as a bool.
+    # RETURN: If true, return 0.
+    #         If false, return 1.
+    #         If an exception occurs, return 2.
+    #
+      function is_xor
+      {
+        if ! is_bool "${1}" \
+          || ! is_bool "${2}"; then
+          return 2
+        fi
+
+        if [[ "${1}" == "${2}" ]]; then
+          return 1
+        fi
+
+        if ! "${1}" \
+          && ! "${2}"; then
+          return 1
+        fi
+
+        return 0
+      }
+
   #
   # enumerables
   #
