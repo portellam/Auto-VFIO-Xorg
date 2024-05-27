@@ -9,8 +9,8 @@
 
 #
 # TODO:
-# - [ ] create dicts for each source files args.
-# - [ ] create functions to call main functions for each source.
+# - [x] create dicts for each source files args.
+# - [x] create functions to call main functions for each source.
 #
 
 #
@@ -121,11 +121,10 @@
     )
 
     declare -A DICT_LOOKING_GLASS_ARGS=(
-      ["BUFFER_SIZE"]="",
       ["INSTALL"]=false,
       ["SKIP"]=false,
+      ["UNINSTALL"]=false,
       ["UPDATE"]=false,
-      ["USE_DEFAULTS"]=true,
     )
 
     declare -A DICT_ZRAM_SWAP_ARGS=(
@@ -152,7 +151,7 @@
   #
     function main
     {
-      return 1
+      print_and_log_work
 
       if ! src_privileges_is_user_superuser \
         || ! is_system_supported; then
@@ -199,142 +198,241 @@
   #         If one or more arguments are not valid, return 1.
   #         If an exception occurs, return 2.
   #
-    function parse_args
+    function parse_arguments
     {
-      # TODO: develop!
-      # NOTE: dicts will be populated here.
-      return 1
+      if ! is_string "${1}"; then
+        return 0
+      fi
+
+      while is_string "${1}"; do
+        if ! parse_this_argument "${1}"; then
+          return 1
+        fi
+
+        shift
+      done
+
+      return 0
+    }
+
+  #
+  # DESC:   Parse one argument.
+  # $*:     the command line arguments as an array.
+  # RETURN: If all arguments are valid, or none are passed, return 0
+  #         If one or more arguments are not valid, return 1.
+  #         If an exception occurs, return 2.
+  #
+    function parse_this_argument
+    {
+      if ! is_string "${1}"; then
+        return 0
+      fi
+
+      case "${1}" in
+        # TODO: add functions here!
+
+        "--zram-swap" )
+          if ! zram_swap_parse_usage "$@"; then
+            return 1
+          fi
+
+          return 0
+          ;;
+      esac
+
+      return 0
     }
 
   #
   # DESC: Pre setup
   #
-    function hugepages
-    {
-      if ! src_hugepages_main \
-          "${DICT_HUGEPAGES_ARGS["SKIP"]}" \
-          "${DICT_HUGEPAGES_ARGS["SIZE"]}" \
-          "DICT_HUGEPAGES_ARGS[\"SIZE_KILOBYTES\"]" \
-          "DICT_HUGEPAGES_ARGS[\"COUNT\"]" \
-          "DICT_HUGEPAGES_ARGS[\"COUNT_KILOBYTES\"]" \
-          "${DICT_HUGEPAGES_ARGS["FREE_MAX_MEMORY_KILOBYTES"]}"
-          "DICT_HUGEPAGES_ARGS[\"COUNT_MAX_KILOBYTES\"]"; then
-        DICT_GENERATE_EVDEV_ARGS["HUGEPAGES_ENABLED"]=false
-        return 1
-      fi
+    #
+    # DESC:   Call source.
+    # RETURN: If successful, return 0.
+    #         If not, return 1.
+    #
+      function hugepages
+      {
+        if ! src_hugepages_main \
+            "${DICT_HUGEPAGES_ARGS["SKIP"]}" \
+            "${DICT_HUGEPAGES_ARGS["SIZE"]}" \
+            "DICT_HUGEPAGES_ARGS[\"SIZE_KILOBYTES\"]" \
+            "DICT_HUGEPAGES_ARGS[\"COUNT\"]" \
+            "DICT_HUGEPAGES_ARGS[\"COUNT_KILOBYTES\"]" \
+            "${DICT_HUGEPAGES_ARGS["FREE_MAX_MEMORY_KILOBYTES"]}"
+            "DICT_HUGEPAGES_ARGS[\"COUNT_MAX_KILOBYTES\"]"; then
+          DICT_GENERATE_EVDEV_ARGS["HUGEPAGES_ENABLED"]=false
+          return 1
+        fi
 
-      DICT_GENERATE_EVDEV_ARGS["HUGEPAGES_ENABLED"]=true
-      return 0
-    }
+        DICT_GENERATE_EVDEV_ARGS["HUGEPAGES_ENABLED"]=true
+        return 0
+      }
 
-    function isolcpu
-    {
-      # if ! src_isolcpu_main; then
-      #   return 1
-      # fi
+    #
+    # DESC:   Call source.
+    # RETURN: If successful, return 0.
+    #         If not, return 1.
+    #
+      function isolcpu
+      {
+        if ! src_isolcpu_main \
+            "${DICT_AUTO_XORG_ARGS["SKIP"]}" \
+            "${DICT_AUTO_XORG_ARGS["THREAD_SETS"]}"; then
+          return 1
+        fi
 
-      return 0
-    }
+        return 0
+      }
 
   #
   # DESC: Main setup
   #
-    function iommu
-    {
-      # if ! src_iommu_main; then
-      #   return 1
-      # fi
+    #
+    # DESC:   Call source.
+    # RETURN: If successful, return 0.
+    #         If not, return 1.
+    #
+      function iommu
+      {
+        if ! src_iommu_main \
+            "${DICT_AUTO_XORG_ARGS["SKIP"]}" \
+            "${DICT_AUTO_XORG_ARGS["USE_DEFAULT_XML"]}" \
+            "${DICT_AUTO_XORG_ARGS["XML_FILE_NAME"]}" \
+            "${DICT_AUTO_XORG_ARGS["SELECT_ALL"]}" \
+            "${DICT_AUTO_XORG_ARGS["SELECT_ALL_NON_VGA"]}" \
+            "${DICT_AUTO_XORG_ARGS["IOMMU_GROUPS"]}"; then
+          return 1
+        fi
 
-      return 0
-    }
+        return 0
+      }
 
-    function vfio_setup
-    {
-      DICT_VFIO_ARGS["HUGEPAGES_COUNT"]="${DICT_HUGEPAGES_ARGS["COUNT"]}"
-      DICT_VFIO_ARGS["HUGEPAGES_SIZE"]="${DICT_HUGEPAGES_ARGS["SIZE"]}"
-      DICT_VFIO_ARGS["ISOLCPU_THREAD_SETS"]="${DICT_ISOLCPU_ARGS["THREAD_SETS"]}"
-      DICT_VFIO_ARGS["IOMMU_GROUPS"]="${DICT_IOMMU_ARGS["IOMMU_GROUPS"]}"
+    #
+    # DESC:   Call source.
+    # RETURN: If successful, return 0.
+    #         If not, return 1.
+    #
+      function vfio_setup
+      {
+        DICT_VFIO_ARGS["HUGEPAGES_COUNT"]="${DICT_HUGEPAGES_ARGS["COUNT"]}"
+        DICT_VFIO_ARGS["HUGEPAGES_SIZE"]="${DICT_HUGEPAGES_ARGS["SIZE"]}"
+        DICT_VFIO_ARGS["ISOLCPU_THREAD_SETS"]="${DICT_ISOLCPU_ARGS["THREAD_SETS"]}"
+        DICT_VFIO_ARGS["IOMMU_GROUPS"]="${DICT_IOMMU_ARGS["IOMMU_GROUPS"]}"
 
-      # if ! src_vfio_setup_main; then
-      #   return 1
-      # fi
+        # if ! src_vfio_setup_main; then
+        #   return 1
+        # fi
 
-      return 0
-    }
+        return 0
+      }
 
   #
   # DESC: Post setup
   #
-    function auto_xorg
-    {
-      if ! src_auto_xorg_main \
-          "${DICT_AUTO_XORG_ARGS["SKIP"]}" \
-          "${DICT_AUTO_XORG_ARGS["INSTALL"]}" \
-          "${DICT_AUTO_XORG_ARGS["UNINSTALL"]}" \
-          "${DICT_AUTO_XORG_ARGS["UPDATE"]}" \
-          "DICT_AUTO_XORG_ARGS[\"ARGS\"]"; then
-        return 1
-      fi
+    #
+    # DESC:   Call source.
+    # RETURN: If successful, return 0.
+    #         If not, return 1.
+    #
+      function auto_xorg
+      {
+        if ! src_auto_xorg_main \
+            "${DICT_AUTO_XORG_ARGS["SKIP"]}" \
+            "${DICT_AUTO_XORG_ARGS["INSTALL"]}" \
+            "${DICT_AUTO_XORG_ARGS["UNINSTALL"]}" \
+            "${DICT_AUTO_XORG_ARGS["UPDATE"]}" \
+            "DICT_AUTO_XORG_ARGS[\"ARGS\"]"; then
+          return 1
+        fi
 
-      return 0
-    }
-
-    function generate_evdev
-    {
-      local -r str_hugepages_argument=" --hugepages "
-
-      if DICT_GENERATE_EVDEV_ARGS["HUGEPAGES_ENABLED"] \
-        && ! array_contains_value \
-          "DICT_GENERATE_EVDEV_ARGS[\"ARGS\"]" \
-          "${str_hugepages_argument}"; then
-        DICT_GENERATE_EVDEV_ARGS["ARGS"]+="${str_hugepages_argument}"
-      fi
-
-      if ! src_generate_evdev_main \
-          "${DICT_GENERATE_EVDEV_ARGS["SKIP"]}" \
-          "${DICT_GENERATE_EVDEV_ARGS["INSTALL"]}" \
-          "${DICT_GENERATE_EVDEV_ARGS["UNINSTALL"]}" \
-          "${DICT_GENERATE_EVDEV_ARGS["UPDATE"]}" \
-          "DICT_GENERATE_EVDEV_ARGS[\"ARGS\"]"; then
-        return 1
-      fi
-
-      return 0
-    }
-
-    function libvirt_hooks
-    {
-      if ! src_libvirt_hooks_main \
-          "${DICT_LIBVIRT_HOOKS_ARGS["SKIP"]}" \
-          "${DICT_LIBVIRT_HOOKS_ARGS["INSTALL"]}" \
-          "${DICT_LIBVIRT_HOOKS_ARGS["UNINSTALL"]}" \
-          "${DICT_LIBVIRT_HOOKS_ARGS["UPDATE"]}"; then
-        return 1
-      fi
-
-      return 0
-    }
-
-    function looking_glass
-    {
-      # if ! src_looking_glass_main; then
-      #   return 1
-      # fi
-
-      return 0
-    }
-
-    function scream
-    {
-      # if ! src_scream_main; then
-      #   return 1
-      # fi
-
-      return 0
-    }
+        return 0
+      }
 
     #
-    # DESC:   Call src_zram_swap_main.
+    # DESC:   Call source.
+    # RETURN: If successful, return 0.
+    #         If not, return 1.
+    #
+      function generate_evdev
+      {
+        local -r str_hugepages_argument=" --hugepages "
+
+        if DICT_GENERATE_EVDEV_ARGS["HUGEPAGES_ENABLED"] \
+          && ! array_contains_value \
+            "DICT_GENERATE_EVDEV_ARGS[\"ARGS\"]" \
+            "${str_hugepages_argument}"; then
+          DICT_GENERATE_EVDEV_ARGS["ARGS"]+="${str_hugepages_argument}"
+        fi
+
+        if ! src_generate_evdev_main \
+            "${DICT_GENERATE_EVDEV_ARGS["SKIP"]}" \
+            "${DICT_GENERATE_EVDEV_ARGS["INSTALL"]}" \
+            "${DICT_GENERATE_EVDEV_ARGS["UNINSTALL"]}" \
+            "${DICT_GENERATE_EVDEV_ARGS["UPDATE"]}" \
+            "DICT_GENERATE_EVDEV_ARGS[\"ARGS\"]"; then
+          return 1
+        fi
+
+        return 0
+      }
+
+    #
+    # DESC:   Call source.
+    # RETURN: If successful, return 0.
+    #         If not, return 1.
+    #
+      function libvirt_hooks
+      {
+        if ! src_libvirt_hooks_main \
+            "${DICT_LIBVIRT_HOOKS_ARGS["SKIP"]}" \
+            "${DICT_LIBVIRT_HOOKS_ARGS["INSTALL"]}" \
+            "${DICT_LIBVIRT_HOOKS_ARGS["UNINSTALL"]}" \
+            "${DICT_LIBVIRT_HOOKS_ARGS["UPDATE"]}"; then
+          return 1
+        fi
+
+        return 0
+      }
+
+    #
+    # DESC:   Call source.
+    # RETURN: If successful, return 0.
+    #         If not, return 1.
+    #
+      function looking_glass
+      {
+        if ! src_looking_glass_main \
+            "${DICT_LIBVIRT_HOOKS_ARGS["SKIP"]}" \
+            "${DICT_LIBVIRT_HOOKS_ARGS["INSTALL"]}" \
+            "${DICT_LIBVIRT_HOOKS_ARGS["UNINSTALL"]}" \
+            "${DICT_LIBVIRT_HOOKS_ARGS["UPDATE"]}"; then
+          return 1
+        fi
+
+        return 0
+      }
+
+    #
+    # DESC:   Call source.
+    # RETURN: If successful, return 0.
+    #         If not, return 1.
+    #
+      function scream
+      {
+        if ! src_scream_main \
+            "${DICT_LIBVIRT_HOOKS_ARGS["SKIP"]}" \
+            "${DICT_LIBVIRT_HOOKS_ARGS["INSTALL"]}" \
+            "${DICT_LIBVIRT_HOOKS_ARGS["UNINSTALL"]}" \
+            "${DICT_LIBVIRT_HOOKS_ARGS["UPDATE"]}"; then
+          return 1
+        fi
+
+        return 0
+      }
+
+    #
+    # DESC:   Call source.
     # RETURN: If successful, return 0.
     #         If not, return 1.
     #
@@ -378,6 +476,7 @@
 
     #
     # DESC:   Parse, validate, and save selected arguments.
+    # $*:     the arguments as a string.
     # RETURN: If none or all arguments are valid, return 0.
     #         If any argument is not valid, return 1.
     #
