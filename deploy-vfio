@@ -222,7 +222,86 @@
       fi
 
       case "${1}" in
-        # TODO: add functions here!
+        "--auto-xorg" )
+          if ! auto_xorg_parse_usage "$@"; then
+            return 1
+          fi
+
+          return 0
+          ;;
+
+        "--compatibility" )
+          if ! compatibility_parse_usage "$@"; then
+            return 1
+          fi
+
+          return 0
+          ;;
+
+        "--generate-evdev" )
+          if ! generate_evdev_parse_usage "$@"; then
+            return 1
+          fi
+
+          return 0
+          ;;
+
+        "--hugepages" )
+          if ! hugepages_parse_usage "$@"; then
+            return 1
+          fi
+
+          return 0
+          ;;
+
+
+        "--iommu" )
+          if ! iommu_parse_usage "$@"; then
+            return 1
+          fi
+
+          return 0
+          ;;
+
+        "--isolcpu" )
+          if ! isolcpu_parse_usage "$@"; then
+            return 1
+          fi
+
+          return 0
+          ;;
+
+        "--libvirt-hooks" )
+          if ! libvirt_hooks_parse_usage "$@"; then
+            return 1
+          fi
+
+          return 0
+          ;;
+
+        "--looking-glass" )
+          if ! looking_glass_parse_usage "$@"; then
+            return 1
+          fi
+
+          return 0
+          ;;
+
+        "--scream" )
+          if ! scream_parse_usage "$@"; then
+            return 1
+          fi
+
+          return 0
+          ;;
+
+        "--vfio-setup" )
+          if ! vfio_setup_parse_usage "$@"; then
+            return 1
+          fi
+
+          return 0
+          ;;
 
         "--zram-swap" )
           if ! zram_swap_parse_usage "$@"; then
@@ -231,9 +310,22 @@
 
           return 0
           ;;
-      esac
 
-      return 0
+        "--help" | "-h" | * )
+          src_iommu_usage_prompt
+          src_vfio_usage_prompt
+          src_hugepages_usage_prompt
+          src_isolcpu_usage_prompt
+          src_auto_xorg_usage_prompt
+          src_generate_evdev_usage_prompt
+          src_libvirt_hooks_usage_prompt
+          src_looking_glass_usage_prompt
+          src_scream_usage_prompt
+          src_zram_swap_usage_prompt
+
+          return 0
+          ;;
+      esac
     }
 
   #
