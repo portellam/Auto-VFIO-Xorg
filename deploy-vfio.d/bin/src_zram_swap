@@ -37,7 +37,7 @@
   # $7:     do use calculated fraction.
   # $8:     do use default fraction.
   # $9:     the fraction as a string.
-  # $10:    count of reserved memory in bytes as an int.
+  # $10:    count of reserved memory in kilobytes as an int.
   # RETURN: If successful, return 0.
   #         If not, return 1.
   #         If any exceptions occur, return 2.
@@ -45,10 +45,10 @@
     function src_zram_swap_main
     {
       local -r str_repo_name="ZRAM Swap"
-      local -r int_reserved_memory_count_bytes="${10}"
+      local -r int_reserved_memory_count_kilobytes="${10}"
 
-      if ! is_int "${int_reserved_memory_count_bytes}"; then
-        log_invalid_parameter "int_reserved_memory_count_bytes"
+      if ! is_int "${int_reserved_memory_count_kilobytes}"; then
+        log_invalid_parameter "int_reserved_memory_count_kilobytes"
         return 2
       fi
 
@@ -132,7 +132,7 @@
           "${bool_do_use_calculated_fraction}" \
           "${bool_do_use_default_fraction}" \
           "${str_fraction}" \
-          "${int_reserved_memory_count_bytes}"; then
+          "${int_reserved_memory_count_kilobytes}"; then
           return 1
         fi
 
@@ -145,7 +145,7 @@
           "${bool_do_use_calculated_fraction}" \
           "${bool_do_use_default_fraction}" \
           "${str_fraction}" \
-          "${int_reserved_memory_count_bytes}"; then
+          "${int_reserved_memory_count_kilobytes}"; then
           return 1
         fi
 
@@ -169,7 +169,7 @@
           "${bool_do_use_calculated_fraction}" \
           "${bool_do_use_default_fraction}" \
           "${str_fraction}" \
-          "${int_reserved_memory_count_bytes}"; then
+          "${int_reserved_memory_count_kilobytes}"; then
         return 1
       fi
 
@@ -178,7 +178,7 @@
           "${bool_do_use_calculated_fraction}" \
           "${bool_do_use_default_fraction}" \
           "${str_fraction}" \
-          "${int_reserved_memory_count_bytes}"; then
+          "${int_reserved_memory_count_kilobytes}"; then
         return 1
       fi
 
@@ -192,7 +192,7 @@
   #
   # DESC:   Get the calculated fraction.
   # $1:     the fraction as a string reference.
-  # $2:     the amount of reserved memory in bytes.
+  # $2:     the amount of reserved memory in kilobytes.
   # RETURN: If fraction is valid, return 0.
   #         If not, return 1.
   #         If an exception occurs, return 2.
@@ -201,11 +201,11 @@
     {
       log_work "Getting calculated fraction..."
 
-      local -r int_reserved_memory_count_bytes="${1}"
+      local -r int_reserved_memory_count_kilobytes="${1}"
 
       if ! src_zram_swap_is_reserved_memory_valid \
-        "${int_reserved_memory_count_bytes}"; then
-        log_invalid_parameter "int_reserved_memory_count_bytes"
+        "${int_reserved_memory_count_kilobytes}"; then
+        log_invalid_parameter "int_reserved_memory_count_kilobytes"
         print_and_log_warn "Reserve memory amount is not valid."
         return 2
       fi
@@ -218,19 +218,19 @@
         return 2
       fi
 
-      local -ir int_zram_swap_available_memory_bytes=$(( \
+      local -ir int_zram_swap_available_memory_kilobytes=$(( \
         SRC_MEMORY_INT_CURRENT_FREE_MEMORY_BYTES / 2 \
       ))
 
-      local int_sum_of_reserved_and_requested_memory_bytes=$(( \
-        int_reserved_memory_count_bytes + int_zram_swap_available_memory_bytes \
+      local int_sum_of_reserved_and_requested_memory_kilobytes=$(( \
+        int_reserved_memory_count_kilobytes + int_zram_swap_available_memory_kilobytes \
       ))
 
       if [[ \
-        "${int_sum_of_reserved_and_requested_memory_bytes}" -ge \
+        "${int_sum_of_reserved_and_requested_memory_kilobytes}" -ge \
         "${SRC_MEMORY_INT_CURRENT_FREE_MEMORY_BYTES}" \
       ]]; then
-        log_invalid_parameter "int_sum_of_reserved_and_requested_memory_bytes"
+        log_invalid_parameter "int_sum_of_reserved_and_requested_memory_kilobytes"
         print_and_log_warn "Total reserved memory count exceeds current free memory".
         return 2
       fi
@@ -241,7 +241,7 @@
       # Then truncate the decimal and return an integer.
       #
         local -r str_max_and_available_memory_fraction=""\
-          "${SRC_MEMORY_INT_MAX_FREE_MEMORY_BYTES}/${int_zram_swap_available_memory_bytes}"
+          "${SRC_MEMORY_INT_MAX_FREE_MEMORY_BYTES}/${int_zram_swap_available_memory_kilobytes}"
 
         local -i int_denominator=$( printf "%.0f" \
           $( echo "scale=2;${str_max_and_available_memory_fraction}" | bc ) \
@@ -377,24 +377,24 @@
 
   #
   # DESC:   Is reserved memory valid
-  # $1:     count of reserved memory in bytes as an int.
+  # $1:     count of reserved memory in kilobytes as an int.
   # RETURN: If amount is valid, return 0.
   #         If not, return 1.
   #
     function src_zram_swap_is_reserved_memory_valid
     {
-      local -r int_reserved_memory_count_bytes="${1}"
+      local -r int_reserved_memory_count_kilobytes="${1}"
 
-      if ! is_int "${int_reserved_memory_count_bytes}" \
+      if ! is_int "${int_reserved_memory_count_kilobytes}" \
         || [[ \
-          "${int_reserved_memory_count_bytes}" -lt \
+          "${int_reserved_memory_count_kilobytes}" -lt \
           "${SRC_MEMORY_INT_MAX_FREE_MEMORY_BYTES}" \
         ]]; then
-        log_invalid_parameter "int_reserved_memory_count_bytes"
+        log_invalid_parameter "int_reserved_memory_count_kilobytes"
 
         print_and_log_warn "Reserved memory count is not valid. "\
           "Size must be less than maximum free memory "\
-          "(${SRC_MEMORY_INT_MAX_FREE_MEMORY_BYTES} bytes)."
+          "(${SRC_MEMORY_INT_MAX_FREE_MEMORY_BYTES} kilobytes)."
         return 1
       fi
 
@@ -453,7 +453,7 @@
   # $2:     do use calculated fraction.
   # $3:     do use default fraction.
   # $4:     the fraction as a string.
-  # $5:     amount of reserved memory in bytes as an int.
+  # $5:     amount of reserved memory in kilobytes as an int.
   # RETURN: If install is successful, return 0.
   #         If install has failed, return 1.
   #         If install is skipped, return 2.
@@ -465,10 +465,10 @@
 
       print_and_log_work "Installing ${str_repo_name}..."
 
-      local -r int_reserved_memory_count_bytes="${5}"
+      local -r int_reserved_memory_count_kilobytes="${5}"
 
-      if ! is_int "${int_reserved_memory_count_bytes}"; then
-        log_invalid_parameter "int_reserved_memory_count_bytes"
+      if ! is_int "${int_reserved_memory_count_kilobytes}"; then
+        log_invalid_parameter "int_reserved_memory_count_kilobytes"
         print_and_log_fail "${str_fail}"
         return 2
       fi
@@ -515,7 +515,7 @@
           "${bool_do_use_default_fraction}" \
           "${bool_do_use_calculated_fraction}" \
           "${str_fraction}" \
-          "${int_reserved_memory_count_bytes}" \
+          "${int_reserved_memory_count_kilobytes}" \
         || ! src_zram_swap_enable_device \
           "${bool_do_force_restart}"; then
         print_and_log_fail "${str_fail}"
@@ -532,7 +532,7 @@
   # $2:     do use calculated fraction.
   # $3:     do use default fraction.
   # $4:     the fraction as a string.
-  # $5:     amount of reserved memory in bytes as an int.
+  # $5:     amount of reserved memory in kilobytes as an int.
   # RETURN: If install is successful, return 0.
   #         If install has failed, return 1.
   #         If install is skipped, return 2.
@@ -559,7 +559,7 @@
   # $2:     do use calculated fraction.
   # $3:     do use default fraction.
   # $4:     the fraction as a string.
-  # $5:     amount of reserved memory in bytes as an int.
+  # $5:     amount of reserved memory in kilobytes as an int.
   # RETURN: If modification is successful, return 0.
   #         If modification has failed, return 1.
   #         If modification is skipped, return 2.
@@ -571,10 +571,10 @@
 
       print_and_log_work "Modifying ${str_repo_name}..."
 
-      local -r int_reserved_memory_count_bytes="${5}"
+      local -r int_reserved_memory_count_kilobytes="${5}"
 
-      if ! is_int "${int_reserved_memory_count_bytes}"; then
-        log_invalid_parameter "int_reserved_memory_count_bytes"
+      if ! is_int "${int_reserved_memory_count_kilobytes}"; then
+        log_invalid_parameter "int_reserved_memory_count_kilobytes"
         print_and_log_fail "${str_fail}"
         return 2
       fi
@@ -615,7 +615,7 @@
           "${bool_do_use_default_fraction}" \
           "${bool_do_use_calculated_fraction}" \
           "${str_fraction}" \
-          "${int_reserved_memory_count_bytes}" \
+          "${int_reserved_memory_count_kilobytes}" \
         || ! src_zram_swap_enable_device \
           "${bool_do_force_restart}"; then
         print_and_log_fail "${str_fail}"
@@ -632,7 +632,7 @@
   # $2:     do use calculated fraction.
   # $3:     do use default fraction.
   # $4:     the fraction as a string.
-  # $5:     amount of reserved memory in bytes as an int.
+  # $5:     amount of reserved memory in kilobytes as an int.
   # RETURN: If modification is successful, return 0.
   #         If modification has failed, return 1.
   #         If modification is skipped, return 2.
@@ -658,7 +658,7 @@
   # $1:     do use the default fraction value.
   # $2:     do use calculated fraction value.
   # $3:     the fraction as a string.
-  # $4:     count of reserved memory in bytes as an int.
+  # $4:     count of reserved memory in kilobytes as an int.
   # RETURN: If output is valid and file is written, return 0.
   #         If not, return 1.
   #         If an exception occurs, return 2.
@@ -670,10 +670,10 @@
 
       log_work "Modifying ${str_repo_name} configuration..."
 
-      local int_reserved_memory_count_bytes="${4}"
+      local int_reserved_memory_count_kilobytes="${4}"
 
-      if ! is_int "${int_reserved_memory_count_bytes}"; then
-        log_invalid_parameter "int_reserved_memory_count_bytes"
+      if ! is_int "${int_reserved_memory_count_kilobytes}"; then
+        log_invalid_parameter "int_reserved_memory_count_kilobytes"
         print_and_log_warn "${str_warn}"
         return 2
       fi
@@ -706,7 +706,7 @@
       if ! is_fraction "${str_fraction}"; then
         if "${bool_do_use_calculated_fraction}"; then
           if ! src_zram_swap_calculate_fraction \
-            "${str_fraction}" "${int_reserved_memory_count_bytes}"; then
+            "${str_fraction}" "${int_reserved_memory_count_kilobytes}"; then
             print_and_log_warn "${str_warn}"
             return 1
           fi
@@ -882,6 +882,208 @@
       if ! src_zram_swap_uninstall; then
         return 1
       fi
+
+      return 0
+    }
+
+  #
+  # DESC:   Parse ZRAM Swap arguments and options.
+  # $1:     the argument and option dictionary as a reference.
+  # $2:     the option and value dictionary as a reference.
+  # $*:     the options as a string.
+  # RETURN: If none or all options are valid, return 0.
+  #         If any option is not valid, return 1.
+  #         If an exception occurs, return 2.
+  #
+    function src_zram_swap_parse_usage
+    {
+      local -n ref_dict_selected_arguments="${1}"
+
+      if ! is_dict "${ref_dict_selected_arguments}"; then
+        log_invalid_parameter "ref_dict_selected_arguments"
+        return 2
+      fi
+
+      shift
+
+      local -n ref_dict_selected_options="${1}"
+
+      if ! is_dict "${ref_dict_selected_options}"; then
+        log_invalid_parameter "ref_dict_selected_options"
+        return 2
+      fi
+
+      shift
+
+      if ! is_string "${1}"; then
+        log_output "No options set."
+        return 0
+      fi
+
+      while is_string "${1}"; do
+        local str_parent="${1}"
+        local str_child_key=""
+        local str_child_value=""
+        shift
+
+        if ! src_zram_swap_parse_usage_options \
+            "${str_parent}" \
+            "str_child_key" \
+            "str_child_value"; then
+            print_and_log_invalid_option "${str_parent}"
+            return 1
+        fi
+
+        if dict_contains_key_value_pair \
+            "ref_dict_selected_arguments" \
+            "${str_parent}" \
+            "${str_child_key}"; then
+          log_invalid_parameter "ref_dict_selected_arguments"
+          print_and_log_invalid_option "${str_parent}"
+          print_conflicting_options
+          return 1
+        fi
+
+        if dict_contains_key_value_pair \
+            "ref_dict_selected_options" \
+            "${str_child_key}" \
+            "${str_child_value}"; then
+          log_invalid_parameter "ref_dict_selected_options"
+          print_and_log_invalid_option "${str_parent}"
+          print_conflicting_options
+          return 1
+        fi
+
+        ref_dict_selected_arguments["${str_parent}"]="${str_child_key}"
+        ref_dict_selected_options["${str_child_key}"]="${str_child_value}"
+        shift
+      done
+
+      return 0
+    }
+
+  #
+  # DESC:   Parse options.
+  # $1:     the parent option as a string.
+  # $2:     the child option key as a string reference.
+  # $3:     the child option value as a string reference.
+  # RETURN: If none or all option are valid, return 0.
+  #         If any option is not valid, return 1.
+  #
+    function src_zram_swap_parse_usage_options
+    {
+      local -r str_parent="${1}"
+      local -n ref_child_key="${2}"
+      local -n ref_child_value="${3}"
+
+      if ! is_string "${str_parent}"; then
+        return 0
+      fi
+
+      shift
+
+      case "${str_parent}" in
+        "install"| "modify" )
+          if ! src_zram_swap_parse_usage_nested_options \
+              "${str_parent}" \
+              "ref_child_key" \
+              "ref_child_value"; then
+            return 1
+          fi
+
+          return 0
+          ;;
+
+        "skip" | "uninstall" | "update" )
+          return 0
+          ;;
+
+        * )
+          return 2
+          ;;
+      esac
+    }
+
+  #
+  # DESC:   Parse nested options.
+  # $1:     the parent option as a string.
+  # $2:     the child option key as a string reference.
+  # $3:     the child option value as a string reference.
+  # RETURN: If none or all option are valid, return 0.
+  #         If any option is not valid, return 1.
+  #
+    function src_zram_swap_parse_usage_nested_options
+    {
+      local -r str_parent="${1}"
+      local -n ref_nested_child_key="${2}"
+      local -n ref_nested_child_value="${3}"
+
+      if ! is_string "${str_parent}"; then
+        return 0
+      fi
+
+      shift
+      local ref_nested_child_key="$( echo "${*}" | cut --delimiter '=' --fields 2 )"
+      local ref_nested_child_value="$( echo "${*}" | cut --delimiter '=' --fields 2 )"
+
+      case "${str_parent}" in
+        "restart" )
+          return 0
+          ;;
+
+        "fraction="* )
+          if ! is_fraction "${ref_nested_child_value}" \
+            && [[ "${ref_nested_child_value}" == "default" ]]; then
+            return 1
+          fi
+          ;;
+
+        "hugepages-count="* )
+          if ! is_int "${ref_nested_child_value}"; then
+            return 1
+          fi
+          ;;
+
+        "hugepages-size="* )
+          if ! src_hugepages_get_kilobytes_size \
+              "${ref_nested_child_value}" \
+              "ref"; then
+            return 1
+          fi
+          ;;
+
+        * )
+          return 2
+          ;;
+      esac
+
+      ref_nested_child_key="${str_child_key}"
+      ref_nested_child_value="${str_child_value}"
+      return 0
+    }
+
+  #
+  # DESC:   Prompt usage.
+  # RETURN: Always return 0.
+  #
+    function src_zram_swap_usage_prompt
+    {
+      echo -e ""\
+      "--zram-swap"\
+      "  install    Install zram-swap. Downloads installer if absent."\
+      "  modify     Modify the existing installation."\
+      "  skip       Skip prompts and do nothing."\
+      "  uninstall  Uninstall zram-swap."\
+      "  update     Download zram-swap installer."\
+      "  [install/modify] OPTIONS:"\
+      "    fraction=         Set the fraction of total memory to allocate as ZRAM swap. Overrides the default value."\
+      "    hugepages-count=  The count of Hugepages. Append any positive number."\
+      "    hugepages-size=   The size of a Hugepage as a multiple of one byte (4K/2M/1G)."\
+      ""\
+      "    [fraction=] VALUES:"\
+      "      x/y         A fraction between 0 and 1."\
+      "      calculated  Caclulate a fraction value given defined logic."\
+      ""
 
       return 0
     }

@@ -129,16 +129,16 @@
     )
 
     declare -A DICT_ZRAM_SWAP_ARGS=(
-      ["FORCE_RESTART"]=false,
-      ["HUGEPAGES_COUNT_MAX_KILOBYTES"]="",
+      ["FRACTION"]="",
+      ["HUGEPAGES_COUNT"]="",
+      ["HUGEPAGES_SIZE"]="",
       ["INSTALL"]=false,
       ["MODIFY"]=false,
-      ["RESERVED_MEMORY_FRACTION"]="",
       ["RESTART"]=false,
       ["SKIP"]=false,
       ["UPDATE"]=false,
-      ["USE_CALCULATION"]=false,
-      ["USE_DEFAULTS"]=true,
+      ["USE_CACULATED_FRACTION"]=false,
+      ["USE_DEFAULT_FRACTION"]=true,
     )
 
 #
@@ -333,26 +333,183 @@
       return 0
     }
 
-    function zram_swap
-    {
-      DICT_ZRAM_SWAP_ARGS["HUGEPAGES_COUNT_MAX_KILOBYTES"]="${DICT_HUGEPAGES_ARGS["COUNT_MAX_KILOBYTES"]}"
+    #
+    # DESC:   Call src_zram_swap_main.
+    # RETURN: If successful, return 0.
+    #         If not, return 1.
+    #
+      function zram_swap
+      {
+        DICT_ZRAM_SWAP_ARGS["HUGEPAGES_COUNT_MAX_KILOBYTES"]=\
+          "${DICT_HUGEPAGES_ARGS["COUNT_MAX_KILOBYTES"]}"
 
-      if ! src_zram_swap_main \
-          "${DICT_ZRAM_SWAP_ARGS["SKIP"]}" \
-          "${DICT_ZRAM_SWAP_ARGS["MODIFY"]}" \
-          "${DICT_ZRAM_SWAP_ARGS["INSTALL"]}" \
-          "${DICT_ZRAM_SWAP_ARGS["UNINSTALL"]}" \
-          "${DICT_ZRAM_SWAP_ARGS["UPDATE"]}" \
-          "${DICT_ZRAM_SWAP_ARGS["RESTART"]}" \
-          "${DICT_ZRAM_SWAP_ARGS["USE_CALCULATION"]}" \
-          "${DICT_ZRAM_SWAP_ARGS["USE_DEFAULTS"]}" \
-          "${DICT_ZRAM_SWAP_ARGS["RESERVED_MEMORY_FRACTION"]}" \
-          "${DICT_ZRAM_SWAP_ARGS["HUGEPAGES_COUNT_MAX_KILOBYTES"]}"; then
-        return 1
-      fi
+        local -i int_hugepages_maximum_count_kilobytes=0
+        local -i int_hugepages_size_kilobytes=0
 
-      return 0
-    }
+        if is_int "${DICT_ZRAM_SWAP_ARGS["HUGEPAGES_COUNT"]}"; then
+          if ! src_hugepages_get_kilobytes_size \
+              "${DICT_ZRAM_SWAP_ARGS["HUGEPAGES_SIZE"]}" \
+              "${int_hugepages_size_kilobytes}" \
+            || ! src_hugepages_get_count \
+              "${DICT_ZRAM_SWAP_ARGS["HUGEPAGES_COUNT"]}" \
+              "${int_hugepages_size_kilobytes}" \
+              "${INT_FREE_MAX_MEMORY_KILOBYTES}" \
+              "${int_hugepages_maximum_count_kilobytes}"; then
+            return 1
+          fi
+        fi
+
+        if ! src_zram_swap_main \
+            "${DICT_ZRAM_SWAP_ARGS["SKIP"]}" \
+            "${DICT_ZRAM_SWAP_ARGS["MODIFY"]}" \
+            "${DICT_ZRAM_SWAP_ARGS["INSTALL"]}" \
+            "${DICT_ZRAM_SWAP_ARGS["UNINSTALL"]}" \
+            "${DICT_ZRAM_SWAP_ARGS["UPDATE"]}" \
+            "${DICT_ZRAM_SWAP_ARGS["RESTART"]}" \
+            "${DICT_ZRAM_SWAP_ARGS["USE_CACULATED_FRACTION"]}" \
+            "${DICT_ZRAM_SWAP_ARGS["USE_DEFAULT_FRACTION"]}" \
+            "${DICT_ZRAM_SWAP_ARGS["FRACTION"]}" \
+            "${int_hugepages_maximum_count_kilobytes}"; then
+          return 1
+        fi
+
+        return 0
+      }
+
+    #
+    # DESC:   Parse, validate, and save selected arguments.
+    # RETURN: If none or all arguments are valid, return 0.
+    #         If any argument is not valid, return 1.
+    #
+      function zram_swap_parse_usage
+      {
+        local -a str_arguments="$@"
+
+        local -A dict_selected_arguments \
+          dict_selected_options
+
+        if ! src_zram_swap_parse_usage_parse \
+            "dict_selected_arguments" \
+            "dict_selected_options" \
+            "${str_arguments}"; then
+          return 2
+        fi
+
+        if array_contains_value \
+            "dict_selected_arguments" \
+            "skip"; then
+          DICT_ZRAM_SWAP_ARGS["SKIP"]=true
+        fi
+
+        if array_contains_value \
+            "dict_selected_arguments" \
+            "update"; then
+          DICT_ZRAM_SWAP_ARGS["UPDATE"]=true
+        fi
+
+        if array_contains_value \
+            "dict_selected_arguments" \
+            "uninstall"; then
+          DICT_ZRAM_SWAP_ARGS["UNINSTALL"]=true
+        fi
+
+        local bool_has_install=false
+
+        if array_contains_value \
+            "dict_selected_arguments" \
+            "install"; then
+          bool_has_install=true
+        fi
+
+        local bool_has_modify=false
+
+        if array_contains_value \
+            "dict_selected_arguments" \
+            "modify"; then
+          bool_has_modify=true
+        fi
+
+        if "${bool_has_install}" \
+          && "${bool_has_modify}"; then
+          return 0
+        fi
+
+        if ! is_xor \
+            "${bool_has_install}" \
+            "${bool_has_modify}"; then
+          print_and_log_invalid_option "install"
+          print_and_log_invalid_option "modify"
+          return 1
+        fi
+
+        local bool_is_calculated_fraction=false
+
+        if array_contains_value \
+            "dict_selected_options" \
+            "restart"; then
+          DICT_ZRAM_SWAP_ARGS["RESTART"]=true
+        fi
+
+        if dict_contains_key_value_pair \
+            "dict_selected_options" \
+            "fraction=" \
+            "calculated"; then
+          bool_is_calculated_fraction=true
+        fi
+
+        if ${bool_is_calculated_fraction}; then
+          DICT_ZRAM_SWAP_ARGS["USE_CACULATED_FRACTION"]=true
+          DICT_ZRAM_SWAP_ARGS["USE_DEFAULT_FRACTION"]=false
+        fi
+
+        if array_contains_value \
+            "dict_selected_options" \
+            "fraction=" \
+          && ! ${bool_is_calculated_fraction}; then
+          DICT_ZRAM_SWAP_ARGS["FRACTION"]=\
+            "${dict_selected_options["fraction="]}"
+
+          DICT_ZRAM_SWAP_ARGS["USE_DEFAULT_FRACTION"]=false
+        fi
+
+        local bool_has_hugepages_count=false
+
+        if dict_contains_key_value_pair \
+            "dict_selected_options" \
+            "hugepages-count"; then
+          bool_has_hugepages_count=true
+        fi
+
+        local bool_has_hugepages_size=false
+
+        if dict_contains_key_value_pair \
+            "dict_selected_options" \
+            "hugepages-size"; then
+          bool_has_hugepages_size=true
+        fi
+
+        if is_string "${DICT_HUGEPAGES_ARGS["COUNT"]}" \
+            && is_string "${DICT_HUGEPAGES_ARGS["SIZE"]}"; then
+          DICT_ZRAM_SWAP_ARGS["HUGEPAGES_COUNT"]="${DICT_HUGEPAGES_ARGS["COUNT"]}"
+          DICT_ZRAM_SWAP_ARGS["HUGEPAGES_SIZE"]="${DICT_HUGEPAGES_ARGS["SIZE"]}"
+        fi
+
+        if ( "${bool_has_hugepages_count}" \
+          && "${bool_has_hugepages_size}" ); then
+          DICT_ZRAM_SWAP_ARGS["HUGEPAGES_COUNT"]=\
+            "${dict_selected_options["hugepages-count"]}"
+
+          DICT_ZRAM_SWAP_ARGS["HUGEPAGES_SIZE"]=\
+            "${dict_selected_options["hugepages-size"]}"
+        elif is_xor \
+            "${bool_has_hugepages_count}" \
+            "${bool_has_hugepages_size}"; then
+          print_and_log_warn "Both Hugepages count and size must be set, or neither."
+          return 1
+        fi
+
+        return 0
+      }
 
 #
 # main logic
