@@ -223,7 +223,7 @@
 
       case "${1}" in
         "--auto-xorg" )
-          if ! auto_xorg_parse_usage "$@"; then
+          if ! auto_xorg_usage "$@"; then
             return 1
           fi
 
@@ -231,7 +231,7 @@
           ;;
 
         "--compatibility" )
-          if ! compatibility_parse_usage "$@"; then
+          if ! compatibility_usage "$@"; then
             return 1
           fi
 
@@ -239,7 +239,7 @@
           ;;
 
         "--generate-evdev" )
-          if ! generate_evdev_parse_usage "$@"; then
+          if ! generate_evdev_usage "$@"; then
             return 1
           fi
 
@@ -247,7 +247,7 @@
           ;;
 
         "--hugepages" )
-          if ! hugepages_parse_usage "$@"; then
+          if ! hugepages_usage "$@"; then
             return 1
           fi
 
@@ -256,7 +256,7 @@
 
 
         "--iommu" )
-          if ! iommu_parse_usage "$@"; then
+          if ! iommu_usage "$@"; then
             return 1
           fi
 
@@ -264,7 +264,7 @@
           ;;
 
         "--isolcpu" )
-          if ! isolcpu_parse_usage "$@"; then
+          if ! isolcpu_usage "$@"; then
             return 1
           fi
 
@@ -272,7 +272,7 @@
           ;;
 
         "--libvirt-hooks" )
-          if ! libvirt_hooks_parse_usage "$@"; then
+          if ! libvirt_hooks_usage "$@"; then
             return 1
           fi
 
@@ -280,7 +280,7 @@
           ;;
 
         "--looking-glass" )
-          if ! looking_glass_parse_usage "$@"; then
+          if ! looking_glass_usage "$@"; then
             return 1
           fi
 
@@ -288,7 +288,7 @@
           ;;
 
         "--scream" )
-          if ! scream_parse_usage "$@"; then
+          if ! scream_usage "$@"; then
             return 1
           fi
 
@@ -296,7 +296,7 @@
           ;;
 
         "--vfio-setup" )
-          if ! vfio_setup_parse_usage "$@"; then
+          if ! vfio_setup_usage "$@"; then
             return 1
           fi
 
@@ -304,7 +304,7 @@
           ;;
 
         "--zram-swap" )
-          if ! zram_swap_parse_usage "$@"; then
+          if ! zram_swap_usage "$@"; then
             return 1
           fi
 
@@ -573,14 +573,14 @@
     # RETURN: If none or all arguments are valid, return 0.
     #         If any argument is not valid, return 1.
     #
-      function zram_swap_parse_usage
+      function zram_swap_usage
       {
         local -a str_arguments="$@"
 
         local -A dict_selected_arguments \
           dict_selected_options
 
-        if ! src_zram_swap_parse_usage \
+        if ! src_zram_swap_usage \
             "dict_selected_arguments" \
             "dict_selected_options" \
             "${str_arguments}"; then

@@ -895,7 +895,7 @@
   #         If any option is not valid, return 1.
   #         If an exception occurs, return 2.
   #
-    function src_zram_swap_parse_usage
+    function src_zram_swap_usage
     {
       local -n ref_dict_selected_arguments="${1}"
 
