@@ -8,12 +8,6 @@
 #
 
 #
-# TODO:
-# - [x] create dicts for each source files args.
-# - [x] create functions to call main functions for each source.
-#
-
-#
 # sources
 #
   declare -g SCRIPT_DIR="/usr/local/bin/"
@@ -80,7 +74,6 @@
     )
 
     declare -A DICT_VFIO_ARGS=(
-      # TODO: validate in src_vfio_setup for CMDLINE args (ex: hugepages, isolcpu, devices)
       ["CUSTOM_CMDLINE_STRING"]="",
       ["HUGEPAGES_COUNT"]="",
       ["HUGEPAGES_SIZE"]="",
@@ -320,9 +313,17 @@
         DICT_VFIO_ARGS["ISOLCPU_THREAD_SETS"]="${DICT_ISOLCPU_ARGS["THREAD_SETS"]}"
         DICT_VFIO_ARGS["IOMMU_GROUPS"]="${DICT_IOMMU_ARGS["IOMMU_GROUPS"]}"
 
-        # if ! src_vfio_setup_main; then
-        #   return 1
-        # fi
+        if ! src_vfio_setup_main \
+            "${DICT_VFIO_ARGS["SKIP"]}" \
+            "${DICT_VFIO_ARGS["MULTI_BOOT_SETUP"]}" \
+            "${DICT_VFIO_ARGS["STATIC_SETUP"]}" \
+            "${DICT_VFIO_ARGS["IOMMU_GROUPS"]}" \
+            "${DICT_VFIO_ARGS["HUGEPAGES_COUNT"]}" \
+            "${DICT_VFIO_ARGS["HUGEPAGES_SIZE"]}" \
+            "${DICT_VFIO_ARGS["ISOLCPU_THREAD_SETS"]}" \
+            "${DICT_VFIO_ARGS["CUSTOM_CMDLINE_STRING"]}"; then
+          return 1
+        fi
 
         return 0
       }
@@ -403,10 +404,10 @@
       function looking_glass
       {
         if ! src_looking_glass_main \
-            "${DICT_LIBVIRT_HOOKS_ARGS["SKIP"]}" \
-            "${DICT_LIBVIRT_HOOKS_ARGS["INSTALL"]}" \
-            "${DICT_LIBVIRT_HOOKS_ARGS["UNINSTALL"]}" \
-            "${DICT_LIBVIRT_HOOKS_ARGS["UPDATE"]}"; then
+            "${DICT_LOOKING_GLASS_ARGS["SKIP"]}" \
+            "${DICT_LOOKING_GLASS_ARGS["INSTALL"]}" \
+            "${DICT_LOOKING_GLASS_ARGS["UNINSTALL"]}" \
+            "${DICT_LOOKING_GLASS_ARGS["UPDATE"]}"; then
           return 1
         fi
 
