@@ -2,7 +2,7 @@
 
 #
 # Filename:       src_zram_swap
-# Description:    Logic to update and install ZRAM Swap.
+# Description:    Logic to update and install zram-swap.
 # Author(s):      Alex Portell <github.com/portellam>
 # Maintainer(s):  Alex Portell <github.com/portellam>
 #
@@ -44,7 +44,7 @@
   #
     function src_zram_swap_main
     {
-      local -r str_repo_name="ZRAM Swap"
+      local -r str_repo_name="zram-swap"
       local -r int_reserved_memory_count_kilobytes="${10}"
 
       if ! is_int "${int_reserved_memory_count_kilobytes}"; then
@@ -275,7 +275,7 @@
   #
     function src_zram_swap_does_repo_exist
     {
-      local -r str_repo_name="ZRAM Swap"
+      local -r str_repo_name="zram-swap"
       local -r str_warn="Could not determine if ${str_repo_name} repository exists."
 
       log_work "Determining if ${str_repo_name} repository exists..."
@@ -311,15 +311,15 @@
     }
 
   #
-  # DESC:   Enable ZRAM Swap device.
-  # $1:     do force restart all ZRAM Swap devices.
-  # RETURN: If ZRAM Swap device is enabled, return 0.
+  # DESC:   Enable zram-swap device.
+  # $1:     do force restart all zram-swap devices.
+  # RETURN: If zram-swap device is enabled, return 0.
   #         If not, return 1.
   #         If an exception occurs, return 2.
   #
     function src_zram_swap_enable_device
     {
-      local -r str_repo_name="ZRAM Swap"
+      local -r str_repo_name="zram-swap"
       log_work "Enabling ${str_repo_name} device(s)..."
 
       local -r str_warn="Could not enable ${str_repo_name} device(s)."
@@ -402,14 +402,14 @@
     }
 
   #
-  # DESC:   Execute ZRAM Swap installer.
+  # DESC:   Execute zram-swap installer.
   # $*:     the command line arguments as a string.
   # RETURN: If execution is successful, return 0.
   #         If false, return 1.
   #
     function src_zram_swap_execute_installer
     {
-      local -r str_repo_name="ZRAM Swap"
+      local -r str_repo_name="zram-swap"
       local -r str_warn="Could not execute ${str_repo_name} installer."
 
       if ! src_zram_swap_does_repo_exist "false"; then
@@ -448,7 +448,7 @@
     }
 
   #
-  # DESC:   Install ZRAM Swap.
+  # DESC:   Install zram-swap.
   # $1:     do force restart.
   # $2:     do use calculated fraction.
   # $3:     do use default fraction.
@@ -460,7 +460,7 @@
   #
     function src_zram_swap_install
     {
-      local -r str_repo_name="ZRAM Swap"
+      local -r str_repo_name="zram-swap"
       local -r str_fail="Could not install ${str_repo_name}."
 
       print_and_log_work "Installing ${str_repo_name}..."
@@ -527,7 +527,7 @@
     }
 
   #
-  # DESC:   Prompt to install ZRAM Swap.
+  # DESC:   Prompt to install zram-swap.
   # $1:     do force restart.
   # $2:     do use calculated fraction.
   # $3:     do use default fraction.
@@ -539,7 +539,7 @@
   #
     function src_zram_swap_install_prompt
     {
-      local -r str_repo_name="ZRAM Swap"
+      local -r str_repo_name="zram-swap"
 
       if ! ask_yes_no_question "Install ${str_repo_name}?"; then
         print_and_log_output "Skipped install of ${str_repo_name}."
@@ -554,7 +554,7 @@
     }
 
   #
-  # DESC:   Modify ZRAM Swap.
+  # DESC:   Modify zram-swap.
   # $1:     do force restart.
   # $2:     do use calculated fraction.
   # $3:     do use default fraction.
@@ -566,7 +566,7 @@
   #
     function src_zram_swap_modify
     {
-      local -r str_repo_name="ZRAM Swap"
+      local -r str_repo_name="zram-swap"
       local -r str_fail="Could not modify ${str_repo_name}."
 
       print_and_log_work "Modifying ${str_repo_name}..."
@@ -627,7 +627,7 @@
     }
 
   #
-  # DESC:   Prompt to modify ZRAM Swap.
+  # DESC:   Prompt to modify zram-swap.
   # $1:     do force restart.
   # $2:     do use calculated fraction.
   # $3:     do use default fraction.
@@ -639,7 +639,7 @@
   #
     function src_zram_swap_modify_prompt
     {
-      local -r str_repo_name="ZRAM Swap"
+      local -r str_repo_name="zram-swap"
 
       if ! ask_yes_no_question "Modify ${str_repo_name}?"; then
         print_and_log_output "Skipped modification of ${str_repo_name}."
@@ -654,7 +654,7 @@
     }
 
   #
-  # DESC:   Modify configuration files for ZRAM Swap.
+  # DESC:   Modify configuration files for zram-swap.
   # $1:     do use the default fraction value.
   # $2:     do use calculated fraction value.
   # $3:     the fraction as a string.
@@ -665,7 +665,7 @@
   #
     function src_zram_swap_modify_configuration
     {
-      local -r str_repo_name="ZRAM Swap"
+      local -r str_repo_name="zram-swap"
       local -r str_warn="Could not modify ${str_repo_name} configuration."
 
       log_work "Modifying ${str_repo_name} configuration..."
@@ -742,16 +742,16 @@
     }
 
   #
-  # DESC:   Set ZRAM Swap fraction size.
+  # DESC:   Set zram-swap fraction size.
   # $1:     the fraction as a string reference.
   # $2:     do use the default fraction value.
-  # RETURN: If ZRAM Swap fraction size is valid, return 0.
+  # RETURN: If zram-swap fraction size is valid, return 0.
   #         If not, return 1.
   #         If an exception occurs, return 2.
   #
     function src_zram_swap_set_fraction
     {
-      local -r str_repo_name="ZRAM Swap"
+      local -r str_repo_name="zram-swap"
       local -r str_warn="Could not set ${str_repo_name} fraction value."
 
       print_and_log_work "Setting ${str_repo_name} fraction value..."
@@ -796,16 +796,16 @@
     }
 
   #
-  # DESC:   Set ZRAM Swap value by user input.
+  # DESC:   Set zram-swap value by user input.
   # $1:     the fraction as a string reference.
   # $2:     do use the default fraction value.
-  # RETURN: If ZRAM Swap value is valid, return 0.
+  # RETURN: If zram-swap value is valid, return 0.
   #         If not, return 1.
   #         If an exception occurs, return 2.
   #
     function src_zram_swap_set_fraction_prompt
     {
-      local -r str_repo_name="ZRAM Swap"
+      local -r str_repo_name="zram-swap"
 
       local bool_do_use_default="${2}"
 
@@ -850,7 +850,7 @@
     }
 
   #
-  # DESC:   Uninstall ZRAM Swap.
+  # DESC:   Uninstall zram-swap.
   # RETURN: If uninstall is successful, return 0.
   #         If uninstall has failed, return 1.
   #         If uninstall is skipped, return 2.
@@ -865,14 +865,14 @@
     }
 
   #
-  # DESC:   Prompt to uninstall ZRAM Swap.
+  # DESC:   Prompt to uninstall zram-swap.
   # RETURN: If uninstall is successful, return 0.
   #         If uninstall has failed, return 1.
   #         If uninstall is skipped, return 2.
   #
     function src_zram_swap_uninstall_prompt
     {
-      local -r str_repo_name="ZRAM Swap"
+      local -r str_repo_name="zram-swap"
 
       if ! ask_yes_no_question "Uninstall ${str_repo_name}?"; then
         print_and_log_output "Skipped uninstall of ${str_repo_name}."
@@ -887,7 +887,7 @@
     }
 
   #
-  # DESC:   Parse ZRAM Swap arguments and options.
+  # DESC:   Parse zram-swap arguments and options.
   # $1:     the argument and option dictionary as a reference.
   # $2:     the option and value dictionary as a reference.
   # $*:     the options as a string.
@@ -983,7 +983,7 @@
       shift
 
       case "${str_parent}" in
-        "install"| "modify" )
+        "install" | "modify" )
           if ! src_zram_swap_usage_parse_nested_options \
               "${str_parent}" \
               "ref_child_key" \
@@ -1023,7 +1023,7 @@
       fi
 
       shift
-      local str_child_key="$( echo "${*}" | cut --delimiter '=' --fields 2 )"
+      local str_child_key="$( echo "${*}" | cut --delimiter '=' --fields 1 )"
       local str_child_value="$( echo "${*}" | cut --delimiter '=' --fields 2 )"
 
       case "${str_parent}" in
@@ -1069,20 +1069,24 @@
     function src_zram_swap_usage_prompt
     {
       echo -e ""\
-      "--zram-swap"\
-      "  install    Install zram-swap. Downloads installer if absent."\
-      "  modify     Modify the existing installation."\
-      "  skip       Skip prompts and do nothing."\
-      "  uninstall  Uninstall zram-swap."\
-      "  update     Download zram-swap installer."\
-      "  [install/modify] OPTIONS:"\
-      "    fraction=         Set the fraction of total memory to allocate as ZRAM swap. Overrides the default value."\
-      "    hugepages-count=  The count of Hugepages. Append any positive number."\
-      "    hugepages-size=   The size of a Hugepage as a multiple of one byte (4K/2M/1G)."\
-      ""\
-      "    [fraction=] VALUES:"\
-      "      x/y         A fraction between 0 and 1."\
-      "      calculated  Caclulate a fraction value given defined logic."\
+      "--zram-swap  Compress page memory in RAM with the (default) fast algorithm "\
+        "'lz4' (compression ratio of 5:2).\n"\
+      "  help       Print usage."\
+      "  install    Install zram-swap. Downloads installer if absent.\n"\
+      "  modify     Modify the existing installation.\n"\
+      "  skip       Skip prompts and do nothing.\n"\
+      "  uninstall  Uninstall zram-swap.\n"\
+      "  update     Download zram-swap installer.\n"\
+      "  [install/modify] OPTIONS:\n"\
+      "    fraction=         Set the fraction of total memory to allocate as "\
+        "zram-swap. Overrides the default value.\n"\
+      "    hugepages-count=  The count of Hugepages. Append any positive number.\n"\
+      "    hugepages-size=   The size of a Hugepage in bytes with a metric prefix "\
+        "(4K/2M/1G).\n"\
+      "\n"\
+      "    [fraction=] VALUES:\n"\
+      "      x/y         A fraction between 0 and 1.\n"\
+      "      calculated  Caclulate a fraction value given defined logic.\n"\
       ""
 
       return 0
