@@ -91,6 +91,7 @@
 
     declare -A DICT_AUTO_XORG_ARGS=(
       ["ARGS"]=""
+      ["EXECUTE"]=false,
       ["INSTALL"]=false,
       ["SKIP"]=false,
       ["UNINSTALL"]=false,
@@ -99,6 +100,7 @@
 
     declare -A DICT_GENERATE_EVDEV_ARGS=(
       ["ARGS"]=""
+      ["EXECUTE"]=false,
       ["HUGEPAGES_ENABLED"]=false
       ["INSTALL"]=false,
       ["SKIP"]=false,
@@ -432,6 +434,7 @@
       {
         if ! src_auto_xorg_main \
             "${DICT_AUTO_XORG_ARGS["SKIP"]}" \
+            "${DICT_AUTO_XORG_ARGS["EXECUTE"]}" \
             "${DICT_AUTO_XORG_ARGS["INSTALL"]}" \
             "${DICT_AUTO_XORG_ARGS["UNINSTALL"]}" \
             "${DICT_AUTO_XORG_ARGS["UPDATE"]}" \
@@ -460,6 +463,7 @@
 
         if ! src_generate_evdev_main \
             "${DICT_GENERATE_EVDEV_ARGS["SKIP"]}" \
+            "${DICT_GENERATE_EVDEV_ARGS["EXECUTE"]}" \
             "${DICT_GENERATE_EVDEV_ARGS["INSTALL"]}" \
             "${DICT_GENERATE_EVDEV_ARGS["UNINSTALL"]}" \
             "${DICT_GENERATE_EVDEV_ARGS["UPDATE"]}" \
