@@ -555,12 +555,15 @@
           return 0
           ;;
 
-        "help" | "skip" | "uninstall" | "update" )
+        "help" \
+          | "skip" \
+          | "uninstall" \
+          | "update" )
           return 0
           ;;
 
         * )
-          return 2
+          return 1
           ;;
       esac
     }
