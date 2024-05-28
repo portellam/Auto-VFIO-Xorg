@@ -1071,7 +1071,6 @@
       echo -e ""\
       "--zram-swap  Compress page memory in RAM with the (default) fast algorithm "\
         "'lz4' (compression ratio of 5:2).\n"\
-      "  help       Print usage."\
       "  install    Install zram-swap. Downloads installer if absent.\n"\
       "  modify     Modify the existing installation.\n"\
       "  skip       Skip prompts and do nothing.\n"\
