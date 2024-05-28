@@ -507,56 +507,42 @@
           return 2
         fi
 
-        if array_contains_value \
-            "dict_selected_arguments" \
-            "help"; then
-          DICT_AUTO_XORG_ARGS["HELP"]=true
-        fi
+        local -Ar dict_selected_flag_and_argument=(
+          ["EXECUTE"]="execute"
+          ["HELP"]="install"
+          ["INSTALL"]="install"
+          ["SKIP"]="skip"
+          ["UNINSTALL"]="uninstall"
+          ["UPDATE"]="update"
+        )
 
-        if array_contains_value \
-            "dict_selected_arguments" \
-            "skip"; then
-          DICT_AUTO_XORG_ARGS["SKIP"]=true
-        fi
+        for str_flag in "${!dict_selected_flag_and_argument[*]}"; do
+          local str_argument="${!dict_selected_flag_and_argument["${str_flag}"]}"
 
-        if array_contains_value \
-            "dict_selected_arguments" \
-            "uninstall"; then
-          DICT_AUTO_XORG_ARGS["UNINSTALL"]=true
-        fi
-
-        if array_contains_value \
-            "dict_selected_arguments" \
-            "update"; then
-          DICT_AUTO_XORG_ARGS["UPDATE"]=true
-        fi
-
-        local bool_has_execute=false
-
-        if array_contains_value \
-            "dict_selected_arguments" \
-            "execute"; then
-          bool_has_execute=true
-        fi
-
-        local bool_has_install=false
-
-        if array_contains_value \
-            "dict_selected_arguments" \
-            "install"; then
-          bool_has_install=true
-        fi
-
-        if "${bool_has_execute}" \
-          && "${bool_has_install}"; then
-          return 0
-        fi
+          if array_contains_value \
+              "dict_selected_arguments" \
+              "${str_argument}"; then
+              dict_selected_arguments["${str_flag}"]=true
+              continue
+          fi
+        done
 
         if ! is_xor \
-            "${bool_has_install}" \
-            "${bool_has_execute}"; then
+            "${DICT_AUTO_XORG_ARGS["EXECUTE"]}" \
+            "${DICT_AUTO_XORG_ARGS["INSTALL"]}"; then
           print_and_log_invalid_option "execute"
           print_and_log_invalid_option "install"
+          return 1
+        fi
+
+        if is_dict_not_empty "dict_selected_options" \
+          && ! "${DICT_ZRAM_SWAP_ARGS["EXECUTE"]}" \
+          && ! "${DICT_ZRAM_SWAP_ARGS["INSTALL"]}"; then
+          print_and_log_invalid_option "arguments="
+
+          print_and_log_warn "Either 'execute' or 'install' must be set, but not "\
+            "both."
+
           return 1
         fi
 
@@ -659,8 +645,11 @@
     #
       function zram_swap
       {
-        DICT_ZRAM_SWAP_ARGS["HUGEPAGES_COUNT_MAX_KILOBYTES"]=\
-          "${DICT_HUGEPAGES_ARGS["COUNT_MAX_KILOBYTES"]}"
+        if is_string "${DICT_HUGEPAGES_ARGS["COUNT"]}" \
+            && is_string "${DICT_HUGEPAGES_ARGS["SIZE"]}"; then
+          DICT_ZRAM_SWAP_ARGS["HUGEPAGES_COUNT"]="${DICT_HUGEPAGES_ARGS["COUNT"]}"
+          DICT_ZRAM_SWAP_ARGS["HUGEPAGES_SIZE"]="${DICT_HUGEPAGES_ARGS["SIZE"]}"
+        fi
 
         local -i int_hugepages_maximum_count_kilobytes=0
         local -i int_hugepages_size_kilobytes=0
@@ -716,60 +705,43 @@
           return 2
         fi
 
-        if array_contains_value \
-            "dict_selected_arguments" \
-            "skip"; then
-          DICT_ZRAM_SWAP_ARGS["SKIP"]=true
-        fi
+        local -Ar dict_selected_flag_and_argument=(
+          ["INSTALL"]="install"
+          ["MODIFY"]="modify"
+          ["RESTART"]="restart"
+          ["SKIP"]="skip"
+          ["UNINSTALL"]="uninstall"
+          ["UPDATE"]="update"
+        )
 
-        if array_contains_value \
-            "dict_selected_arguments" \
-            "uninstall"; then
-          DICT_ZRAM_SWAP_ARGS["UNINSTALL"]=true
-        fi
+        for str_flag in "${!dict_selected_flag_and_argument[*]}"; do
+          local str_argument="${!dict_selected_flag_and_argument["${str_flag}"]}"
 
-        if array_contains_value \
-            "dict_selected_arguments" \
-            "update"; then
-          DICT_ZRAM_SWAP_ARGS["UPDATE"]=true
-        fi
+          if array_contains_value \
+              "dict_selected_arguments" \
+              "${str_argument}"; then
+              dict_selected_arguments["${str_flag}"]=true
+              continue
+          fi
+        done
 
-        local bool_has_install=false
-
-        if array_contains_value \
-            "dict_selected_arguments" \
-            "install"; then
-          bool_has_install=true
-        fi
-
-        local bool_has_modify=false
-
-        if array_contains_value \
-            "dict_selected_arguments" \
-            "modify"; then
-          bool_has_modify=true
-        fi
-
-        if "${bool_has_install}" \
-          && "${bool_has_modify}"; then
-          return 0
+        if is_dict_not_empty "dict_selected_options" \
+          && ! "${DICT_ZRAM_SWAP_ARGS["INSTALL"]}" \
+          && ! "${DICT_ZRAM_SWAP_ARGS["MODIFY"]}"; then
+          print_and_log_invalid_option "arguments="
+          print_and_log_warn "Either 'install' or 'modify' must be set, but not both."
+          return 1
         fi
 
         if ! is_xor \
-            "${bool_has_install}" \
-            "${bool_has_modify}"; then
+            "${DICT_ZRAM_SWAP_ARGS["INSTALL"]}" \
+            "${DICT_ZRAM_SWAP_ARGS["MODIFY"]}"; then
           print_and_log_invalid_option "install"
           print_and_log_invalid_option "modify"
           return 1
         fi
 
         local bool_is_calculated_fraction=false
-
-        if array_contains_value \
-            "dict_selected_options" \
-            "restart"; then
-          DICT_ZRAM_SWAP_ARGS["RESTART"]=true
-        fi
 
         if dict_contains_key_value_pair \
             "dict_selected_options" \
@@ -797,7 +769,7 @@
 
         if dict_contains_key_value_pair \
             "dict_selected_options" \
-            "hugepages-count"; then
+            "hugepages-count="; then
           bool_has_hugepages_count=true
         fi
 
@@ -805,14 +777,8 @@
 
         if dict_contains_key_value_pair \
             "dict_selected_options" \
-            "hugepages-size"; then
+            "hugepages-size="; then
           bool_has_hugepages_size=true
-        fi
-
-        if is_string "${DICT_HUGEPAGES_ARGS["COUNT"]}" \
-            && is_string "${DICT_HUGEPAGES_ARGS["SIZE"]}"; then
-          DICT_ZRAM_SWAP_ARGS["HUGEPAGES_COUNT"]="${DICT_HUGEPAGES_ARGS["COUNT"]}"
-          DICT_ZRAM_SWAP_ARGS["HUGEPAGES_SIZE"]="${DICT_HUGEPAGES_ARGS["SIZE"]}"
         fi
 
         if ( "${bool_has_hugepages_count}" \
@@ -822,15 +788,20 @@
 
           DICT_ZRAM_SWAP_ARGS["HUGEPAGES_SIZE"]=\
             "${dict_selected_options["hugepages-size"]}"
+
         elif is_xor \
             "${bool_has_hugepages_count}" \
             "${bool_has_hugepages_size}"; then
           print_and_log_invalid_option
-          print_and_log_warn "Both Hugepages count and size must be set, or neither."
-          return 1
-        fi
 
-        return 0
+          print_and_log_warn "Both 'hugepages-count=' and 'hugepages-size' must be "\
+            "set, or neither."
+
+          return 1
+
+        else
+          return 0
+        fi
       }
 
 #
