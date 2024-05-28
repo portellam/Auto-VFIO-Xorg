@@ -26,12 +26,13 @@
 #
   #
   # DESC:   Main execution.
-  # $1:     do skip.
-  # $2:     do force execute.
-  # $3:     do force install.
-  # $4:     do force uninstall.
-  # $5:     do force update.
-  # $6:     the execute/install command line arguments as an array reference.
+  # $1:     do print usage.
+  # $2:     do skip.
+  # $3:     do force execute.
+  # $4:     do force install.
+  # $5:     do force uninstall.
+  # $6:     do force update.
+  # $7:     the execute/install command line arguments as an array reference.
   # RETURN: If successful, return 0.
   #         If not, return 1.
   #         If any exceptions occur, return 2.
@@ -39,7 +40,7 @@
     function src_auto_xorg_main
     {
       local -r str_repo_name="Auto X.Org"
-      local -n arr_arguments="${6}"
+      local -n arr_arguments="${7}"
 
       if ! is_array "${arr_arguments}"; then
         log_invalid_parameter "arr_arguments"
@@ -53,39 +54,58 @@
         return 2
       fi
 
-      local -r bool_do_force_update="${5}"
+      local -r bool_do_force_update="${6}"
 
       if ! is_bool "${bool_do_force_update}"; then
         log_invalid_parameter "bool_do_force_update"
         return 2
       fi
 
-      local -r bool_do_force_uninstall="${4}"
+      local -r bool_do_force_uninstall="${5}"
 
       if ! is_bool "${bool_do_force_uninstall}"; then
         log_invalid_parameter "bool_do_force_uninstall"
         return 2
       fi
 
-      local -r bool_do_force_install="${3}"
+      local -r bool_do_force_install="${4}"
 
       if ! is_bool "${bool_do_force_install}"; then
         log_invalid_parameter "bool_do_force_install"
         return 2
       fi
 
-      local -r bool_do_force_execute="${2}"
+      local -r bool_do_force_execute="${3}"
 
       if ! is_bool "${bool_do_force_execute}"; then
         log_invalid_parameter "bool_do_force_execute"
         return 2
       fi
 
-      local -r bool_do_force_skip="${1}"
+      local -r bool_do_force_skip="${2}"
 
       if ! is_bool "${bool_do_force_skip}"; then
         log_invalid_parameter "bool_do_force_skip"
         return 2
+      fi
+
+      local -r bool_do_print_usage="${1}"
+
+      if ! is_bool "${bool_do_print_usage}"; then
+        log_invalid_parameter "bool_do_print_usage"
+        return 2
+      fi
+
+      if "${bool_do_print_usage}"; then
+        src_auto_xorg_usage_prompt
+
+        if ! src_auto_xorg_execute_usage_prompt; then
+          if ! src_auto_xorg_installer_usage_prompt; then
+              return 1
+          fi
+        fi
+
+        return 0
       fi
 
       if "${bool_do_force_skip}"; then
@@ -296,6 +316,26 @@
     }
 
   #
+  # DESC:   Prompt executable usage.
+  # RETURN: If prompt is successful, return 0.
+  #         If prompt is not, return 1.
+  #
+    function src_auto_xorg_execute_usage_prompt
+    {
+      local -r str_repo_name="Auto X.Org"
+      local -r str_bin="auto-xorg"
+      local -r str_warn="Could not get usage from ${str_repo_name} executable."
+
+      if ! command -v "${str_bin}" &> /dev/null; then
+        log_warn "${str_warn}"
+        return 1
+      fi
+
+      sudo bash "${str_bin}" --help
+      return 0
+    }
+
+  #
   # DESC:   Install of Auto X.Org.
   # $*:     the command line arguments as a string.
   # RETURN: If install is successful, return 0.
@@ -338,6 +378,32 @@
         return 1
       fi
 
+      return 0
+    }
+
+  #
+  # DESC:   Prompt installer usage.
+  # RETURN: If prompt is successful, return 0.
+  #         If prompt is not, return 1.
+  #
+  #
+    function src_auto_xorg_installer_usage_prompt
+    {
+      local -r str_repo_name="Auto X.Org"
+      local -r str_warn="Could not get usage from ${str_repo_name} installer."
+
+      if ! src_auto_xorg_does_repo_exist "false"; then
+        log_warn "${str_warn}"
+        return 1
+      fi
+
+      if ! go_to_parent_path \
+        || ! change_directory "auto-xorg"; then
+        log_warn "${str_warn}"
+        return 1
+      fi
+
+      sudo bash installer.bash --help
       return 0
     }
 
@@ -566,3 +632,5 @@
 
       return 0
     }
+
+  

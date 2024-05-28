@@ -433,6 +433,7 @@
       function auto_xorg
       {
         if ! src_auto_xorg_main \
+            "${DICT_AUTO_XORG_ARGS["HELP"]}" \
             "${DICT_AUTO_XORG_ARGS["SKIP"]}" \
             "${DICT_AUTO_XORG_ARGS["EXECUTE"]}" \
             "${DICT_AUTO_XORG_ARGS["INSTALL"]}" \
