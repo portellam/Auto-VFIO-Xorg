@@ -994,12 +994,15 @@
           return 0
           ;;
 
-        "skip" | "uninstall" | "update" )
+        "help" \
+          | "skip" \
+          | "uninstall" \
+          | "update" )
           return 0
           ;;
 
         * )
-          return 2
+          return 1
           ;;
       esac
     }
@@ -1083,6 +1086,7 @@
       "    hugepages-size=   The size of a Hugepage in bytes with a metric prefix "\
         "(4K/2M/1G).\n"\
       "\n"\
+      "    restart           Restart any active zram-swap devices."
       "    [fraction=] VALUES:\n"\
       "      x/y         A fraction between 0 and 1.\n"\
       "      calculated  Caclulate a fraction value given defined logic.\n"\
