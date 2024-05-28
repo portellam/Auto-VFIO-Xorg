@@ -32,7 +32,7 @@
   # $4:     do force install.
   # $5:     do force uninstall.
   # $6:     do force update.
-  # $7:     the execute/install command line arguments as an array reference.
+  # $7:     the execute/install command line arguments as a comma-delimited string.
   # RETURN: If successful, return 0.
   #         If not, return 1.
   #         If any exceptions occur, return 2.
@@ -40,19 +40,17 @@
     function src_auto_xorg_main
     {
       local -r str_repo_name="Auto X.Org"
-      local -n arr_arguments="${7}"
+      local -r str_comma_delimited_arguments="${7}"
 
-      if ! is_array "${arr_arguments}"; then
-        log_invalid_parameter "arr_arguments"
+      if ! is_string "${str_comma_delimited_arguments}"; then
+        log_invalid_parameter "str_comma_delimited_arguments"
         return 2
       fi
 
-      local -r str_arguments=""
-
-      if ! get_delimited_string_from_array "arr_arguments" "str_arguments" " "; then
-        log_invalid_parameter "str_arguments"
-        return 2
-      fi
+      local -r str_space_delimited_arguments="$( echo \
+        "${str_comma_delimited_arguments}" | \
+        sed --regexp-extended 's/[,]+/ /g' \
+      )"
 
       local -r bool_do_force_update="${6}"
 
@@ -147,11 +145,11 @@
         return 1
       fi
 
-      if ! src_auto_xorg_install_prompt "${str_arguments}"; then
+      if ! src_auto_xorg_install_prompt "${str_space_delimited_arguments}"; then
         return 1
       fi
 
-      if ! src_auto_xorg_execute_prompt "${str_arguments}"; then
+      if ! src_auto_xorg_execute_prompt "${str_space_delimited_arguments}"; then
         return 1
       fi
 
@@ -632,5 +630,3 @@
 
       return 0
     }
-
-  
