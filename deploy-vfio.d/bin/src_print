@@ -287,25 +287,6 @@
     }
 
   #
-  # DESC:   Print duplicate option output.
-  # $1:     the option as a string.
-  # RETURN: Always return 1.
-  #
-    function print_and_log_duplicate_option
-    {
-      local -ir int_return_code="${?}"
-      local -r str_output="Duplicate option"
-
-      if ! is_string "${1}"; then
-        print_and_log_warn "${str_output}."
-      else
-        print_and_log_warn "${str_output}'${1}'."
-      fi
-
-      return 1
-    }
-
-  #
   # DESC:   Print invalid argument output.
   # $1:     the argument as a string.
   # RETURN: Always exit 1.
@@ -333,7 +314,7 @@
       local -r str_output="Invalid option"
 
       if ! is_string "${1}"; then
-        print_and_log_warn "${str_output}."
+        print_and_log_warn "${str_output} found."
       else
         print_and_log_warn "${str_output} '${1}'."
       fi
