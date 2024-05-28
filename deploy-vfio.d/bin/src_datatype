@@ -335,6 +335,32 @@
       }
 
     #
+    # DESC:   Is input variable a non-empty dictionary.
+    # $1:     the dictionary as a reference.
+    # RETURN: If true, return 0.
+    #         If false, return 1.
+    #         If an exception occurs, return 2.
+    #
+      function is_dict_not_empty
+      {
+        if ! is_dict "${1}"; then
+          return 2
+        fi
+
+        local -n ref_dict_not_empty="${1}"
+
+        for var_key in "${!ref_dict_not_empty[@]}"; do
+          if is_string "${ref_dict_not_empty["${var_key}"]}" &> /dev/null; then
+            log_to_stdout "Not empty dictionary."
+            return 0
+          fi
+        done
+
+        log_to_stderr "Empty dictionary."
+        return 1
+      }
+
+    #
     # DESC:   Is input variable an enum.
     # $1:     the enum as a reference.
     # RETURN: If true, return 0.
@@ -371,12 +397,6 @@
         if ! is_enum "${1}"; then
           return 2
         fi
-
-        case "$( declare -p ${1} 2>/dev/null )" in
-          *"-a"* | *"-A"* )
-            log_to_stdout "Variable is an enum."
-            return 0
-        esac
 
         local -n ref_enum_not_empty="${1}"
 
