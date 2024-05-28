@@ -159,6 +159,8 @@
 
       print_and_log_work "Executing pre setup..."
 
+      # TODO: place these in own code blocks, add skip checks and statements!
+
       if ! hugepages \
         || ! isolcpu; then
         print_and_log_fail "Pre setup failed."
@@ -180,7 +182,6 @@
       if ! auto_xorg \
         || ! libvirt_hooks \
         || ! looking_glass \
-        || ! scream \
         || ! zram_swap; then
         print_and_log_fail "Post setup failed."
         return 1
@@ -210,6 +211,25 @@
 
         shift
       done
+
+      if "${DICT_HUGEPAGES_ARGS["SKIP"]}" \
+        && "${DICT_ISOLCPU_ARGS["SKIP"]}"; then
+        BOOL_PRE_SETUP_SKIP=true
+      fi
+
+      if "${DICT_IOMMU_ARGS["SKIP"]}" \
+        && "${DICT_VFIO_ARGS["SKIP"]}"; then
+        BOOL_SKIP_MAIN_SETUP=true
+      fi
+
+      if "${DICT_AUTO_XORG_ARGS["SKIP"]}" \
+        && "${DICT_ISOLCPU_ARGS["SKIP"]}" \
+        && "${DICT_GENERATE_EVDEV_ARGS["SKIP"]}" \
+        && "${DICT_LIBVIRT_HOOKS_ARGS["SKIP"]}" \
+        && "${DICT_LOOKING_GLASS_ARGS["SKIP"]}" \
+        && "${DICT_ZRAM_SWAP_ARGS["SKIP"]}"; then
+        BOOL_SKIP_POST_SETUP=true
+      fi
 
       return 0
     }
@@ -293,13 +313,13 @@
           return 0
           ;;
 
-        "--scream" )
-          if ! scream_usage "$@"; then
-            return 1
-          fi
+        # "--scream" )
+        #   if ! scream_usage "$@"; then
+        #     return 1
+        #   fi
 
-          return 0
-          ;;
+        #   return 0
+        #   ;;
 
         "--vfio-setup" )
           if ! vfio_setup_usage "$@"; then
@@ -326,7 +346,7 @@
           src_generate_evdev_usage_prompt
           src_libvirt_hooks_usage_prompt
           src_looking_glass_usage_prompt
-          src_scream_usage_prompt
+          # src_scream_usage_prompt
           src_zram_swap_usage_prompt
 
           exit 0
@@ -342,7 +362,7 @@
           src_generate_evdev_usage_prompt
           src_libvirt_hooks_usage_prompt
           src_looking_glass_usage_prompt
-          src_scream_usage_prompt
+          # src_scream_usage_prompt
           src_zram_swap_usage_prompt
 
           return 1
@@ -816,5 +836,4 @@
 #
 # main logic
 #
-  parse_args "$@"
-  main
+  main "$@"
