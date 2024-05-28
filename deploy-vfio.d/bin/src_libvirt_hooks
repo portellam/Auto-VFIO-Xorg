@@ -284,3 +284,56 @@
 
       return 0
     }
+
+  #
+  # DESC:   Parse Libvirt Hooks arguments.
+  # $*:     the arguments as a string.
+  # RETURN: If none or all options are valid, return 0.
+  #         If any option is not valid, return 1.
+  #         If an exception occurs, return 2.
+  #
+    function src_libvirt_hooks_usage
+    {
+      if ! is_string "${1}"; then
+        log_output "No options set."
+        return 0
+      fi
+
+      while is_string "${1}"; do
+        case "${1}" in
+          "help" \
+            | "install" \
+            | "skip" \
+            | "uninstall" \
+            | "update" )
+            shift
+            ;;
+
+          * )
+            print_and_log_invalid_option "${1}"
+            return 1
+            ;;
+        esac
+      done
+
+      return 0
+    }
+
+  #
+  # DESC:   Prompt usage.
+  # RETURN: Always return 0.
+  #
+    function src_libvirt_hooks_usage_prompt
+    {
+      echo -e ""\
+      "--libvirt-hooks  Scripts which extend and enhance Guests' functionality.\n"\
+      "  help       Print usage."\
+      "  install    Install Libvirt Hooks. Downloads "\
+        "installer if absent.\n"\
+      "  skip       Skip prompts and do nothing.\n"\
+      "  uninstall  Uninstall Libvirt Hooks.\n"\
+      "  update     Download Libvirt Hooks installer.\n"\
+      ""
+
+      return 0
+    }
