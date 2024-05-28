@@ -146,6 +146,10 @@
   #
     function main
     {
+      if ! parse_arguments "$@"; then
+        return 1
+      fi
+
       print_and_log_work
 
       if ! src_privileges_is_user_superuser \
@@ -313,7 +317,7 @@
           return 0
           ;;
 
-        "--help" | "-h" | * )
+        "--help" | "-h" )
           src_iommu_usage_prompt
           src_vfio_usage_prompt
           src_hugepages_usage_prompt
@@ -325,7 +329,23 @@
           src_scream_usage_prompt
           src_zram_swap_usage_prompt
 
-          return 0
+          exit 0
+          ;;
+
+        * )
+          print_and_log_invalid_argument "${1}"
+          src_iommu_usage_prompt
+          src_vfio_usage_prompt
+          src_hugepages_usage_prompt
+          src_isolcpu_usage_prompt
+          src_auto_xorg_usage_prompt
+          src_generate_evdev_usage_prompt
+          src_libvirt_hooks_usage_prompt
+          src_looking_glass_usage_prompt
+          src_scream_usage_prompt
+          src_zram_swap_usage_prompt
+
+          return 1
           ;;
       esac
     }
@@ -463,6 +483,7 @@
             "dict_selected_arguments" \
             "dict_selected_options" \
             "${str_arguments}"; then
+          print_and_log_invalid_option
           return 2
         fi
 
@@ -671,6 +692,7 @@
             "dict_selected_arguments" \
             "dict_selected_options" \
             "${str_arguments}"; then
+          print_and_log_invalid_option
           return 2
         fi
 
@@ -783,6 +805,7 @@
         elif is_xor \
             "${bool_has_hugepages_count}" \
             "${bool_has_hugepages_size}"; then
+          print_and_log_invalid_option
           print_and_log_warn "Both Hugepages count and size must be set, or neither."
           return 1
         fi
