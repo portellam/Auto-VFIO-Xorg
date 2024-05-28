@@ -447,6 +447,88 @@
       }
 
     #
+    # DESC:   Parse, validate, and save selected arguments.
+    # $*:     the arguments as a string.
+    # RETURN: If none or all arguments are valid, return 0.
+    #         If any argument is not valid, return 1.
+    #
+      function auto_xorg_usage
+      {
+        local -a str_arguments="$@"
+
+        local -A dict_selected_arguments \
+          dict_selected_options
+
+        if ! src_auto_xorg_usage \
+            "dict_selected_arguments" \
+            "dict_selected_options" \
+            "${str_arguments}"; then
+          return 2
+        fi
+
+        if array_contains_value \
+            "dict_selected_arguments" \
+            "help"; then
+          DICT_AUTO_XORG_ARGS["HELP"]=true
+        fi
+
+        if array_contains_value \
+            "dict_selected_arguments" \
+            "skip"; then
+          DICT_AUTO_XORG_ARGS["SKIP"]=true
+        fi
+
+        if array_contains_value \
+            "dict_selected_arguments" \
+            "uninstall"; then
+          DICT_AUTO_XORG_ARGS["UNINSTALL"]=true
+        fi
+
+        if array_contains_value \
+            "dict_selected_arguments" \
+            "update"; then
+          DICT_AUTO_XORG_ARGS["UPDATE"]=true
+        fi
+
+        local bool_has_execute=false
+
+        if array_contains_value \
+            "dict_selected_arguments" \
+            "execute"; then
+          bool_has_execute=true
+        fi
+
+        local bool_has_install=false
+
+        if array_contains_value \
+            "dict_selected_arguments" \
+            "install"; then
+          bool_has_install=true
+        fi
+
+        if "${bool_has_execute}" \
+          && "${bool_has_install}"; then
+          return 0
+        fi
+
+        if ! is_xor \
+            "${bool_has_install}" \
+            "${bool_has_execute}"; then
+          print_and_log_invalid_option "execute"
+          print_and_log_invalid_option "install"
+          return 1
+        fi
+
+        if array_contains_value \
+            "dict_selected_options" \
+            "arguments="; then
+          DICT_ZRAM_SWAP_ARGS["ARGS"]="${dict_selected_options["arguments="]}"
+        fi
+
+        return 0
+      }
+
+    #
     # DESC:   Call source.
     # RETURN: If successful, return 0.
     #         If not, return 1.
@@ -600,14 +682,14 @@
 
         if array_contains_value \
             "dict_selected_arguments" \
-            "update"; then
-          DICT_ZRAM_SWAP_ARGS["UPDATE"]=true
+            "uninstall"; then
+          DICT_ZRAM_SWAP_ARGS["UNINSTALL"]=true
         fi
 
         if array_contains_value \
             "dict_selected_arguments" \
-            "uninstall"; then
-          DICT_ZRAM_SWAP_ARGS["UNINSTALL"]=true
+            "update"; then
+          DICT_ZRAM_SWAP_ARGS["UPDATE"]=true
         fi
 
         local bool_has_install=false
