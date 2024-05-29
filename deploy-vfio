@@ -22,8 +22,8 @@
   source "${SCRIPT_BIN_DIR}src_network"
   source "${SCRIPT_BIN_DIR}src_auto_xorg"
   source "${SCRIPT_BIN_DIR}src_libvirt_hooks"
-  source "${SCRIPT_BIN_DIR}src_looking_glass"
-  source "${SCRIPT_BIN_DIR}src_scream"
+  #source "${SCRIPT_BIN_DIR}src_looking_glass"
+  #source "${SCRIPT_BIN_DIR}src_scream"
   source "${SCRIPT_BIN_DIR}src_zram_swap"
 
 #
@@ -152,42 +152,13 @@
 
       print_and_log_work
 
-      if ! src_privileges_is_user_superuser \
-        || ! is_system_supported; then
+      if ! compatibility \
+        || ! pre_setup \
+        || ! main_setup \
+        || ! post_setup; then
         return 1
       fi
 
-      print_and_log_work "Executing pre setup..."
-
-      # TODO: place these in own code blocks, add skip checks and statements!
-
-      if ! hugepages \
-        || ! isolcpu; then
-        print_and_log_fail "Pre setup failed."
-        return 1
-      fi
-
-      print_and_log_pass "Pre setup complete."
-      print_and_log_work "Executing main setup..."
-
-      if ! iommu \
-        || ! vfio_setup; then
-        print_and_log_fail "Main setup failed."
-        return 1
-      fi
-
-      print_and_log_pass "Main setup complete."
-      print_and_log_work "Executing post setup..."
-
-      if ! auto_xorg \
-        || ! libvirt_hooks \
-        || ! looking_glass \
-        || ! zram_swap; then
-        print_and_log_fail "Post setup failed."
-        return 1
-      fi
-
-      print_and_log_pass "Post setup complete."
       print_and_log_pass
     }
 
@@ -371,8 +342,55 @@
     }
 
   #
+  # DESC: Compatibility
+  #
+    #
+    # DESC:   Call sources.
+    # RETURN: If successful, return 0.
+    #         If not, return 1.
+    #
+      function compatibility
+      {
+        if "${BOOL_COMPATIBILITY_SKIP}"; then
+          print_and_log_output "Compatibility checks skipped."
+          return 0
+        fi
+
+        if ! src_privileges_is_user_superuser \
+          || ! is_system_supported; then
+          return 1
+        fi
+
+        return 0
+      }
+
+  #
   # DESC: Pre setup
   #
+    #
+    # DESC:   Call sources.
+    # RETURN: If successful, return 0.
+    #         If not, return 1.
+    #
+      function pre_setup
+      {
+        if "${BOOL_PRE_SETUP_SKIP}"; then
+          print_and_log_output "Pre setup skipped."
+          return 0
+        fi
+
+        print_and_log_work "Executing pre setup..."
+
+        if ! hugepages \
+          || ! isolcpu; then
+          print_and_log_fail "Pre setup failed."
+          return 1
+        fi
+
+        print_and_log_pass "Pre setup complete."
+        return 0
+      }
+
     #
     # DESC:   Call source.
     # RETURN: If successful, return 0.
@@ -415,6 +433,30 @@
   #
   # DESC: Main setup
   #
+    #
+    # DESC:   Call sources.
+    # RETURN: If successful, return 0.
+    #         If not, return 1.
+    #
+      function main_setup
+      {
+        if "${BOOL_MAIN_SETUP_SKIP}"; then
+          print_and_log_output "Main setup skipped."
+          return 0
+        fi
+
+        print_and_log_work "Executing main setup..."
+
+        if ! iommu \
+          || ! vfio_setup; then
+          print_and_log_fail "Main setup failed."
+          return 1
+        fi
+
+        print_and_log_pass "Main setup complete."
+        return 0
+      }
+
     #
     # DESC:   Call source.
     # RETURN: If successful, return 0.
@@ -465,6 +507,32 @@
   #
   # DESC: Post setup
   #
+    #
+    # DESC:   Call sources.
+    # RETURN: If successful, return 0.
+    #         If not, return 1.
+    #
+      function post_setup
+      {
+        if "${BOOL_POST_SETUP_SKIP}"; then
+          print_and_log_output "Post setup skipped."
+          return 0
+        fi
+
+        print_and_log_work "Executing post setup..."
+
+        if ! auto_xorg \
+          || ! generate_evdev \
+          || ! libvirt_hooks \
+          || ! zram_swap; then
+          print_and_log_fail "Post setup failed."
+          return 1
+        fi
+
+        print_and_log_pass "Post setup complete."
+        return 0
+      }
+
     #
     # DESC:   Call source.
     # RETURN: If successful, return 0.
@@ -536,8 +604,8 @@
         fi
 
         if is_dict_not_empty "dict_selected_options" \
-          && ! "${DICT_ZRAM_SWAP_ARGS["EXECUTE"]}" \
-          && ! "${DICT_ZRAM_SWAP_ARGS["INSTALL"]}"; then
+          && ! "${DICT_AUTO_XORG_ARGS["EXECUTE"]}" \
+          && ! "${DICT_AUTO_XORG_ARGS["INSTALL"]}"; then
           print_and_log_invalid_option "arguments="
 
           print_and_log_warn "Either 'execute' or 'install' must be set, but not "\
@@ -549,7 +617,7 @@
         if array_contains_value \
             "dict_selected_options" \
             "arguments="; then
-          DICT_ZRAM_SWAP_ARGS["ARGS"]="${dict_selected_options["arguments="]}"
+          DICT_AUTO_XORG_ARGS["ARGS"]="${dict_selected_options["arguments="]}"
         fi
 
         return 0
@@ -562,16 +630,17 @@
     #
       function generate_evdev
       {
-        local -r str_hugepages_argument=" --hugepages "
+        local -r str_hugepages_argument="--hugepages"
 
         if DICT_GENERATE_EVDEV_ARGS["HUGEPAGES_ENABLED"] \
           && ! array_contains_value \
             "DICT_GENERATE_EVDEV_ARGS[\"ARGS\"]" \
             "${str_hugepages_argument}"; then
-          DICT_GENERATE_EVDEV_ARGS["ARGS"]+="${str_hugepages_argument}"
+          DICT_GENERATE_EVDEV_ARGS["ARGS"]+="${str_hugepages_argument},"
         fi
 
         if ! src_generate_evdev_main \
+            "${DICT_GENERATE_EVDEV_ARGS["HELP"]}" \
             "${DICT_GENERATE_EVDEV_ARGS["SKIP"]}" \
             "${DICT_GENERATE_EVDEV_ARGS["EXECUTE"]}" \
             "${DICT_GENERATE_EVDEV_ARGS["INSTALL"]}" \
@@ -579,6 +648,75 @@
             "${DICT_GENERATE_EVDEV_ARGS["UPDATE"]}" \
             "DICT_GENERATE_EVDEV_ARGS[\"ARGS\"]"; then
           return 1
+        fi
+
+        return 0
+      }
+
+    #
+    # DESC:   Parse, validate, and save selected arguments.
+    # $*:     the arguments as a string.
+    # RETURN: If none or all arguments are valid, return 0.
+    #         If any argument is not valid, return 1.
+    #
+      function generate_evdev_usage
+      {
+        local -a str_arguments="$@"
+
+        local -A dict_selected_arguments \
+          dict_selected_options
+
+        if ! src_generate_evdev_usage \
+            "dict_selected_arguments" \
+            "dict_selected_options" \
+            "${str_arguments}"; then
+          print_and_log_invalid_option
+          return 2
+        fi
+
+        local -Ar dict_selected_flag_and_argument=(
+          ["EXECUTE"]="execute"
+          ["HELP"]="install"
+          ["INSTALL"]="install"
+          ["SKIP"]="skip"
+          ["UNINSTALL"]="uninstall"
+          ["UPDATE"]="update"
+        )
+
+        for str_flag in "${!dict_selected_flag_and_argument[*]}"; do
+          local str_argument="${!dict_selected_flag_and_argument["${str_flag}"]}"
+
+          if array_contains_value \
+              "dict_selected_arguments" \
+              "${str_argument}"; then
+              dict_selected_arguments["${str_flag}"]=true
+              continue
+          fi
+        done
+
+        if ! is_xor \
+            "${DICT_GENERATE_EVDEV_ARGS["EXECUTE"]}" \
+            "${DICT_GENERATE_EVDEV_ARGS["INSTALL"]}"; then
+          print_and_log_invalid_option "execute"
+          print_and_log_invalid_option "install"
+          return 1
+        fi
+
+        if is_dict_not_empty "dict_selected_options" \
+          && ! "${DICT_GENERATE_EVDEV_ARGS["EXECUTE"]}" \
+          && ! "${DICT_GENERATE_EVDEV_ARGS["INSTALL"]}"; then
+          print_and_log_invalid_option "arguments="
+
+          print_and_log_warn "Either 'execute' or 'install' must be set, but not "\
+            "both."
+
+          return 1
+        fi
+
+        if array_contains_value \
+            "dict_selected_options" \
+            "arguments="; then
+          DICT_GENERATE_EVDEV_ARGS["ARGS"]="${dict_selected_options["arguments="]}"
         fi
 
         return 0
@@ -603,36 +741,68 @@
       }
 
     #
-    # DESC:   Call source.
-    # RETURN: If successful, return 0.
-    #         If not, return 1.
+    # DESC:   Parse, validate, and save selected arguments.
+    # $*:     the arguments as a string.
+    # RETURN: If none or all arguments are valid, return 0.
+    #         If any argument is not valid, return 1.
     #
-      function looking_glass
+      function libvirt_hooks_usage
       {
-        if ! src_looking_glass_main \
-            "${DICT_LOOKING_GLASS_ARGS["SKIP"]}" \
-            "${DICT_LOOKING_GLASS_ARGS["INSTALL"]}" \
-            "${DICT_LOOKING_GLASS_ARGS["UNINSTALL"]}" \
-            "${DICT_LOOKING_GLASS_ARGS["UPDATE"]}"; then
+        local -a str_arguments="$@"
+
+        local -A dict_selected_arguments \
+          dict_selected_options
+
+        if ! src_generate_evdev_usage \
+            "dict_selected_arguments" \
+            "dict_selected_options" \
+            "${str_arguments}"; then
+          print_and_log_invalid_option
+          return 2
+        fi
+
+        local -Ar dict_selected_flag_and_argument=(
+          ["HELP"]="install"
+          ["INSTALL"]="install"
+          ["SKIP"]="skip"
+          ["UNINSTALL"]="uninstall"
+          ["UPDATE"]="update"
+        )
+
+        for str_flag in "${!dict_selected_flag_and_argument[*]}"; do
+          local str_argument="${!dict_selected_flag_and_argument["${str_flag}"]}"
+
+          if array_contains_value \
+              "dict_selected_arguments" \
+              "${str_argument}"; then
+              dict_selected_arguments["${str_flag}"]=true
+              continue
+          fi
+        done
+
+        if ! is_xor \
+            "${DICT_GENERATE_EVDEV_ARGS["EXECUTE"]}" \
+            "${DICT_GENERATE_EVDEV_ARGS["INSTALL"]}"; then
+          print_and_log_invalid_option "execute"
+          print_and_log_invalid_option "install"
           return 1
         fi
 
-        return 0
-      }
+        if is_dict_not_empty "dict_selected_options" \
+          && ! "${DICT_GENERATE_EVDEV_ARGS["EXECUTE"]}" \
+          && ! "${DICT_GENERATE_EVDEV_ARGS["INSTALL"]}"; then
+          print_and_log_invalid_option "arguments="
 
-    #
-    # DESC:   Call source.
-    # RETURN: If successful, return 0.
-    #         If not, return 1.
-    #
-      function scream
-      {
-        if ! src_scream_main \
-            "${DICT_LIBVIRT_HOOKS_ARGS["SKIP"]}" \
-            "${DICT_LIBVIRT_HOOKS_ARGS["INSTALL"]}" \
-            "${DICT_LIBVIRT_HOOKS_ARGS["UNINSTALL"]}" \
-            "${DICT_LIBVIRT_HOOKS_ARGS["UPDATE"]}"; then
+          print_and_log_warn "Either 'execute' or 'install' must be set, but not "\
+            "both."
+
           return 1
+        fi
+
+        if array_contains_value \
+            "dict_selected_options" \
+            "arguments="; then
+          DICT_GENERATE_EVDEV_ARGS["ARGS"]="${dict_selected_options["arguments="]}"
         fi
 
         return 0
