@@ -28,7 +28,7 @@
   # RETURN: If true, return 0.
   #         If false, return 1.
   #
-    function is_distribution_supported
+    function src_compatibility_is_distribution_supported
     {
       if "${SRC_COMPATIBILITY_BOOL_DO_IGNORE_DISTRO}"; then
         log_output "Skipped system distribution support check."
@@ -57,7 +57,7 @@
   # RETURN: If true, return 0.
   #         If false, return 1.
   #
-    function is_iommu_enabled
+    function src_compatibility_is_iommu_enabled
     {
       if ! compgen -G "/sys/kernel/iommu_groups/*/devices/*" &> /dev/null; then
         print_and_log_warn "System does not support IOMMU groups."
@@ -98,13 +98,13 @@
   # RETURN: If true, return 0.
   #         If false, return 1.
   #
-    function is_system_supported
+    function src_compatibility_is_system_supported
     {
-      if ! is_virtualization_enabled \
-        || ! is_iommu_enabled \
-        || ! is_systemd_installed \
-        || ! is_xml_library_installed \
-        || ! is_distribution_supported; then
+      if ! src_compatibility_is_virtualization_enabled \
+        || ! src_compatibility_is_iommu_enabled \
+        || ! src_compatibility_is_systemd_installed \
+        || ! src_compatibility_is_xml_library_installed \
+        || ! src_compatibility_is_distribution_supported; then
         print_and_log_warn "System is not supported."
         exit 1
       fi
@@ -118,7 +118,7 @@
   # RETURN: If true, return 0.
   #         If false, return 1.
   #
-    function is_systemd_installed
+    function src_compatibility_is_systemd_installed
     {
       if ! command -v systemd &> /dev/null; then
         print_and_log_warn "'systemd' is not installed."
@@ -134,7 +134,7 @@
   # RETURN: If true, return 0.
   #         If false, return 1.
   #
-    function is_virtualization_enabled
+    function src_compatibility_is_virtualization_enabled
     {
       if ! LC_ALL=C lscpu | grep --ignore-case Virtualization &> /dev/null \
         && ! grep --extended-regexp --quiet --color=auto 'vmx|svm|0xc0f' \
@@ -154,7 +154,7 @@
   # RETURN: If true, return 0.
   #         If false, return 1.
   #
-    function is_xml_library_installed
+    function src_compatibility_is_xml_library_installed
     {
       if ! command -v "xmlstarlet" &> /dev/null; then
         print_and_log_warn "Required XML libraries are not installed."
