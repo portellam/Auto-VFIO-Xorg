@@ -49,12 +49,14 @@
       ["COUNT_MAX_KILOBYTES"]=""
       ["COUNT_KILOBYTES"]="",
       ["FREE_MAX_MEMORY_KILOBYTES"]="${INT_FREE_MAX_MEMORY_KILOBYTES}"
+      ["HELP"]=false,
       ["SIZE"]="",
       ["SIZE_KILOBYTES"]="",
       ["SKIP"]=false,
     )
 
     declare -A DICT_ISOLCPU_ARGS=(
+      ["HELP"]=false,
       ["SKIP"]=false,
       ["THREAD_SETS"]="",
     )
@@ -65,6 +67,7 @@
     BOOL_SKIP_MAIN_SETUP=false
 
     declare -A DICT_IOMMU_ARGS=(
+      ["HELP"]=false,
       ["IOMMU_GROUPS"]="",
       ["SELECT_ALL"]=true,
       ["SELECT_ALL_NON_VGA"]=false,
@@ -75,6 +78,7 @@
 
     declare -A DICT_VFIO_ARGS=(
       ["CUSTOM_CMDLINE_STRING"]="",
+      ["HELP"]=false,
       ["HUGEPAGES_COUNT"]="",
       ["HUGEPAGES_SIZE"]="",
       ["IOMMU_GROUPS"]="",
@@ -92,6 +96,7 @@
     declare -A DICT_AUTO_XORG_ARGS=(
       ["ARGS"]=""
       ["EXECUTE"]=false,
+      ["HELP"]=false,
       ["INSTALL"]=false,
       ["SKIP"]=false,
       ["UNINSTALL"]=false,
@@ -101,6 +106,7 @@
     declare -A DICT_GENERATE_EVDEV_ARGS=(
       ["ARGS"]=""
       ["EXECUTE"]=false,
+      ["HELP"]=false,
       ["HUGEPAGES_ENABLED"]=false
       ["INSTALL"]=false,
       ["SKIP"]=false,
@@ -109,6 +115,7 @@
     )
 
     declare -A DICT_LIBVIRT_HOOKS_ARGS=(
+      ["HELP"]=false,
       ["INSTALL"]=false,
       ["SKIP"]=false,
       ["UNINSTALL"]=false,
@@ -116,6 +123,7 @@
     )
 
     declare -A DICT_LOOKING_GLASS_ARGS=(
+      ["HELP"]=false,
       ["INSTALL"]=false,
       ["SKIP"]=false,
       ["UNINSTALL"]=false,
@@ -124,6 +132,7 @@
 
     declare -A DICT_ZRAM_SWAP_ARGS=(
       ["FRACTION"]="",
+      ["HELP"]=false,
       ["HUGEPAGES_COUNT"]="",
       ["HUGEPAGES_SIZE"]="",
       ["INSTALL"]=false,
@@ -399,6 +408,7 @@
       function hugepages
       {
         if ! src_hugepages_main \
+            "${DICT_HUGEPAGES_ARGS["HELP"]}" \
             "${DICT_HUGEPAGES_ARGS["SKIP"]}" \
             "${DICT_HUGEPAGES_ARGS["SIZE"]}" \
             "DICT_HUGEPAGES_ARGS[\"SIZE_KILOBYTES\"]" \
@@ -422,6 +432,7 @@
       function isolcpu
       {
         if ! src_isolcpu_main \
+            "${DICT_AUTO_XORG_ARGS["HELP"]}" \
             "${DICT_AUTO_XORG_ARGS["SKIP"]}" \
             "${DICT_AUTO_XORG_ARGS["THREAD_SETS"]}"; then
           return 1
@@ -465,12 +476,13 @@
       function iommu
       {
         if ! src_iommu_main \
-            "${DICT_AUTO_XORG_ARGS["SKIP"]}" \
-            "${DICT_AUTO_XORG_ARGS["USE_DEFAULT_XML"]}" \
-            "${DICT_AUTO_XORG_ARGS["XML_FILE_NAME"]}" \
-            "${DICT_AUTO_XORG_ARGS["SELECT_ALL"]}" \
-            "${DICT_AUTO_XORG_ARGS["SELECT_ALL_NON_VGA"]}" \
-            "${DICT_AUTO_XORG_ARGS["IOMMU_GROUPS"]}"; then
+            "${DICT_IOMMU_ARGS["HELP"]}" \
+            "${DICT_IOMMU_ARGS["SKIP"]}" \
+            "${DICT_IOMMU_ARGS["USE_DEFAULT_XML"]}" \
+            "${DICT_IOMMU_ARGS["XML_FILE_NAME"]}" \
+            "${DICT_IOMMU_ARGS["SELECT_ALL"]}" \
+            "${DICT_IOMMU_ARGS["SELECT_ALL_NON_VGA"]}" \
+            "${DICT_IOMMU_ARGS["IOMMU_GROUPS"]}"; then
           return 1
         fi
 
@@ -490,6 +502,7 @@
         DICT_VFIO_ARGS["IOMMU_GROUPS"]="${DICT_IOMMU_ARGS["IOMMU_GROUPS"]}"
 
         if ! src_vfio_setup_main \
+            "${DICT_VFIO_ARGS["HELP"]}" \
             "${DICT_VFIO_ARGS["SKIP"]}" \
             "${DICT_VFIO_ARGS["MULTI_BOOT_SETUP"]}" \
             "${DICT_VFIO_ARGS["STATIC_SETUP"]}" \
@@ -577,7 +590,7 @@
 
         local -Ar dict_selected_flag_and_argument=(
           ["EXECUTE"]="execute"
-          ["HELP"]="install"
+          ["HELP"]="help"
           ["INSTALL"]="install"
           ["SKIP"]="skip"
           ["UNINSTALL"]="uninstall"
@@ -676,7 +689,7 @@
 
         local -Ar dict_selected_flag_and_argument=(
           ["EXECUTE"]="execute"
-          ["HELP"]="install"
+          ["HELP"]="help"
           ["INSTALL"]="install"
           ["SKIP"]="skip"
           ["UNINSTALL"]="uninstall"
@@ -730,6 +743,7 @@
       function libvirt_hooks
       {
         if ! src_libvirt_hooks_main \
+            "${DICT_LIBVIRT_HOOKS_ARGS["HELP"]}" \
             "${DICT_LIBVIRT_HOOKS_ARGS["SKIP"]}" \
             "${DICT_LIBVIRT_HOOKS_ARGS["INSTALL"]}" \
             "${DICT_LIBVIRT_HOOKS_ARGS["UNINSTALL"]}" \
@@ -762,7 +776,7 @@
         fi
 
         local -Ar dict_selected_flag_and_argument=(
-          ["HELP"]="install"
+          ["HELP"]="help"
           ["INSTALL"]="install"
           ["SKIP"]="skip"
           ["UNINSTALL"]="uninstall"
@@ -838,6 +852,7 @@
         fi
 
         if ! src_zram_swap_main \
+            "${DICT_ZRAM_SWAP_ARGS["HELP"]}" \
             "${DICT_ZRAM_SWAP_ARGS["SKIP"]}" \
             "${DICT_ZRAM_SWAP_ARGS["MODIFY"]}" \
             "${DICT_ZRAM_SWAP_ARGS["INSTALL"]}" \
@@ -876,6 +891,7 @@
         fi
 
         local -Ar dict_selected_flag_and_argument=(
+          ["HELP"]="help"
           ["INSTALL"]="install"
           ["MODIFY"]="modify"
           ["RESTART"]="restart"
