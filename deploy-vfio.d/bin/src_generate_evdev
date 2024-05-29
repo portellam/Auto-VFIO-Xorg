@@ -26,12 +26,13 @@
 #
   #
   # DESC:   Main execution.
-  # $1:     do skip.
-  # $2:     do force execute.
-  # $3:     do force install.
-  # $4:     do force uninstall.
-  # $5:     do force update.
-  # $6:     the execute/install command line arguments as an array reference.
+  # $1:     do print usage
+  # $2:     do skip.
+  # $3:     do force execute.
+  # $4:     do force install.
+  # $5:     do force uninstall.
+  # $6:     do force update.
+  # $7:     the execute/install command line arguments as an array reference.
   # RETURN: If successful, return 0.
   #         If not, return 1.
   #         If any exceptions occur, return 2.
@@ -39,7 +40,7 @@
     function src_generate_evdev_main
     {
       local -r str_repo_name="Generate Evdev"
-      local -n arr_arguments="${6}"
+      local -n arr_arguments="${7}"
 
       if ! is_array "${arr_arguments}"; then
         log_invalid_parameter "arr_arguments"
@@ -53,39 +54,56 @@
         return 2
       fi
 
-      local -r bool_do_force_update="${5}"
+      local -r bool_do_force_update="${6}"
 
       if ! is_bool "${bool_do_force_update}"; then
         log_invalid_parameter "bool_do_force_update"
         return 2
       fi
 
-      local -r bool_do_force_uninstall="${4}"
+      local -r bool_do_force_uninstall="${5}"
 
       if ! is_bool "${bool_do_force_uninstall}"; then
         log_invalid_parameter "bool_do_force_uninstall"
         return 2
       fi
 
-      local -r bool_do_force_install="${3}"
+      local -r bool_do_force_install="${4}"
 
       if ! is_bool "${bool_do_force_install}"; then
         log_invalid_parameter "bool_do_force_install"
         return 2
       fi
 
-      local -r bool_do_force_execute="${2}"
+      local -r bool_do_force_execute="${3}"
 
       if ! is_bool "${bool_do_force_execute}"; then
         log_invalid_parameter "bool_do_force_execute"
         return 2
       fi
 
-      local -r bool_do_force_skip="${1}"
+      local -r bool_do_force_skip="${2}"
 
       if ! is_bool "${bool_do_force_skip}"; then
         log_invalid_parameter "bool_do_force_skip"
         return 2
+      fi
+
+      local -r bool_do_print_usage="${1}"
+
+      if ! is_bool "${bool_do_print_usage}"; then
+        log_invalid_parameter "bool_do_print_usage"
+        return 2
+      fi
+
+      if "${bool_do_print_usage}"; then
+        src_generate_evdev_usage_prompt
+
+        if ! src_generate_evdev_execute_usage_prompt; then
+          return 1
+        fi
+
+        exit 0
       fi
 
       if "${bool_do_force_skip}"; then
@@ -127,7 +145,7 @@
         return 1
       fi
 
-      if ! src_generate_evdev_install_prompt "${str_arguments}"; then
+      if ! src_generate_evdev_install_prompt; then
         return 1
       fi
 
@@ -296,6 +314,26 @@
     }
 
   #
+  # DESC:   Prompt executable usage.
+  # RETURN: If prompt is successful, return 0.
+  #         If prompt is not, return 1.
+  #
+    function src_generate_evdev_execute_usage_prompt
+    {
+      local -r str_repo_name="Generate Evdev"
+      local -r str_bin="generate-evdev"
+      local -r str_warn="Could not get usage from ${str_repo_name} executable."
+
+      if ! command -v "${str_bin}" &> /dev/null; then
+        log_warn "${str_warn}"
+        return 1
+      fi
+
+      sudo bash "${str_bin}" --help
+      return 0
+    }
+
+  #
   # DESC:   Install of Generate Evdev.
   # $*:     the command line arguments as a string.
   # RETURN: If install is successful, return 0.
@@ -379,6 +417,193 @@
       if ! src_generate_evdev_uninstall; then
         return 1
       fi
+
+      return 0
+    }
+
+    #
+  # DESC:   Parse Generate Evdev arguments and options.
+  # $1:     the argument and option dictionary as a reference.
+  # $2:     the option and value dictionary as a reference.
+  # $*:     the options as a string.
+  # RETURN: If none or all options are valid, return 0.
+  #         If any option is not valid, return 1.
+  #         If an exception occurs, return 2.
+  #
+    function src_generate_evdev_usage
+    {
+      local -n ref_dict_selected_arguments="${1}"
+
+      if ! is_dict "${ref_dict_selected_arguments}"; then
+        log_invalid_parameter "ref_dict_selected_arguments"
+        return 2
+      fi
+
+      shift
+
+      local -n ref_dict_selected_options="${1}"
+
+      if ! is_dict "${ref_dict_selected_options}"; then
+        log_invalid_parameter "ref_dict_selected_options"
+        return 2
+      fi
+
+      shift
+
+      if ! is_string "${1}"; then
+        log_output "No options set."
+        return 0
+      fi
+
+      while is_string "${1}"; do
+        local str_parent="${1}"
+        local str_child_key=""
+        local str_child_value=""
+        shift
+
+        if ! src_generate_evdev_usage_parse_options \
+            "${str_parent}" \
+            "str_child_key" \
+            "str_child_value"; then
+            print_and_log_invalid_option "${str_parent}"
+            return 1
+        fi
+
+        if dict_contains_key_value_pair \
+            "ref_dict_selected_arguments" \
+            "${str_parent}" \
+            "${str_child_key}"; then
+          log_invalid_parameter "ref_dict_selected_arguments"
+          print_and_log_invalid_option "${str_parent}"
+          print_conflicting_options
+          return 1
+        fi
+
+        if dict_contains_key_value_pair \
+            "ref_dict_selected_options" \
+            "${str_child_key}" \
+            "${str_child_value}"; then
+          log_invalid_parameter "ref_dict_selected_options"
+          print_and_log_invalid_option "${str_parent}"
+          print_conflicting_options
+          return 1
+        fi
+
+        ref_dict_selected_arguments["${str_parent}"]="${str_child_key}"
+        ref_dict_selected_options["${str_child_key}"]="${str_child_value}"
+        shift
+      done
+
+      return 0
+    }
+
+  #
+  # DESC:   Parse options.
+  # $1:     the parent option as a string.
+  # $2:     the child option key as a string reference.
+  # $3:     the child option value as a string reference.
+  # RETURN: If none or all option are valid, return 0.
+  #         If any option is not valid, return 1.
+  #
+    function src_generate_evdev_usage_parse_options
+    {
+      local -r str_parent="${1}"
+      local -n ref_child_key="${2}"
+      local -n ref_child_value="${3}"
+
+      if ! is_string "${str_parent}"; then
+        return 0
+      fi
+
+      shift
+
+      case "${str_parent}" in
+         "execute" )
+          if ! src_generate_evdev_usage_parse_nested_options \
+              "${str_parent}" \
+              "ref_child_key" \
+              "ref_child_value"; then
+            return 1
+          fi
+
+          return 0
+          ;;
+
+        "execute" \
+          | "help" \
+          | "skip" \
+          | "uninstall" \
+          | "update" )
+          return 0
+          ;;
+
+        * )
+          return 1
+          ;;
+      esac
+    }
+
+  #
+  # DESC:   Parse nested options.
+  # $1:     the parent option as a string.
+  # $2:     the child option key as a string reference.
+  # $3:     the child option value as a string reference.
+  # RETURN: If none or all option are valid, return 0.
+  #         If any option is not valid, return 1.
+  #
+    function src_generate_evdev_usage_parse_nested_options
+    {
+      local -r str_parent="${1}"
+      local -n ref_nested_child_key="${2}"
+      local -n ref_nested_child_value="${3}"
+
+      if ! is_string "${str_parent}"; then
+        return 0
+      fi
+
+      shift
+      local str_child_key="$( echo "${*}" | cut --delimiter '=' --fields 1 )"
+      local str_child_value="$( echo "${*}" | cut --delimiter '=' --fields 2 )"
+
+      case "${str_parent}" in
+        "arguments="* )
+          if ! is_string "${str_child_value}"; then
+            return 1
+          fi
+          ;;
+
+        * )
+          return 2
+          ;;
+      esac
+
+      ref_nested_child_key="${str_child_key}"
+      ref_nested_child_value="${str_child_value}"
+      return 0
+    }
+
+  #
+  # DESC:   Prompt usage.
+  # RETURN: Always return 0.
+  #
+    function src_generate_evdev_usage_prompt
+    {
+      echo -e ""\
+      "--generate-evdev  Specify which Host input devices .\n"\
+      "  help            Print usage.\n"\
+      "  install         Install Generate Evdev. Downloads installer if absent.\n"\
+      "  execute         Execute Generate Evdev.\n"\
+      "  skip            Skip prompts and do nothing.\n"\
+      "  uninstall       Uninstall Generate Evdev.\n"\
+      "  update          Download Generate Evdev installer.\n"\
+      "  [execute OPTIONS]:\n"\
+      "    arguments=    Invoke the arguments for Generate Evdev, delimited by"\
+        "comma.\n"\
+      "\n"\
+      "  Example:\n"\
+      "    --generate-evdev modify arguments=--arg1,--arg2 Execute Generate Evdev "\
+        "with the arguments listed.\n"\
+      ""
 
       return 0
     }

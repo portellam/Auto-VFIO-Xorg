@@ -28,16 +28,17 @@
 #
   #
   # DESC:   Main execution.
-  # $1:     do skip.
-  # $2:     do force modify.
-  # $3:     do force install.
-  # $4:     do force uninstall.
-  # $5:     do force update.
-  # $6:     do force restart.
-  # $7:     do use calculated fraction.
-  # $8:     do use default fraction.
-  # $9:     the fraction as a string.
-  # $10:    count of reserved memory in kilobytes as an int.
+  # $1:     do print usage.
+  # $2:     do skip.
+  # $3:     do force modify.
+  # $4:     do force install.
+  # $5:     do force uninstall.
+  # $6:     do force update.
+  # $7:     do force restart.
+  # $8:     do use calculated fraction.
+  # $9:     do use default fraction.
+  # $10:     the fraction as a string.
+  # $11:    count of reserved memory in kilobytes as an int.
   # RETURN: If successful, return 0.
   #         If not, return 1.
   #         If any exceptions occur, return 2.
@@ -45,74 +46,86 @@
     function src_zram_swap_main
     {
       local -r str_repo_name="zram-swap"
-      local -r int_reserved_memory_count_kilobytes="${10}"
+      local -r int_reserved_memory_count_kilobytes="${11}"
 
       if ! is_int "${int_reserved_memory_count_kilobytes}"; then
         log_invalid_parameter "int_reserved_memory_count_kilobytes"
         return 2
       fi
 
-      local -r str_fraction="${9}"
+      local -r str_fraction="${10}"
 
       if ! is_fraction "${str_fraction}"; then
         log_invalid_parameter "str_fraction"
         return 2
       fi
 
-      local -r bool_do_use_default_fraction="${8}"
+      local -r bool_do_use_default_fraction="${9}"
 
       if ! is_bool "${bool_do_use_default_fraction}"; then
         log_invalid_parameter "bool_do_use_default_fraction"
         return 2
       fi
 
-      local -r bool_do_use_calculated_fraction="${7}"
+      local -r bool_do_use_calculated_fraction="${8}"
 
       if ! is_bool "${bool_do_use_calculated_fraction}"; then
         log_invalid_parameter "bool_do_use_calculated_fraction"
         return 2
       fi
 
-      local -r bool_do_force_restart="${5}"
+      local -r bool_do_force_restart="${7}"
 
       if ! is_bool "${bool_do_force_restart}"; then
         log_invalid_parameter "bool_do_force_restart"
         return 2
       fi
 
-      local -r bool_do_force_update="${5}"
+      local -r bool_do_force_update="${6}"
 
       if ! is_bool "${bool_do_force_modify}"; then
         log_invalid_parameter "bool_do_force_update"
         return 2
       fi
 
-      local -r bool_do_force_uninstall="${4}"
+      local -r bool_do_force_uninstall="${5}"
 
       if ! is_bool "${bool_do_force_uninstall}"; then
         log_invalid_parameter "bool_do_force_uninstall"
         return 2
       fi
 
-      local -r bool_do_force_install="${3}"
+      local -r bool_do_force_install="${4}"
 
       if ! is_bool "${bool_do_force_install}"; then
         log_invalid_parameter "bool_do_force_install"
         return 2
       fi
 
-      local -r bool_do_force_modify="${2}"
+      local -r bool_do_force_modify="${3}"
 
       if ! is_bool "${bool_do_force_modify}"; then
         log_invalid_parameter "bool_do_force_modify"
         return 2
       fi
 
-      local -r bool_do_force_skip="${1}"
+      local -r bool_do_force_skip="${2}"
 
       if ! is_bool "${bool_do_force_skip}"; then
         log_invalid_parameter "bool_do_force_skip"
         return 2
+      fi
+
+      local -r bool_do_print_usage="${1}"
+
+      if ! is_bool "${bool_do_print_usage}"; then
+        log_invalid_parameter "bool_do_print_usage"
+        return 2
+      fi
+
+      if "${bool_do_print_usage}"; then
+        src_zram_swap_usage_prompt
+        exit 0
       fi
 
       if "${bool_do_force_skip}"; then
@@ -1074,6 +1087,7 @@
       echo -e ""\
       "--zram-swap  Compress page memory in RAM with the (default) fast algorithm "\
         "'lz4' (compression ratio of 5:2).\n"\
+      "  help       Print usage.\n"\
       "  install    Install zram-swap. Downloads installer if absent.\n"\
       "  modify     Modify the existing installation.\n"\
       "  skip       Skip prompts and do nothing.\n"\

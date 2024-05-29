@@ -103,7 +103,7 @@
           fi
         fi
 
-        return 0
+        exit 0
       fi
 
       if "${bool_do_force_skip}"; then
@@ -616,7 +616,7 @@
       echo -e ""\
       "--auto-xorg  Set the video output (should the primary video device be binded "\
         " to vfio-pci).\n"\
-      "  help       Print usage."\
+      "  help       Print usage.\n"\
       "  install    Install Auto X.Org (set video output at boot-time). Downloads "\
         "installer if absent.\n"\
       "  execute    Execute Auto X.Org (set video output at run-time).\n"\
