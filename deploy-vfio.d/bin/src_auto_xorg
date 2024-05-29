@@ -623,7 +623,7 @@
       "  skip       Skip prompts and do nothing.\n"\
       "  uninstall  Uninstall Auto X.Org.\n"\
       "  update     Download Auto X.Org installer.\n"\
-      "  [install/execute] OPTIONS:\n"\
+      "  [install/execute OPTIONS]:\n"\
       "    arguments=  Invoke the arguments for Auto X.Org, delimited by comma.\n"\
       "\n"\
       "  Example:\n"\

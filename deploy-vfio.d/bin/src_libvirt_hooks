@@ -327,12 +327,12 @@
     {
       echo -e ""\
       "--libvirt-hooks  Scripts which extend and enhance Guests' functionality.\n"\
-      "  help       Print usage."\
-      "  install    Install Libvirt Hooks. Downloads "\
+      "  help           Print usage."\
+      "  install        Install Libvirt Hooks. Downloads "\
         "installer if absent.\n"\
-      "  skip       Skip prompts and do nothing.\n"\
-      "  uninstall  Uninstall Libvirt Hooks.\n"\
-      "  update     Download Libvirt Hooks installer.\n"\
+      "  skip           Skip prompts and do nothing.\n"\
+      "  uninstall      Uninstall Libvirt Hooks.\n"\
+      "  update         Download Libvirt Hooks installer.\n"\
       ""
 
       return 0

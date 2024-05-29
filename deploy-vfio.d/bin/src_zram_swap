@@ -1079,15 +1079,15 @@
       "  skip       Skip prompts and do nothing.\n"\
       "  uninstall  Uninstall zram-swap.\n"\
       "  update     Download zram-swap installer.\n"\
-      "  [install/modify] OPTIONS:\n"\
+      "  [install/modify OPTIONS]:\n"\
       "    fraction=         Set the fraction of total memory to allocate as "\
         "zram-swap. Overrides the default value.\n"\
       "    hugepages-count=  The count of Hugepages. Append any positive number.\n"\
       "    hugepages-size=   The size of a Hugepage in bytes with a metric prefix "\
         "(4K/2M/1G).\n"\
       "\n"\
-      "    restart           Restart any active zram-swap devices."
-      "    [fraction=] VALUES:\n"\
+      "    restart           Restart any active zram-swap devices."\
+      "    [fraction=VALUES]:\n"\
       "      x/y         A fraction between 0 and 1.\n"\
       "      calculated  Caclulate a fraction value given defined logic.\n"\
       ""
