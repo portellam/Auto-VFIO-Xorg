@@ -43,23 +43,7 @@
     {
       local -r str_setup_name="Static Hugepages"
       local -r str_fail="Could not setup ${str_setup_name}."
-
-      echo
-      echo -e "${SRC_PRINT_STR_SET_COLOR_YELLOW}Hugepage${SRC_PRINT_STR_SET_ESCAPE}"\
-        "is a feature which statically allocates system memory to pagefiles."\
-        "\nGuest(s) can use Hugepage to a peformance benefit."\
-        "\nThe greater the Hugepage size, the less fragmentation of memory, and the "\
-        "less latency/overhead of system memory-access."\
-        "\n${SRC_PRINT_STR_SET_COLOR_YELLOW}NOTE:${SRC_PRINT_STR_SET_ESCAPE} It is "\
-        "recommended to use a size which is a multiple of an individual memory "\
-        "channel/stick."\
-        "\n${SRC_PRINT_STR_SET_COLOR_YELLOW}Example:${SRC_PRINT_STR_SET_ESCAPE} Four"\
-        " (4) channels of 8 GB each, use 1x, 2x, or 3x (8 GB, 16 GB, or 24 GB)."\
-        "\n${SRC_PRINT_STR_SET_COLOR_YELLOW}NOTE:${SRC_PRINT_STR_SET_ESCAPE} If this"\
-        " is skipped, the equivalent Libvirt hook for dynamic allocation will be "\
-        "installed.\n"
-
-      local -n ref_int_hugepages_maximum_count_kilobytes="${7}"
+      local -n ref_int_hugepages_maximum_count_kilobytes="${8}"
 
       if ! is_reference "${ref_int_hugepages_maximum_count_kilobytes}"; then
         log_invalid_parameter "ref_int_hugepages_maximum_count_kilobytes"
@@ -67,15 +51,15 @@
         return 2
       fi
 
-      if ! is_int "${6}" \
-        || [[ "${6}" -le 0 ]]; then
+      if ! is_int "${7}" \
+        || [[ "${7}" -le 0 ]]; then
         log_invalid_parameter "int_free_maximum_memory_kilobytes"
         print_and_log_warn "Maximum free memory value is not valid."
         return 2
       fi
 
-      local -ir int_free_maximum_memory_kilobytes="${6}"
-      local -n ref_int_hugepages_count="${5}"
+      local -ir int_free_maximum_memory_kilobytes="${7}"
+      local -n ref_int_hugepages_count="${6}"
 
       if ! is_reference "${ref_int_hugepages_count}"; then
         log_invalid_parameter "ref_int_hugepages_count"
@@ -83,7 +67,7 @@
         return 2
       fi
 
-      local -n ref_int_hugepages_count_kilobytes="${4}"
+      local -n ref_int_hugepages_count_kilobytes="${5}"
 
       if ! is_reference "${ref_int_hugepages_count_kilobytes}"; then
         log_invalid_parameter "ref_int_hugepages_count_kilobytes"
@@ -91,7 +75,7 @@
         return 2
       fi
 
-      local -n ref_int_hugepages_size_kilobytes="${3}"
+      local -n ref_int_hugepages_size_kilobytes="${4}"
 
       if ! is_reference "${ref_int_hugepages_size_kilobytes}"; then
         log_invalid_parameter "ref_int_hugepages_size_kilobytes"
@@ -99,21 +83,33 @@
         return 2
       fi
 
-      if ! is_string "${2}"; then
+      if ! is_string "${3}"; then
         log_invalid_parameter "str_hugepages_size"
         print_and_log_warn "${str_warn}"
         return 2
       fi
 
-      local -ir str_hugepages_size="${2}"
+      local -ir str_hugepages_size="${3}"
 
-      if ! is_bool "${1}"; then
+      if ! is_bool "${2}"; then
         log_invalid_parameter "bool_skip"
         print_and_log_warn "${str_warn}"
         return 2
       fi
 
-      local -ir bool_skip="${1}"
+      local -ir bool_skip="${2}"
+
+      local -r bool_do_print_usage="${1}"
+
+      if ! is_bool "${bool_do_print_usage}"; then
+        log_invalid_parameter "bool_do_print_usage"
+        return 2
+      fi
+
+      if "${bool_do_print_usage}"; then
+        src_hugepages_usage_prompt
+        exit 0
+      fi
 
       if "${bool_skip}" \
         || ! ask_yes_or_no "Setup ${SET_COLOR_YELLOW}${str_setup_name}"\
@@ -433,4 +429,24 @@
       log_invalid_parameter "ref_int_prompt_hugepages_size_kilobytes"
       print_and_log_warn "${str_warn}"
       return 1
+    }
+
+  #
+  # DESC:   Prompt usage.
+  # RETURN: Always return 0.
+  #
+    function src_hugepages_usage_prompt
+    {
+      echo -e ""\
+      "--hugepages  Create static hugepages to allocate RAM for Guest(s).\n"\
+      "  help       Print usage.\n"\
+      "  count=     The count of Hugepages. Append any positive number. The greater "\
+        "the Hugepage size, the less fragmentation of memory, and the less latency/"\
+        "overhead of system memory-access.\n"\
+      "  size=      The size of a Hugepage in bytes with a metric prefix "\
+        "(4K/2M/1G).\n"\
+      "  skip       Skip prompts and do nothing.\n"\
+      ""
+
+      return 0
     }
