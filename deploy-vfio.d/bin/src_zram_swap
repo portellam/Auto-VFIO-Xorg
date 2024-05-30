@@ -26,6 +26,9 @@
 #
 # logic
 #
+  # TODO: remove default and calculated fraction bools!
+  #       only change behavior if new fraction and/or hugepages amount is provided!
+
   #
   # DESC:   Main execution.
   # $1:     do print usage.
@@ -1048,8 +1051,7 @@
           ;;
 
         "fraction="* )
-          if ! is_fraction "${str_child_value}" \
-            && [[ "${str_child_value}" == "default" ]]; then
+          if ! is_fraction "${str_child_value}"; then
             return 1
           fi
           ;;
@@ -1085,26 +1087,36 @@
     function src_zram_swap_usage_prompt
     {
       echo -e ""\
-      "--zram-swap  Compress page memory in RAM with the (default) fast algorithm "\
-        "'lz4' (compression ratio of 5:2).\n"\
-      "  help       Print usage.\n"\
-      "  install    Install zram-swap. Downloads installer if absent.\n"\
-      "  modify     Modify the existing installation.\n"\
-      "  skip       Skip prompts and do nothing.\n"\
-      "  uninstall  Uninstall zram-swap.\n"\
-      "  update     Download zram-swap installer.\n"\
-      "  [install/modify OPTIONS]:\n"\
-      "    fraction=         Set the fraction of total memory to allocate as "\
-        "zram-swap. Overrides the default value.\n"\
-      "    hugepages-count=  The count of Hugepages. Append any positive number.\n"\
-      "    hugepages-size=   The size of a Hugepage in bytes with a metric prefix "\
-        "(4K/2M/1G).\n"\
+      "--zram-swap  Compress paged Host memory in RAM with the (default) fast "\
+        "algorithm 'lz4' (compression ratio of 5:2). NOTE: Leave at least 4G or 8G "\
+        "for Host!\n"\
+      "  help               Print usage.\n"\
+      "  skip               Skip prompts and do nothing.\n"\
+      "  install OPTION...  Install zram-swap. Downloads installer if absent.\n"\
+      "  modify OPTION...   Modify the existing installation.\n"\
+      "  uninstall          Uninstall zram-swap.\n"\
+      "  update             Download zram-swap installer.\n"\
       "\n"\
-      "    restart           Restart any active zram-swap devices."\
-      "    [fraction=VALUES]:\n"\
-      "      x/y         A fraction between 0 and 1.\n"\
-      "      calculated  Caclulate a fraction value given defined logic.\n"\
-      ""
+      "  install/modify:"\
+      "    fraction=STRING        Set the fraction of total memory to allocate as "\
+        "zram-swap. Overrides the default value.\n"\
+      "    hugepages-count=NUM    The count of Hugepages as any positive "\
+        "number. If fraction is not set, overrides default with lesser value.\n"\
+      "    hugepages-size=STRING  The size of a Hugepage in bytes with a metric "\
+        "prefix (4K/2M/1G). If fraction is not set, overrides default with lesser "\
+        "value.\n"\
+      "\n"\
+      "    restart                Restart any active zram-swap devices.\n"\
+      "\n"\
+      "    fraction:\n"\
+      "      x/y                  A fraction between 0 and 1.\n"\
+      "\n"\
+      "  Examples:\n"\
+      "    install fraction=1/8  Install and create a RAM swap file with 1/8 of the "\
+        "total Host RAM (given 64G RAM, effective swap size is ~20G).\n"\
+      "    modify hugepages-count=16 hugepages-size=1G\n"\
+        "                          Modify existing install and create RAM swap file "\
+        " without default fraction given total is subtracted by 16G (Hugepages).\n"\
 
       return 0
     }
