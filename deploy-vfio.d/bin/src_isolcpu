@@ -19,3 +19,168 @@
   declare -g SRC_STR_SCRIPT_BIN_DIR="${SRC_STR_SCRIPT_DIR}deploy-vfio.d/"
 
   source "${SRC_STR_SCRIPT_BIN_DIR}src_print"
+
+#
+# logic
+#
+    function execute_static_isolcpu_setup
+    {
+      execute_static_isolcpu_setup_prompt || return 0
+      local -r output="Static Isolcpu setup"
+
+      if ! execute_static_isolcpu_setup_main; then
+        print_fail_to_log "${output}"
+        return 1
+      fi
+
+      print_pass_to_log "${output}"
+    }
+
+    function execute_static_isolcpu_setup_main
+    {
+      local -i cores_allocated_to_host=1
+      local -i total_cores_count=$( cat /proc/cpuinfo | grep "cpu cores" | uniq | grep --only-matching "[0-9]\+" )
+      local -i total_threads_count=$( cat /proc/cpuinfo | grep "siblings" | uniq | grep --only-matching "[0-9]\+" )
+
+      get_maximum_count_of_cores_allocated_to_host "cores_allocated_to_host" "${total_cores_count}" || return 1
+
+      local -a host_cores_enum=( $( seq 0 $(( "${cores_allocated_to_host}" - 1 )) ) )
+      local -a host_threads_enum=( )
+      local -a guest_cores_enum=( $( seq "${cores_allocated_to_host}" $(( "${total_cores_count}" - 1 )) ) )
+      local -a guest_threads_enum=( )
+      local -ir host_smt_factor=$(( "${total_threads_count}" / "${total_cores_count}" ))
+      local -ar smt_factor_enum=( $( seq 0 $(( "${host_smt_factor}" - 1 )) ) )
+      local host_threads_delim=""
+      local guest_threads_delim=""
+
+      get_thread_pair_enums_and_delims
+
+      GRUB_CMDLINE_ISOLCPU="isolcpus=${guest_threads_delim} nohz_full=${guest_threads_delim} rcu_nocbs=${guest_threads_delim}"
+      PRE_SETUP_DO_EXECUTE_ISOLCPU=true
+
+      echo -e "Host CPU thread(s):\t${host_threads_delim}"
+      echo -e "Guest CPU thread(s):\t${guest_threads_delim}"
+    }
+
+    function execute_static_isolcpu_setup_prompt
+    {
+      if "${PRE_SETUP_DO_EXECUTE_ISOLCPU}"; then
+        return 0
+      fi
+
+      echo
+
+      if ! "${COMMON_ARGS_IS_EXECUTION_QUIET}"; then
+        echo -e "${SET_COLOR_YELLOW}Isolcpu${RESET_COLOR} is a feature which isolates CPU threads from the Host machine.\nGuest(s) can use Isolcpu to a peformance benefit. Guest(s) can use isolated CPU threads, increasing responsiveness and stability, without interferrence from the Host.\n${SET_COLOR_YELLOW}NOTE:${RESET_COLOR} If this is skipped, the equivalent Libvirt hook for dynamic isolation will be installed.\n"
+      fi
+
+      execute_or_skip_prompt "Setup ${SET_COLOR_YELLOW}Static Isolcpu${RESET_COLOR}?"
+    }
+
+    function get_maximum_count_of_cores_allocated_to_host
+    {
+      local -n reference="${1}"
+      local total_cores_count="${2}"
+
+      if [[ "${total_cores_count}" -ge 4 ]]; then
+        reference=2
+
+      elif [[ "${total_cores_count}" -le 3 ]] \
+        && [[ "${total_cores_count}" -ge 2 ]]; then
+        reference=1
+
+      else
+        print_error_to_log "Insufficient CPU cores."
+        return 1
+      fi
+    }
+
+    function get_thread_pair_delim_for_guest
+    {
+      local -i first_thread="${guest_threads_delimited_enum[0]}"
+      local -i last_thread="${guest_threads_delimited_enum[-1]}"
+      local thread_set="${first_thread_set}"
+
+      if [[ "${first_thread}" -ne "${last_thread}" ]]; then
+        thread_set="${first_thread}-${last_thread}"
+      fi
+
+      guest_threads_delim+="${thread_set},"
+    }
+
+    function get_thread_pair_delim_for_host
+    {
+      local -i first_thread="${host_threads_delimited_enum[0]}"
+      local -i last_thread="${host_threads_delimited_enum[-1]}"
+      local thread_set="${first_thread_set}"
+
+      if [[ "${first_thread}" -ne "${last_thread}" ]]; then
+        thread_set="${first_thread}-${last_thread}"
+      fi
+
+      host_threads_delim+="${thread_set},"
+    }
+
+    function get_thread_pair_enums_for_guest
+    {
+      for core in ${guest_cores_enum[@]}; do
+        thread=$(( core + ( smt_factor * total_cores_count ) ))       # <note>VS Code reports a syntax error here. There is none.</note>
+        guest_threads_enum+=( "${thread}" )
+        guest_threads_delimited_enum+=( "${thread}" )
+      done
+    }
+
+    function get_thread_pair_enums_for_host
+    {
+      for core in ${host_cores_enum[@]}; do
+        thread=$(( core + ( smt_factor * total_cores_count ) ))       # <note>VS Code reports a syntax error here. There is none.</note>
+        host_threads_enum+=( "${thread}" )
+        host_threads_delimited_enum+=( "${thread}" )
+      done
+    }
+
+    function get_thread_pair_enums_and_delims
+    {
+      for smt_factor in ${smt_factor_enum[@]}; do
+        local -a host_threads_delimited_enum=( )
+        local -a guest_threads_delimited_enum=( )
+        local -i thread
+
+        get_thread_pair_enums_for_host "thread"
+        get_thread_pair_enums_for_guest "thread"
+        get_thread_pair_delim_for_host
+        get_thread_pair_delim_for_guest
+      done
+
+      if [[ ${host_threads_delim: -1} == "," ]]; then
+        host_threads_delim="${host_threads_delim::-1}"
+      fi
+
+      if [[ ${guest_threads_delim: -1} == "," ]]; then
+        guest_threads_delim="${guest_threads_delim::-1}"
+      fi
+    }
+
+
+  #
+  # DESC:   Prompt usage.
+  # RETURN: Always return 0.
+  #
+    function src_isolcpu_usage_prompt
+    {
+      echo -e ""\
+      "--isolcpu         Static-isolation of Host CPU threads. Improves Guest "\
+        "responsiveness, stability and performance.\n"\
+      "  help            Print usage.\n"\
+      "  skip            Skip prompts and do nothing.\n"\
+      "  cores=STRING    Specify which Host CPU cores to be isolated. Will "\
+        "automatically parse and include each core's CPU threads, too.\n"\
+      "  threads=STRING  Specify the exact Host CPU threads to be isolated.\n"\
+      "\n"\
+      "  Examples:\n"\
+      "    cores=2-7          Isolate a range of cores (Core #3 to #8). If CPU is "\
+        "multi-threaded, include each core's threads, too..\n"\
+      "    threads=2-7,10-15  Isolate two ranges of threads. Same as above.\n"\
+
+      return 0
+    }
