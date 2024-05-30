@@ -34,3 +34,19 @@
       log_output "User is sudo or root."
       return 0
     }
+
+  #
+  # DESC:   Add user to required groups.
+  # RETURN: If user is added to groups, return 0.
+  #         If false, return 1.
+  #
+    function src_privileges_add_user_to_required_groups
+    {
+      if ! sudo adduser "${USER}" "libvirt" &> /dev/null \
+        ||  ! sudo adduser "${USER}" "input" &> /dev/null; then
+        print_and_log_fail "Could not add user to required groups."
+        return 1
+      fi
+
+      print_pass_to_log "Added user to required groups."
+    }
