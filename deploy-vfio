@@ -140,8 +140,6 @@
       ["RESTART"]=false,
       ["SKIP"]=false,
       ["UPDATE"]=false,
-      ["USE_CACULATED_FRACTION"]=false,
-      ["USE_DEFAULT_FRACTION"]=true,
     )
 
 #
@@ -499,7 +497,10 @@
       {
         DICT_VFIO_SETUP_ARGS["HUGEPAGES_COUNT"]="${DICT_HUGEPAGES_ARGS["COUNT"]}"
         DICT_VFIO_SETUP_ARGS["HUGEPAGES_SIZE"]="${DICT_HUGEPAGES_ARGS["SIZE"]}"
-        DICT_VFIO_SETUP_ARGS["ISOLCPU_THREAD_SETS"]="${DICT_ISOLCPU_ARGS["THREAD_SETS"]}"
+
+        DICT_VFIO_SETUP_ARGS["ISOLCPU_THREAD_SETS"]=\
+          "${DICT_ISOLCPU_ARGS["THREAD_SETS"]}"
+
         DICT_VFIO_SETUP_ARGS["IOMMU_GROUPS"]="${DICT_IOMMU_ARGS["IOMMU_GROUPS"]}"
 
         if ! src_vfio_setup_main \
@@ -860,8 +861,6 @@
             "${DICT_ZRAM_SWAP_ARGS["UNINSTALL"]}" \
             "${DICT_ZRAM_SWAP_ARGS["UPDATE"]}" \
             "${DICT_ZRAM_SWAP_ARGS["RESTART"]}" \
-            "${DICT_ZRAM_SWAP_ARGS["USE_CACULATED_FRACTION"]}" \
-            "${DICT_ZRAM_SWAP_ARGS["USE_DEFAULT_FRACTION"]}" \
             "${DICT_ZRAM_SWAP_ARGS["FRACTION"]}" \
             "${int_hugepages_maximum_count_kilobytes}"; then
           return 1
@@ -928,28 +927,11 @@
           return 1
         fi
 
-        local bool_is_calculated_fraction=false
-
-        if dict_contains_key_value_pair \
-            "dict_selected_options" \
-            "fraction=" \
-            "calculated"; then
-          bool_is_calculated_fraction=true
-        fi
-
-        if ${bool_is_calculated_fraction}; then
-          DICT_ZRAM_SWAP_ARGS["USE_CACULATED_FRACTION"]=true
-          DICT_ZRAM_SWAP_ARGS["USE_DEFAULT_FRACTION"]=false
-        fi
-
         if array_contains_value \
             "dict_selected_options" \
-            "fraction=" \
-          && ! ${bool_is_calculated_fraction}; then
+            "fraction="; then
           DICT_ZRAM_SWAP_ARGS["FRACTION"]=\
             "${dict_selected_options["fraction="]}"
-
-          DICT_ZRAM_SWAP_ARGS["USE_DEFAULT_FRACTION"]=false
         fi
 
         local bool_has_hugepages_count=false
