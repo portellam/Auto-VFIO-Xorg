@@ -589,7 +589,8 @@
     function src_generate_evdev_usage_prompt
     {
       echo -e ""\
-      "--generate-evdev  Specify which Host input devices .\n"\
+      "--generate-evdev  Create a virtual KVM (Keyboard-Video-Mouse) switch to share"\
+        " Host input devices to Guest(s). NOTE: Run this script post VFIO setup.\n"\
       "  help            Print usage.\n"\
       "  install         Install Generate Evdev. Downloads installer if absent.\n"\
       "  execute         Execute Generate Evdev.\n"\
