@@ -1072,10 +1072,11 @@
       "\n"\
       "  Examples:\n"\
       "    install fraction=1/8  Install and create a RAM swap file with 1/8 of the "\
-        "total Host RAM (given 64G RAM, effective swap size is ~20G).\n"\
+        "total amount of Host RAM (given 64G RAM, effective swap size is ~20G).\n"\
       "    modify hugepages-count=16 hugepages-size=1G\n"\
         "                          Modify existing install and create RAM swap file "\
-        " without default fraction given total is subtracted by 16G (Hugepages).\n"\
+        "with a fraction (default or calculated) given the partial amount Host RAM "\
+        "(subtracted 16G by Hugepages).\n"\
 
       return 0
     }
