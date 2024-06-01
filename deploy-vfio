@@ -831,6 +831,14 @@
     #
       function zram_swap
       {
+        local bool_use_default_fraction=false
+
+        if ! is_string "${DICT_ZRAM_SWAP_ARGS["FRACTION"]}" \
+          && ( "${DICT_ZRAM_SWAP_ARGS["INSTALL"]}" \
+            || "${DICT_ZRAM_SWAP_ARGS["MODIFY"]}" ); then
+          bool_use_default_fraction=true
+        fi
+
         if is_string "${DICT_HUGEPAGES_ARGS["COUNT"]}" \
             && is_string "${DICT_HUGEPAGES_ARGS["SIZE"]}"; then
           DICT_ZRAM_SWAP_ARGS["HUGEPAGES_COUNT"]="${DICT_HUGEPAGES_ARGS["COUNT"]}"
@@ -862,7 +870,8 @@
             "${DICT_ZRAM_SWAP_ARGS["UPDATE"]}" \
             "${DICT_ZRAM_SWAP_ARGS["RESTART"]}" \
             "${DICT_ZRAM_SWAP_ARGS["FRACTION"]}" \
-            "${int_hugepages_maximum_count_kilobytes}"; then
+            "${int_hugepages_maximum_count_kilobytes}" \
+            "${bool_use_default_fraction}"; then
           return 1
         fi
 
