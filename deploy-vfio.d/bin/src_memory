@@ -47,10 +47,10 @@
         ${SRC_MEMORY_INT_TWO_TO_POWER_OF_TEN} ** 2 \
       ))
 
-      declare -gi SRC_MEMORY_INT_CURRENT_FREE_MEMORY_BYTES=0
-      declare -gi SRC_MEMORY_INT_MIN_FREE_MEMORY_BYTES=0
+      declare -gi SRC_MEMORY_INT_CURRENT_FREE_MEMORY_KILOBYTES=0
+      declare -gi SRC_MEMORY_INT_MIN_FREE_MEMORY_KILOBYTES=0
 
-      declare -gir SRC_MEMORY_INT_MAX_FREE_MEMORY_BYTES=$( \
+      declare -gir SRC_MEMORY_INT_MAX_FREE_MEMORY_KILOBYTES=$( \
         cat /proc/meminfo | grep --ignore-case MemTotal | \
         cut --delimiter ":" --fields 2 | awk 'END {print $1}' \
       )
@@ -66,14 +66,14 @@
   #
     function set_free_memory
     {
-      if ! is_int "${SRC_MEMORY_INT_MAX_FREE_MEMORY_BYTES}" \
-        || ! is_int "${SRC_MEMORY_INT_MIN_FREE_MEMORY_BYTES}"; then
+      if ! is_int "${SRC_MEMORY_INT_MAX_FREE_MEMORY_KILOBYTES}" \
+        || ! is_int "${SRC_MEMORY_INT_MIN_FREE_MEMORY_KILOBYTES}"; then
         log_warn "Failed to get current free memory."
         return 1
       fi
 
-      SRC_MEMORY_INT_CURRENT_FREE_MEMORY_BYTES=$(( \
-        SRC_MEMORY_INT_MAX_FREE_MEMORY_BYTES - SRC_MEMORY_INT_MIN_FREE_MEMORY_BYTES \
+      SRC_MEMORY_INT_CURRENT_FREE_MEMORY_KILOBYTES=$(( \
+        SRC_MEMORY_INT_MAX_FREE_MEMORY_KILOBYTES - SRC_MEMORY_INT_MIN_FREE_MEMORY_KILOBYTES \
       ))
 
       log_output "Set free memory."
@@ -120,11 +120,11 @@
         return 1
       fi
 
-      SRC_MEMORY_INT_MIN_FREE_MEMORY_BYTES=$(
+      SRC_MEMORY_INT_MIN_FREE_MEMORY_KILOBYTES=$(
         declare -p arr_sorted | head --lines 1 \
       )
 
-      if ! is_int "${SRC_MEMORY_INT_MIN_FREE_MEMORY_BYTES}"; then
+      if ! is_int "${SRC_MEMORY_INT_MIN_FREE_MEMORY_KILOBYTES}"; then
         log_warn "Could not find lowest memory channel size value."
         return 1
       fi
@@ -145,7 +145,7 @@
       find_lowest_common_factor_memory_channel_size
       set_free_memory
 
-      if [[ "${SRC_MEMORY_INT_CURRENT_FREE_MEMORY_BYTES}" -le 0 ]]; then
+      if [[ "${SRC_MEMORY_INT_CURRENT_FREE_MEMORY_KILOBYTES}" -le 0 ]]; then
         log_warn "Insufficient Host memory available."
         return 1
       fi
