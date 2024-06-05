@@ -195,10 +195,65 @@
       return 0
     }
 
+  function something
+  {
+    local -n ref_int_fraction="${2}"
+    local -i int_coefficient="${1}"
+    local -i int_temp_coefficient=0
+
+
+
+    if [[ "${int_coefficient}" -le 1 ]]; then
+      int_coefficient=$(( "${int_coefficient}" * 2 ** 10 ))
+
+      something \
+        "${int_coefficient}" \
+        "${ref_int_fraction}"
+
+      return 0
+    fi
+
+    if [[ "${int_coefficient}" -gt 1024 ]]; then
+      int_temp_coefficient=$(( "${int_coefficient}" / 2 ** 10 ))
+
+      something \
+        "${int_coefficient}" \
+        "${ref_int_fraction}"
+
+      return 0
+    fi
+
+    ref_int_fraction=2
+
+    #
+    # TOTAL RAM   OS MIN (EXCLUDE HUGEPAGES, ZRAM-SWAP)
+    # 1G          128M
+    # 2G          1G
+    # 3G          1G
+    # 4G          3G
+    # 5G          3G
+    # 6G          4G
+    # 8G          4G
+    # 16G         8G
+    # 32G         16G
+    # 64G         16G
+    # 128G        64G
+    # 256G        64G
+    # 512G        64G
+    # 1T          128G
+
+
+    # Linux desktop usage
+    # min for OS ==      4G
+    # 
+
+  }
+
   #
   # DESC:   Get the calculated fraction.
   # $1:     the fraction as a string reference.
   # $2:     the amount of reserved memory in kilobytes.
+  # $10:    do use the default fraction value.
   # RETURN: If fraction is valid, return 0.
   #         If not, return 1.
   #         If an exception occurs, return 2.
@@ -207,7 +262,15 @@
     {
       log_work "Getting calculated fraction..."
 
-      local -r int_reserved_memory_count_kilobytes="${1}"
+      local bool_do_use_default="${3}"
+
+      if ! is_bool "${bool_do_use_default}"; then
+        log_invalid_parameter "bool_do_use_default"
+        print_and_log_warn "${str_warn}"
+        return 2
+      fi
+
+      local -r int_reserved_memory_count_kilobytes="${2}"
 
       if ! src_zram_swap_is_reserved_memory_valid \
         "${int_reserved_memory_count_kilobytes}"; then
@@ -224,8 +287,15 @@
         return 2
       fi
 
+      # TOTAL_RAM = FREE_MEMORY + ZRAM_MEMORY + HUGEPAGES_MEMORY
+      # 4G <  FREE_MEMORY       <=  TOTAL_RAM
+      # 0G => ZRAM_MEMORY       <   TOTAL_RAM
+      # 0G => HUGEPAGES_MEMORY  <   TOTAL_RAM
+
+      local -ir int_four_gigabyte_in_kilobytes=$(( 4 * 2 ** 20 ))
+
       local -ir int_zram_swap_available_memory_kilobytes=$(( \
-        SRC_MEMORY_INT_CURRENT_FREE_MEMORY_BYTES / 2 \
+        SRC_MEMORY_INT_CURRENT_FREE_MEMORY_KILOBYTES / 2 \
       ))
 
       local int_sum_of_reserved_and_requested_memory_kilobytes=$(( \
@@ -235,20 +305,27 @@
 
       if [[ \
         "${int_sum_of_reserved_and_requested_memory_kilobytes}" -ge \
-        "${SRC_MEMORY_INT_CURRENT_FREE_MEMORY_BYTES}" \
+        "${SRC_MEMORY_INT_CURRENT_FREE_MEMORY_KILOBYTES}" \
       ]]; then
         log_invalid_parameter "int_sum_of_reserved_and_requested_memory_kilobytes"
         print_and_log_warn "Total reserved memory count exceeds current free memory".
-        return 2
-      fi
 
+        int_sum_of_reserved_and_requested_memory_kilobytes=$(( \
+          int_reserved_memory_count_kilobytes / 2
+        ))
+
+        int_sum_of_reserved_and_requested_memory_kilobytes=$(( \
+          SRC_MEMORY_INT_CURRENT_FREE_MEMORY_KILOBYTES - \
+          int_reserved_memory_count_kilobytes \
+        ))
+      fi
       #
       # NOTE: First evaluate the ratio of max system memory to the zram-swap
       # available memory, as a decimal to the hundredths place.
       # Then truncate the decimal and return an integer.
       #
         local -r str_max_and_available_memory_fraction=""\
-          "${SRC_MEMORY_INT_MAX_FREE_MEMORY_BYTES}/"\
+          "${SRC_MEMORY_INT_MAX_FREE_MEMORY_KILOBYTES}/"\
           "${int_zram_swap_available_memory_kilobytes}"
 
         local -i int_denominator=$( printf "%.0f" \
@@ -396,13 +473,13 @@
       if ! is_int "${int_reserved_memory_count_kilobytes}" \
         || [[ \
           "${int_reserved_memory_count_kilobytes}" -lt \
-          "${SRC_MEMORY_INT_MAX_FREE_MEMORY_BYTES}" \
+          "${SRC_MEMORY_INT_MAX_FREE_MEMORY_KILOBYTES}" \
         ]]; then
         log_invalid_parameter "int_reserved_memory_count_kilobytes"
 
         print_and_log_warn "Reserved memory count is not valid. "\
           "Size must be less than maximum free memory "\
-          "(${SRC_MEMORY_INT_MAX_FREE_MEMORY_BYTES} kilobytes)."
+          "(${SRC_MEMORY_INT_MAX_FREE_MEMORY_KILOBYTES} kilobytes)."
         return 1
       fi
 
@@ -460,6 +537,7 @@
   # $1:     do force restart.
   # $2:     the fraction as a string.
   # $3:     amount of reserved memory in kilobytes as an int.
+  # $4:     do use the default fraction value.
   # RETURN: If install is successful, return 0.
   #         If install has failed, return 1.
   #         If install is skipped, return 2.
@@ -680,14 +758,34 @@
         return 2
       fi
 
+      "${bool_do_use_default}"
+
       if ! src_zram_swap_set_fraction_prompt \
           "str_fraction" \
-          "${bool_do_use_default}" \
-        || ! src_zram_swap_calculate_fraction \
-          "${str_fraction}" \
-          "${int_reserved_memory_count_kilobytes}"; then
+          "${bool_do_use_default}"; then
         print_and_log_warn "${str_warn}"
         return 2
+      fi
+
+      if ! src_zram_swap_calculate_fraction \
+          "${str_fraction}" \
+          "${int_reserved_memory_count_kilobytes}"; then
+        if ! "${bool_do_use_default}"; then
+          print_and_log_warn "${str_warn}"
+          return 2
+        fi
+
+        bool_do_use_default=false
+
+        if ! src_zram_swap_set_fraction \
+            "${str_fraction}" \
+            "${bool_do_use_default}"; then
+          return 1
+        fi
+
+        src_zram_swap_calculate_fraction \
+          "${str_fraction}" \
+          "${int_reserved_memory_count_kilobytes}"
       fi
 
       local -r str_file_path="/etc/default/zram-swap"
