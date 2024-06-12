@@ -2,13 +2,15 @@
 ### v1.1.0
 Effortlessly deploy changes to enable virtualization, hardware-passthrough (VFIO), and quality-of-life enhancements for a seamless VFIO setup on a Linux desktop machine.
 
-**[Latest release](https://github.com/portellam/deploy-vfio/releases/latest) | [View master branch...](https://github.com/portellam/deploy-vfio/tree/master)**
+**[Latest release](https://github.com/portellam/deploy-VFIO/releases/latest)**
 
-#### Related Projects:
-**[Auto X.Org](https://github.com/portellam/auto-xorg) | [Generate Evdev](https://github.com/portellam/generate-evdev) | [Guest Machine Guide](https://github.com/portellam/guest-machine-guide) | [Libvirt Hooks](https://github.com/portellam/libvirt-hooks) | [Power State Virtual Machine Manager](https://github.com/portellam/powerstate-virtmanager)**
+### Related Projects
+[Deploy VFIO](https://github.com/portellam/deploy-VFIO) | **[Auto X.Org](https://github.com/portellam/auto-xorg)** | **[Generate Evdev](https://github.com/portellam/generate-evdev)**
 
-#### Other Links:
-**What is [VFIO?](#VFIO) | [VFIO Article](https://www.kernel.org/doc/html/latest/driver-api/vfio.html) | [VFIO Forum](https://old.reddit.com/r/VFIO) | [PCI Passthrough Guide](https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF)**
+**[Guest Machine Guide](https://github.com/portellam/guest-machine-guide)** | **[Libvirt Hooks](https://github.com/portellam/libvirt-hooks)** | **[Power State Virtual Machine Manager](https://github.com/portellam/powerstate-virtmanager)**
+
+### Other Links:
+**[What is VFIO?](#VFIO) | [VFIO Article](https://www.kernel.org/doc/html/latest/driver-api/vfio.html) | [VFIO Forum](https://old.reddit.com/r/VFIO) | [PCI Passthrough Guide](https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF)**
 
 ## Table of Contents
 - [About](#about)
@@ -69,7 +71,12 @@ Collection of scripts to deploy and re-deploy a VFIO setup.
 
 ### Download
 - To download this script, you may:
-  - Download the latest release [here](https://github.com/portellam/deploy-vfio/releases/latest).
+  - Download the [latest release](https://github.com/portellam/deploy-VFIO/releases/latest).
+  - Download the ZIP file:
+    1. Viewing from the top of the repository's (current) webpage, click the drop-down icon `<> Code `.
+    2. Click `Download ZIP`. Save this file.
+    3. Open the `.zip` file, then extract its contents.
+
   - Clone the repository:
     1. Open a Command Line Interface (CLI).
       - Open a console emulator (for Debian systems: Konsole).
@@ -80,14 +87,12 @@ Collection of scripts to deploy and re-deploy a VFIO setup.
         - `F8` and above are unused.
 
     2. Change your directory to your home folder or anywhere safe: `cd ~`
-    3. Clone the repository: `git clone https://www.github.com/portellam/deploy-vfio`
-  - Download the ZIP file:
-    1. Viewing from the top of the repository's (current) webpage, click the green `<> Code ` drop-down icon.
-    2. Click `Download ZIP`. Save this file.
-    3. Open the `.zip` file, then extract its contents.
+    3. Clone the repository:
+      - `git clone https://www.github.com/portellam/deploy-VFIO`
+
 - To make this script executable, you must:
   1. Open the CLI (see above).
-  2. Go to the directory of where the cloned/extracted repository folder is: `cd name_of_parent_folder/deploy-vfio/`
+  2. Go to the directory of where the cloned/extracted repository folder is: `cd name_of_parent_folder/deploy-VFIO/`
   3. Make the installer script file executable: `chmod +x installer.bash`
     - Do **not** make any other script files executable. The installer will perform this action.
     - Do **not** make any non-script file executable. This is not necessary and potentially dangerous.
