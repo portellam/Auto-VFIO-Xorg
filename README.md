@@ -4,8 +4,7 @@ Effortlessly deploy a hardware-passthrough (VFIO) setup for Virtual Machines
 (VMs) on a Linux desktop. Includes quality-of-life features that you didn't
 think you need!
 
-**Download the Latest Release:**&ensp;[Codeberg][codeberg-releases],
-[GitHub][github-releases]
+## [Download](#5-download)
 
 [codeberg-releases]: https://codeberg.org/portellam/deploy-VFIO/releases/latest
 [github-releases]:   https://github.com/portellam/deploy-VFIO/releases/latest
