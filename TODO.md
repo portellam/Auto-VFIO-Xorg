@@ -1,4 +1,9 @@
 # TODO:
+- [ ] for annoying devices (USB) that bind to a driver and not vfio-pci, suggest...
+  - [ ] pci-stub, if that doesn't work, suggest...
+  - [ ] blacklist, if that doesn't work, suggest...
+  - [ ] libvirt-hook to unbind device dynamically.
+- [ ] warn user of stubborn devices (USB).
 - [ ] clean up and organize Grub list.
   - [ ] place things in subfolder, by IOMMU id type.
 - [ ] any way to fix soundblaster issue?
