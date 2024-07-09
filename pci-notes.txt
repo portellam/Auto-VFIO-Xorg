@@ -1,0 +1,54 @@
+2024-07-07
+
+# How to setup PCI passthrough.
+## Given a USB device with a driver of `xhci_hcd` and hardware ID of `1b21:2142`.
+
+1. Parse for and gather the hardware information of device to passthrough. Find
+(1) the hardware ID, (2) the device driver, and (3) the PCI Bus ID. Execute the
+following in a Linux terminal shell:
+  `lspci -nnk`
+If you know what type of hardware, you may execute either of the following:
+  - for the hardware ID:  `lspci -nnk -m 1b21:2142`
+  - for the PCI bus ID:   `lspci -nnk -s 02:00.0`
+  - for the type:         `lspci -nnk | grep USB`
+
+2. Repeat step 1 for all devices within the same IOMMU group(s) as the device(s)
+to passthrough.
+  a. Find the IOMMU group ID of the device:
+```find /sys/kernel/iommu_groups/ -type l \
+  | sort --numeric-sort --key=5 --field-separator=/ \
+  | grep 02:00.0 | cut --delimiter '/' --fields 5`
+```
+
+  b. Given an IOMMU group ID of `1`, find all device(s) within the same IOMMU
+  group:
+```
+for key in find /sys/kernel/iommu_groups/1/devices/*; do
+  lspci -nnk -s "$( basename "${key}" )"
+done
+```
+
+3. Load VFIO driver before device driver. Place the following kernel command in
+a file located in `/etc/modprobe.d/`:
+  `softdep xhci_pci pre: vfio-pci`
+
+4. If multiple devices of the same driver are present, and you wish to either
+passthrough...
+  a. one (1) device, then you must load and bind device to `pci-stub` before
+    `vfio-pci`.
+    `pci_stub.ids=1b21:2142`
+    `vfio_pci.ids=1b21:2142`
+
+  b. two (2) or more devices, then you may use the previous method or blacklist
+  the device driver before bind to `vfio-pci`.
+    `modprobe.blacklist=xhci_hcd`
+    `vfio_pci.ids=1b21:2142`
+Place the kernel commands in either in GRUB:
+  - for a static configuration:        `/etc/default/grub`
+  - for multiple boot configurations:  `/etc/grub.d/proxifiedScripts/40-custom/`
+or in files located here:
+  1. for driver binding:
+    a. `/etc/initramfs/modules`
+    b. `/etc/modules`
+
+  2. for blacklists only:  `/etc/modprobe.d/`
